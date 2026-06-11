@@ -2,9 +2,14 @@ import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 import { VitePWA } from 'vite-plugin-pwa';
 
+import pkg from './package.json' with { type: 'json' };
+
 export default defineConfig({
   // Served from GitHub Pages at /Things-3/
   base: '/Things-3/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     solid(),
     VitePWA({

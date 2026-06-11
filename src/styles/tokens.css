@@ -1,0 +1,96 @@
+:root {
+  color-scheme: light;
+
+  /* surfaces */
+  --bg: #f5f5f7;
+  --bg-list: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-inset: #eeeeef;
+  --bg-row-active: #ececee;
+  --backdrop: rgba(0, 0, 0, 0.28);
+
+  /* text */
+  --text: #1d1d1f;
+  --text-secondary: #8a8a8e;
+  --text-tertiary: #b9b9bd;
+  --text-invert: #ffffff;
+
+  /* brand + list colors */
+  --blue: #2f7cf6;
+  --blue-deep: #1d6ae5;
+  --yellow: #f7ce46;
+  --yellow-deep: #e8b900;
+  --red: #ff3b30;
+  --teal: #4cc2e8;
+  --tan: #c9a87c;
+  --green: #53b855;
+  --purple: #b678e0;
+
+  --tag-bg: #e6f4e6;
+  --tag-text: #3a8a3c;
+  --tag-border: #b5dcb6;
+
+  /* checkbox */
+  --check-border: #c7c7cc;
+  --check-fill: var(--blue);
+
+  --separator: rgba(60, 60, 67, 0.12);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.18);
+  --shadow-fab: 0 4px 12px rgba(47, 124, 246, 0.45), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-drag: 0 12px 32px rgba(0, 0, 0, 0.24);
+
+  /* type scale */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --fs-title: 28px;
+  --fs-body: 16px;
+  --fs-sub: 13px;
+  --fs-chip: 12px;
+
+  --radius-row: 10px;
+  --radius-card: 14px;
+  --radius-sheet: 16px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #141416;
+  --bg-list: #1d1d20;
+  --bg-card: #26262a;
+  --bg-elevated: #2c2c30;
+  --bg-inset: #2a2a2e;
+  --bg-row-active: #2a2a2f;
+  --backdrop: rgba(0, 0, 0, 0.5);
+
+  --text: #f2f2f4;
+  --text-secondary: #9a9aa0;
+  --text-tertiary: #5d5d63;
+
+  --blue: #4a90f7;
+  --blue-deep: #3a7ee8;
+  --yellow: #f8d04e;
+  --yellow-deep: #e9c235;
+  --red: #ff453a;
+  --teal: #56c8ea;
+  --tan: #cfa97a;
+  --green: #4fc153;
+  --purple: #bd83e3;
+
+  --tag-bg: #243b25;
+  --tag-text: #7fd281;
+  --tag-border: #355736;
+
+  --check-border: #4a4a50;
+
+  --separator: rgba(255, 255, 255, 0.09);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.55);
+  --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-drag: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
