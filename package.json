@@ -15,6 +15,7 @@
     "seed": "echo 'open the app with #seed in the URL to load demo data'"
   },
   "dependencies": {
+    "@solid-primitives/keyed": "^1.5.3",
     "dexie": "^4.0.11",
     "fractional-indexing": "^3.2.0",
     "nanoid": "^5.0.9",

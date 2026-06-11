@@ -1,4 +1,5 @@
-import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
+import { createMemo, createSignal, Show, type JSX } from 'solid-js';
+import { Key } from '@solid-primitives/keyed';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
@@ -8,7 +9,7 @@ import {
   inInbox, inToday, inUpcoming, inAnytime, inSomeday,
   todayTasks, upcomingGroups, groupByHome, todaySortKey,
 } from '../domain/smartLists';
-import { withGrace, graceIds } from '../app/uiState';
+import { graceIds } from '../app/uiState';
 import { keyAtIndex, sortByOrderKey } from '../db/ordering';
 import {
   moveTask, reorderToday, setTaskOrder, updateTask,
@@ -45,25 +46,36 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   }));
 
   // ---- membership with completion grace ----
+  // Tasks in the grace window are treated as still-open BEFORE any domain
+  // filtering/grouping, so they linger in place until the grace expires.
   const visible = createMemo<Task[]>(() => {
-    const all = tasks();
+    const grace = graceIds();
+    const all = tasks().map((t) =>
+      grace.has(t.id) && t.status !== 'open' ? { ...t, status: 'open' as const } : t,
+    );
     const today = currentDate();
-    graceIds(); // re-evaluate when grace changes
     switch (props.list) {
-      case 'inbox': return sortByOrderKey(all.filter(withGrace(inInbox)));
-      case 'today': return all.filter(withGrace((t) => inToday(t, today)));
-      case 'upcoming': return all.filter(withGrace((t) => inUpcoming(t, today)));
-      case 'anytime': return all.filter(withGrace((t) => inAnytime(t, today)));
-      case 'someday': return all.filter(withGrace(inSomeday));
+      case 'inbox': return sortByOrderKey(all.filter(inInbox));
+      case 'today': return all.filter((t) => inToday(t, today));
+      case 'upcoming': return all.filter((t) => inUpcoming(t, today));
+      case 'anytime': return all.filter((t) => inAnytime(t, today));
+      case 'someday': return all.filter(inSomeday);
       default: return [];
     }
   });
 
-  const renderRows = (items: Task[], section: string) => (
-    <AnimatedRows items={items} key={(t) => t.id} suspend={dragging}>
+  // Rows render the REAL task (so graced rows show checked + struck through);
+  // the patched copies above only drive membership/grouping.
+  const taskById = createMemo(() => new Map(tasks().map((t) => [t.id, t])));
+
+  // A real component (not a function call in JSX): items updates flow through
+  // the prop getter without recreating the row tree, so an expanded card
+  // survives unrelated DB writes.
+  const Rows = (p: { items: Task[]; section: string }) => (
+    <AnimatedRows items={p.items} key={(t) => t.id} suspend={dragging}>
       {(task) => (
-        <div data-reorder-row data-key={task.id} data-section={section}>
-          <ExpandableTask task={task} ctx={ctx()} />
+        <div data-reorder-row data-key={task().id} data-section={p.section}>
+          <ExpandableTask task={taskById().get(task().id) ?? task()} ctx={ctx()} />
         </div>
       )}
     </AnimatedRows>
@@ -169,7 +181,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         <Show when={props.list === 'inbox'}>
           <Show when={visible().length > 0} fallback={<EmptyState icon={<ListIcon list="inbox" size={44} />} text="Collect your thoughts here, then organize them later." />}>
             <ReorderGroup onDrop={handleFlatDrop} scrollParent={() => scrollEl ?? null}>
-              {renderRows(visible(), 'inbox')}
+              <Rows items={visible()} section="inbox" />
             </ReorderGroup>
           </Show>
         </Show>
@@ -181,14 +193,14 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
             fallback={<EmptyState icon={<ListIcon list="today" size={44} />} text="Take a moment to plan your day, or enjoy the calm." />}
           >
             <ReorderGroup onDrop={handleTodayDrop} scrollParent={() => scrollEl ?? null}>
-              {renderRows(todaySections().day, 'day')}
+              <Rows items={todaySections().day} section="day" />
               <Show when={todaySections().evening.length > 0}>
                 <SectionHeading
                   label="This Evening"
                   color="var(--text)"
                   trailing={<Icon name="moon" size={15} color="var(--purple)" />}
                 />
-                {renderRows(todaySections().evening, 'evening')}
+                <Rows items={todaySections().evening} section="evening" />
               </Show>
             </ReorderGroup>
           </Show>
@@ -196,26 +208,26 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
 
         <Show when={props.list === 'upcoming'}>
           <Show when={visible().length > 0 || events().some((e) => e.date > currentDate())} fallback={<EmptyState icon={<ListIcon list="upcoming" size={44} />} text="Scheduled to-dos and deadlines will show up here." />}>
-            <For each={upcomingGroups(visible(), currentDate())}>
+            <Key each={upcomingGroups(visible(), currentDate())} by={(g) => `${g.kind}:${g.kind === 'day' ? g.date : g.date.slice(0, 7)}`}>
               {(group) => (
-                <Show when={group.tasks.length > 0 || group.kind === 'day'}>
+                <Show when={group().tasks.length > 0 || group().kind === 'day'}>
                   <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '16px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
                     <span style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text)', 'min-width': '24px' }}>
-                      {group.kind === 'day' ? group.sublabel : ''}
+                      {group().kind === 'day' ? group().sublabel : ''}
                     </span>
-                    <span style={{ 'font-size': '15px', 'font-weight': group.kind === 'month' ? '700' : '500', color: 'var(--text-secondary)' }}>
-                      {group.label} {group.kind === 'month' ? group.sublabel : ''}
+                    <span style={{ 'font-size': '15px', 'font-weight': group().kind === 'month' ? '700' : '500', color: 'var(--text-secondary)' }}>
+                      {group().label} {group().kind === 'month' ? group().sublabel : ''}
                     </span>
                   </div>
-                  <Show when={group.kind === 'day'}>
+                  <Show when={group().kind === 'day'}>
                     <div style={{ padding: '0 16px' }}>
-                      <CalendarBlock compact events={events().filter((e) => e.date === group.date)} />
+                      <CalendarBlock compact events={events().filter((e) => e.date === group().date)} />
                     </div>
                   </Show>
-                  {renderRows(group.tasks, `date:${group.date}`)}
+                  <Rows items={group().tasks} section={`date:${group().date}`} />
                 </Show>
               )}
-            </For>
+            </Key>
           </Show>
         </Show>
 
@@ -230,16 +242,16 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
             }
           >
             <ReorderGroup onDrop={handleGroupedDrop} scrollParent={() => scrollEl ?? null}>
-              <For each={homeGroups()}>
+              <Key each={homeGroups()} by={sectionIdOf}>
                 {(group) => (
                   <>
-                    <Show when={group.kind !== 'standalone'}>
-                      <SectionHeading label={group.title || '—'} small />
+                    <Show when={group().kind !== 'standalone'}>
+                      <SectionHeading label={group().title || '—'} small />
                     </Show>
-                    {renderRows(group.tasks, sectionIdOf(group))}
+                    <Rows items={group().tasks} section={sectionIdOf(group())} />
                   </>
                 )}
-              </For>
+              </Key>
             </ReorderGroup>
           </Show>
         </Show>

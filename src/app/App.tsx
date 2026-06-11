@@ -20,6 +20,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
+import { ScreenKeyContext } from './screenContext';
 
 function ScreenFor(props: { route: Route }): JSX.Element {
   const r = props.route;
@@ -41,9 +42,11 @@ function ScreenWrapper(props: { entry: StackEntry }): JSX.Element {
   onMount(() => registerScreen(props.entry.key, el));
   onCleanup(() => unregisterScreen(props.entry.key));
   return (
-    <div ref={el} class="screen" data-route={props.entry.route.name}>
-      <ScreenFor route={props.entry.route} />
-    </div>
+    <ScreenKeyContext.Provider value={props.entry.key}>
+      <div ref={el} class="screen" data-route={props.entry.route.name}>
+        <ScreenFor route={props.entry.route} />
+      </div>
+    </ScreenKeyContext.Provider>
   );
 }
 

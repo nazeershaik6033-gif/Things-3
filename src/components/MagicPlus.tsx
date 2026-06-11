@@ -1,4 +1,5 @@
-import { onCleanup, onMount, type JSX } from 'solid-js';
+import { onCleanup, onMount, Show, type JSX } from 'solid-js';
+import { useIsTopScreen } from '../app/screenContext';
 import { createPan } from '../gestures/createPan';
 import { createSpring, Spring, SPRING } from '../gestures/springs';
 import { release, tryClaim } from '../gestures/arbiter';
@@ -14,8 +15,17 @@ export interface MagicPlusDrop {
 
 /** The draggable blue + button. Tap → Quick Entry for the current list.
  *  Drag → an insertion gap follows the finger; drop creates the task there.
- *  Drag to the left edge → Inbox. */
-export function MagicPlus(props: {
+ *  Drag to the left edge → Inbox. Renders only on the top screen. */
+export function MagicPlus(props: Parameters<typeof MagicPlusInner>[0]): JSX.Element {
+  const isTop = useIsTopScreen();
+  return (
+    <Show when={isTop()}>
+      <MagicPlusInner {...props} />
+    </Show>
+  );
+}
+
+function MagicPlusInner(props: {
   defaultEntry: () => QuickEntryState;
   /** Where dropping at a slot should send the task; null = not droppable here. */
   entryForDrop?: (drop: MagicPlusDrop) => QuickEntryState | null;
@@ -167,6 +177,7 @@ export function MagicPlus(props: {
           top: '50%',
           transform: 'translateY(-50%)',
           opacity: '0',
+          'pointer-events': 'none',
           transition: 'opacity 150ms ease',
           'z-index': '49',
           background: 'var(--blue)',

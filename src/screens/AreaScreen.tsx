@@ -112,8 +112,8 @@ export function AreaScreen(props: { id: string }): JSX.Element {
           <ReorderGroup onDrop={handleDrop} scrollParent={() => scrollEl ?? null}>
             <AnimatedRows items={looseTasks()} key={(t) => t.id}>
               {(task) => (
-                <div data-reorder-row data-key={task.id} data-section="area">
-                  <ExpandableTask task={task} ctx={ctx()} />
+                <div data-reorder-row data-key={task().id} data-section="area">
+                  <ExpandableTask task={task()} ctx={ctx()} />
                 </div>
               )}
             </AnimatedRows>

@@ -55,7 +55,7 @@ export function TagScreen(props: { id: string }): JSX.Element {
           fallback={<EmptyState icon={<Icon name="tag" size={40} color="var(--green)" />} text="No open to-dos with this tag." />}
         >
           <AnimatedRows items={visible()} key={(t) => t.id}>
-            {(task) => <ExpandableTask task={task} ctx={ctx()} />}
+            {(task) => <ExpandableTask task={task()} ctx={ctx()} />}
           </AnimatedRows>
         </Show>
       </ScreenChrome>

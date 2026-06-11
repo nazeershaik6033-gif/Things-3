@@ -83,7 +83,12 @@ export function ChecklistEditor(props: {
         )}
       </For>
       <button
-        onClick={() => focusItem(insertAfter(null))}
+        // pointerdown (not click): fires before a focused textarea blurs and
+        // reflows the card, so the tap can't get lost mid-layout
+        onPointerDown={(e) => {
+          e.preventDefault();
+          focusItem(insertAfter(null));
+        }}
         style={{ color: 'var(--text-secondary)', 'font-size': '14px', padding: '4px 0 2px 27px' }}
       >
         + Add item

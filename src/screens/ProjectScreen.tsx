@@ -1,4 +1,5 @@
 import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
+import { Key } from '@solid-primitives/keyed';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
@@ -83,11 +84,15 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
     };
   };
 
-  const renderRows = (items: Task[], section: string) => (
-    <AnimatedRows items={items} key={(t) => t.id}>
+  // Rows render the real task; patched copies only drive grouping (grace UX)
+  const taskById = createMemo(() => new Map(tasks().map((t) => [t.id, t])));
+
+  // Real component so row trees update via prop getters instead of remounting
+  const Rows = (p: { items: Task[]; section: string }) => (
+    <AnimatedRows items={p.items} key={(t) => t.id}>
       {(task) => (
-        <div data-reorder-row data-key={task.id} data-section={section}>
-          <ExpandableTask task={task} ctx={ctx()} />
+        <div data-reorder-row data-key={task().id} data-section={p.section}>
+          <ExpandableTask task={taskById().get(task().id) ?? task()} ctx={ctx()} />
         </div>
       )}
     </AnimatedRows>
@@ -139,10 +144,10 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
           fallback={<EmptyState icon={<ProgressPie progress={0} size={40} />} text="No to-dos yet — add the first step." />}
         >
           <ReorderGroup onDrop={handleDrop} scrollParent={() => scrollEl ?? null}>
-            <For each={sections().sections}>
+            <Key each={sections().sections} by={(s) => s.heading?.id ?? 'root'}>
               {(section) => (
                 <>
-                  <Show when={section.heading}>
+                  <Show when={section().heading}>
                     <div
                       style={{
                         display: 'flex',
@@ -153,24 +158,24 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
                       }}
                     >
                       <input
-                        value={section.heading!.title}
+                        value={section().heading!.title}
                         placeholder="Heading"
-                        onInput={(e) => void updateHeading(section.heading!.id, { title: e.currentTarget.value })}
+                        onInput={(e) => void updateHeading(section().heading!.id, { title: e.currentTarget.value })}
                         style={{ flex: '1', color: 'var(--blue)', 'font-weight': '600', 'font-size': '16px' }}
                       />
                       <button
                         aria-label="Heading menu"
-                        onClick={() => setHeadingMenu(section.heading!.id)}
+                        onClick={() => setHeadingMenu(section().heading!.id)}
                         style={{ color: 'var(--text-tertiary)', padding: '4px 6px', display: 'flex' }}
                       >
                         <Icon name="ellipsis" size={17} />
                       </button>
                     </div>
                   </Show>
-                  {renderRows(section.tasks, sectionIdOf(section.heading?.id ?? null))}
+                  <Rows items={section().tasks} section={sectionIdOf(section().heading?.id ?? null)} />
                 </>
               )}
-            </For>
+            </Key>
           </ReorderGroup>
         </Show>
 

@@ -1,13 +1,15 @@
-import { createEffect, on, type JSX, For, createSignal, untrack } from 'solid-js';
+import { createEffect, on, type JSX, createSignal, untrack } from 'solid-js';
+import { Key } from '@solid-primitives/keyed';
 import { captureRects, flipMove } from '../gestures/flip';
 
 /** Keyed list whose reorders/removals/insertions animate via FLIP: rows slide
- *  with transform-only springs, departing rows fade out as absolute clones —
- *  zero layout work during the animation itself. */
+ *  with transform-only springs, departing rows fade out as absolute clones.
+ *  Rows are keyed by id (NOT object identity), so a DB write that replaces
+ *  the array updates row contents in place without remounting components. */
 export function AnimatedRows<T>(props: {
   items: T[];
   key: (item: T) => string;
-  children: (item: T) => JSX.Element;
+  children: (item: () => T) => JSX.Element;
   /** Disable animations (e.g., during an active drag that does its own FLIP). */
   suspend?: () => boolean;
 }): JSX.Element {
@@ -19,12 +21,18 @@ export function AnimatedRows<T>(props: {
     on(
       () => props.items,
       (items) => {
-        if (untrack(() => props.suspend?.() ?? false)) {
+        const oldItems = untrack(displayed);
+        const oldKeys = new Set(oldItems.map(props.key));
+        const newKeys = new Set(items.map(props.key));
+        const structuralChange =
+          oldKeys.size !== newKeys.size ||
+          oldItems.some((it, i) => props.key(it) !== (items[i] !== undefined ? props.key(items[i]!) : ''));
+
+        if (!structuralChange || (untrack(() => props.suspend?.() ?? false))) {
           setDisplayed(() => items);
           return;
         }
-        const oldKeys = new Set(untrack(displayed).map(props.key));
-        const newKeys = new Set(items.map(props.key));
+
         const liveEls = [...rowEls.entries()].filter(([, el]) => el.isConnected);
         const before = captureRects(liveEls.map(([, el]) => el));
         const removedClones: { el: HTMLElement; rect: DOMRect }[] = [];
@@ -41,7 +49,7 @@ export function AnimatedRows<T>(props: {
         const containerRect = container.getBoundingClientRect();
         for (const { el, rect } of removedClones) {
           el.style.position = 'absolute';
-          el.style.top = `${rect.top - containerRect.top + container.scrollTop}px`;
+          el.style.top = `${rect.top - containerRect.top}px`;
           el.style.left = `${rect.left - containerRect.left}px`;
           el.style.width = `${rect.width}px`;
           el.style.pointerEvents = 'none';
@@ -64,7 +72,6 @@ export function AnimatedRows<T>(props: {
             }
           }
         }
-        // Drop references for keys no longer rendered
         for (const key of [...rowEls.keys()]) {
           if (!newKeys.has(key)) rowEls.delete(key);
         }
@@ -75,17 +82,16 @@ export function AnimatedRows<T>(props: {
 
   return (
     <div ref={container} style={{ position: 'relative' }}>
-      <For each={displayed()}>
+      <Key each={displayed()} by={(item) => props.key(item)}>
         {(item) => (
           <div
-            ref={(el) => rowEls.set(props.key(item), el)}
-            data-row-key={props.key(item)}
-            style={{ 'will-change': 'transform' }}
+            ref={(el) => rowEls.set(props.key(item()), el)}
+            data-row-key={props.key(item())}
           >
             {props.children(item)}
           </div>
         )}
-      </For>
+      </Key>
     </div>
   );
 }

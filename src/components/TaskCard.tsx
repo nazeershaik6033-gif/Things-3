@@ -1,7 +1,6 @@
 import {
   createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, type JSX,
 } from 'solid-js';
-import { Portal } from 'solid-js/web';
 import type { Task } from '../db/models';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
@@ -297,6 +296,12 @@ export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.
   let lastH = 0;
   const expanded = () => expandedTaskId() === props.task.id;
 
+  // If the row leaves this list while expanded (scheduled away, moved),
+  // clear the expanded state so no stale backdrop lingers.
+  onCleanup(() => {
+    if (expandedTaskId() === props.task.id) setExpandedTaskId(null);
+  });
+
   onMount(() => {
     lastH = wrap.offsetHeight;
     const ro = new ResizeObserver(() => {
@@ -328,18 +333,18 @@ export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.
   return (
     <>
       <Show when={expanded()}>
-        <Portal>
-          <div
-            onClick={() => setExpandedTaskId(null)}
-            style={{
-              position: 'fixed',
-              inset: '0',
-              'z-index': '20',
-              background: 'var(--backdrop)',
-              animation: 'fade-in 200ms ease-out',
-            }}
-          />
-        </Portal>
+        {/* Inside the screen's stacking context so the card (z 30) stays above */}
+        <div
+          data-testid="card-backdrop"
+          onClick={() => setExpandedTaskId(null)}
+          style={{
+            position: 'fixed',
+            inset: '0',
+            'z-index': '20',
+            background: 'var(--backdrop)',
+            animation: 'fade-in 200ms ease-out',
+          }}
+        />
       </Show>
       <div ref={wrap} style={{ position: 'relative', 'z-index': expanded() ? 30 : 'auto' }}>
         <Show when={expanded()} fallback={<TaskRow task={props.task} ctx={props.ctx} />}>
