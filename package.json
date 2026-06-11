@@ -1,0 +1,33 @@
+{
+  "name": "clarity",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "gen-icons": "node scripts/gen-icons.mjs",
+    "seed": "echo 'open the app with #seed in the URL to load demo data'"
+  },
+  "dependencies": {
+    "dexie": "^4.0.11",
+    "fractional-indexing": "^3.2.0",
+    "nanoid": "^5.0.9",
+    "solid-js": "^1.9.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^17.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-pwa": "^0.21.1",
+    "vite-plugin-solid": "^2.11.1",
+    "vitest": "^3.0.5"
+  }
+}
