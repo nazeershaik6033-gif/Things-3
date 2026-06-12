@@ -40,7 +40,8 @@ export default defineConfig({
     }),
   ],
   build: {
-    target: 'es2022',
+    // Safari 14+ compatibility; es2022 output throws on older iPhones
+    target: ['es2020', 'safari14'],
     sourcemap: false,
   },
   server: {
