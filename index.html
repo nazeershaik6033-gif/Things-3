@@ -16,9 +16,71 @@
     <meta name="apple-mobile-web-app-title" content="Clarity" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <style>
+      /* Inline critical CSS so the splash shows before the main bundle loads */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; background: #f5f5f7; }
+      @media (prefers-color-scheme: dark) { html, body { background: #141416; } }
+      body { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; }
+      #root { height: 100vh; height: 100dvh; position: relative; overflow: hidden; }
+      /* Splash fades out once #root gets a child */
+      #splash {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #f5f5f7; z-index: 9999; transition: opacity 0.3s;
+      }
+      @media (prefers-color-scheme: dark) { #splash { background: #141416; } }
+      #splash svg { opacity: 0.35; }
+      /* Error overlay */
+      #err {
+        display: none; position: fixed; inset: 0; z-index: 99999;
+        background: #fff; padding: 32px 24px; font-family: -apple-system, sans-serif;
+        font-size: 15px; color: #1d1d1f; overflow-y: auto;
+      }
+      @media (prefers-color-scheme: dark) { #err { background: #1c1c1e; color: #f2f2f4; } }
+      #err h2 { font-size: 18px; margin-bottom: 12px; color: #ff3b30; }
+      #err pre { background: #f0f0f0; padding: 12px; border-radius: 8px; font-size: 12px;
+        overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+      @media (prefers-color-scheme: dark) { #err pre { background: #2c2c30; color: #f2f2f4; } }
+      #err button { margin-top: 16px; padding: 10px 20px; border-radius: 8px;
+        background: #2f7cf6; color: #fff; font-size: 15px; border: none; cursor: pointer; }
+    </style>
   </head>
   <body>
+    <!-- Splash: visible before JS loads, hidden once app renders -->
+    <div id="splash" aria-hidden="true">
+      <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+        <rect width="60" height="60" rx="14" fill="#2f7cf6"/>
+        <path d="M18 38V22h4v16h-4zm6-8h8v4h-8v-4zm0-8h12v4H24v-4z"
+              fill="white" opacity="0.9"/>
+      </svg>
+    </div>
+    <!-- Error overlay: shown if JS throws before first render -->
+    <div id="err">
+      <h2>Something went wrong</h2>
+      <p id="err-msg"></p>
+      <pre id="err-stack"></pre>
+      <button onclick="location.reload()">Reload</button>
+    </div>
     <div id="root"></div>
+    <script>
+      // Global error handler — catches any JS error before the SolidJS app loads
+      window.__appStarted = false;
+      function showError(msg, stack) {
+        document.getElementById('err').style.display = 'block';
+        document.getElementById('err-msg').textContent = msg || 'Unknown error';
+        document.getElementById('err-stack').textContent = stack || '';
+      }
+      window.addEventListener('error', function(e) {
+        if (!window.__appStarted) showError(e.message, e.error && e.error.stack);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        if (!window.__appStarted) {
+          var r = e.reason;
+          showError(r && r.message ? r.message : String(r), r && r.stack);
+        }
+      });
+    </script>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
