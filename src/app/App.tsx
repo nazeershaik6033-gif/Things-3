@@ -6,6 +6,8 @@ import {
 import { startDateTicker } from './currentDate';
 import { startTheme } from './theme';
 import { startCalendarSync } from './calendar';
+import { startPomodoroClock } from './pomodoro';
+import { PomodoroMiniBar, PomodoroOverlay } from '../components/PomodoroTimer';
 import { createPan } from '../gestures/createPan';
 import { closeOpenRow } from '../gestures/arbiter';
 import { setExpandedTaskId, expandedTaskId } from './uiState';
@@ -60,6 +62,7 @@ export function App(): JSX.Element {
     startDateTicker();
     startNavigation();
     startCalendarSync();
+    startPomodoroClock();
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses
@@ -95,6 +98,8 @@ export function App(): JSX.Element {
       <SearchOverlay />
       <QuickEntry />
       <InstallCoachMark />
+      <PomodoroMiniBar />
+      <PomodoroOverlay />
     </div>
   );
 }

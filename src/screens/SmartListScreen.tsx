@@ -23,6 +23,7 @@ import { CalendarBlock } from '../components/CalendarBlock';
 import { ScreenChrome, SectionHeading, EmptyState, createScheduler, MenuRow } from './common';
 import { Sheet, SheetTitle } from '../ui/Sheet';
 import { groupByQuadrant, QUADRANTS, quadrantMeta } from '../domain/eisenhower';
+import { setOverlayOpen } from '../app/pomodoro';
 import type { EMQuadrant } from '../db/models';
 import type { TaskRowContext } from '../components/TaskRow';
 import type { QuickEntryState } from '../app/uiState';
@@ -198,7 +199,23 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
 
   return (
     <>
-      <ScreenChrome title={TITLES[props.list] ?? props.list} icon={icon()} scrollRef={(el) => (scrollEl = el)}>
+      <ScreenChrome
+        title={TITLES[props.list] ?? props.list}
+        icon={icon()}
+        scrollRef={(el) => (scrollEl = el)}
+        trailing={
+          props.list === 'today' ? (
+            <button
+              aria-label="Pomodoro timer"
+              data-testid="pomo-open"
+              onClick={() => setOverlayOpen(true)}
+              style={{ padding: '8px 12px', 'font-size': '20px', 'line-height': '1' }}
+            >
+              🍅
+            </button>
+          ) : undefined
+        }
+      >
         <Show when={props.list === 'inbox'}>
           <Show when={visible().length > 0} fallback={<EmptyState icon={<ListIcon list="inbox" size={44} />} text="Collect your thoughts here, then organize them later." />}>
             <ReorderGroup onDrop={handleFlatDrop} scrollParent={() => scrollEl ?? null}>

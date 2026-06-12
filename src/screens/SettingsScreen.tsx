@@ -4,6 +4,8 @@ import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
+import { pomodoroConfig, updatePomodoroConfig, soundOn, setPomodoroSound, doneToday } from '../app/pomodoro';
+import type { PomodoroConfig } from '../domain/pomodoro';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
 
@@ -155,6 +157,45 @@ export function SettingsScreen(): JSX.Element {
           >
             {themePref() === 'auto' ? '✓ ' : ''}Follow system
           </button>
+        </div>
+      </Section>
+
+      <Section title="Pomodoro">
+        <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px', padding: '6px 0' }}>
+          {([
+            ['workMin', 'Focus length', [15, 25, 30, 45, 50]],
+            ['shortMin', 'Short break', [3, 5, 10]],
+            ['longMin', 'Long break', [10, 15, 20, 30]],
+            ['rounds', 'Rounds before long break', [2, 3, 4, 5, 6]],
+          ] as [keyof PomodoroConfig, string, number[]][]).map(([key, label, choices]) => (
+            <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', padding: '6px 0', 'border-bottom': '1px solid var(--separator)' }}>
+              <span style={{ 'font-size': '15px', color: 'var(--text)' }}>{label}</span>
+              <select
+                value={pomodoroConfig()[key]}
+                data-testid={`pomo-${key}`}
+                onChange={(e) => void updatePomodoroConfig({ [key]: Number(e.currentTarget.value) })}
+                style={{ 'font-size': '15px', color: 'var(--blue)', background: 'transparent', border: 'none', 'text-align': 'right' }}
+              >
+                {choices.map((c) => (
+                  <option value={c}>{key === 'rounds' ? c : `${c} min`}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', padding: '8px 0' }}>
+            <span style={{ 'font-size': '15px', color: 'var(--text)' }}>Chime when a round ends</span>
+            <button
+              onClick={() => void setPomodoroSound(!soundOn())}
+              data-testid="pomo-sound"
+              style={{ 'font-size': '15px', 'font-weight': '600', color: soundOn() ? 'var(--green)' : 'var(--text-tertiary)' }}
+            >
+              {soundOn() ? 'On' : 'Off'}
+            </button>
+          </div>
+          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 8px', 'line-height': '1.5' }}>
+            Start the timer with the 🍅 button in Today. Completed focus rounds today: {doneToday()}.
+            The chime only plays while the app is open (iPhone limitation for web apps).
+          </div>
         </div>
       </Section>
 
