@@ -44,7 +44,7 @@ export async function refreshCalendar(force = false): Promise<CalendarStatus | n
     const text = await fetchIcsText(url, proxy);
     const count = await importIcsText(text, url);
     await setSetting('lastIcsFetch', Date.now());
-    return { ok: true, message: `Updated — ${count} events in the next 90 days.` };
+    return { ok: true, message: `Updated — ${count} events synced.` };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : 'Calendar update failed.' };
   }

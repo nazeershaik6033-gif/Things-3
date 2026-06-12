@@ -154,11 +154,15 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Calendar">
+      <Section title="Google Calendar">
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 6px', 'line-height': '1.5' }}>
+          In Google Calendar (web): Settings → your calendar → <b>Integrate calendar</b> →
+          copy the <b>Secret address in iCal format</b>, then paste it here.
+        </div>
         <input
           value={icsUrl()}
           onInput={(e) => setIcsUrl(e.currentTarget.value)}
-          placeholder="iCal subscription URL (.ics)"
+          placeholder="Paste Google Calendar link (.ics)"
           inputmode="url"
           autocapitalize="off"
           data-testid="ics-url"
@@ -194,10 +198,11 @@ export function SettingsScreen(): JSX.Element {
           <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{calStatus()}</div>
         </Show>
         <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
-          Events show in Today and Upcoming, read-only. Many calendar hosts block direct browser
-          access (CORS); the proxy prefix works around that. Public proxies can see your calendar
-          URL — for privacy, host your own tiny proxy (see the project README) or import a .ics
-          file instead. Recurring events aren’t expanded yet.
+          Events appear in the Calendar screen and in Today / Upcoming, read-only. They refresh
+          automatically when you open the app (hourly at most) — use the refresh button in the
+          Calendar screen for an instant update. Google blocks direct browser access (CORS), so
+          the proxy prefix is used; public proxies can see your calendar URL — for privacy, host
+          your own tiny proxy (see the project README) or import a .ics file instead.
         </div>
       </Section>
 

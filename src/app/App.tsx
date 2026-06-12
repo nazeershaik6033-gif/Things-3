@@ -17,6 +17,7 @@ import { TagScreen } from '../screens/TagScreen';
 import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { CalendarScreen } from '../screens/CalendarScreen';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -33,6 +34,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'project': return <ProjectScreen id={r.id} />;
     case 'area': return <AreaScreen id={r.id} />;
     case 'tag': return <TagScreen id={r.id} />;
+    case 'calendar': return <CalendarScreen />;
     case 'settings': return <SettingsScreen />;
   }
 }

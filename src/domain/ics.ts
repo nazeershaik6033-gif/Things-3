@@ -188,8 +188,9 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
   return out;
 }
 
-/** Default display window for calendar subscriptions. */
+/** Default display window for calendar subscriptions: 60 days back so the
+ *  month calendar can show recent past events, 180 forward for browsing. */
 export function defaultWindow(now: Date): { from: DateStr; to: DateStr } {
   const today = toDateStr(now);
-  return { from: today, to: addDays(today, 90) };
+  return { from: addDays(today, -60), to: addDays(today, 180) };
 }
