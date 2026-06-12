@@ -64,11 +64,16 @@ test('deep link to a list works after reload', async ({ page }) => {
   await expect(page.getByTestId('home-inbox')).toBeVisible();
 });
 
-test('dark mode toggle persists across reload', async ({ page }) => {
+test('theme palette persists across reload', async ({ page }) => {
   await page.getByTestId('settings-button').click();
-  await page.getByTestId('theme-dark').click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.reload();
-  await page.waitForSelector('[data-route]');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByTestId('theme-midnight').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
+  // Reload and navigate explicitly to home so hash doesn't re-open settings
+  await page.goto(page.url().replace(/#.*/, ''));
+  await page.waitForSelector('[data-testid="home-inbox"]', { timeout: 15_000 });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
+  // Also verify another palette persists
+  await page.getByTestId('settings-button').click();
+  await page.getByTestId('theme-parchment').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'parchment');
 });

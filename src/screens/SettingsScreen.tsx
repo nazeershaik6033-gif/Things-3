@@ -3,7 +3,7 @@ import { db } from '../db/db';
 import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
-import { setThemePref, themePref, type ThemePref } from '../app/theme';
+import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
 
@@ -85,22 +85,44 @@ export function SettingsScreen(): JSX.Element {
     }
   };
 
-  const themeButton = (pref: ThemePref, label: string) => (
+  const paletteSelected = (id: Palette) =>
+    themePref() === id || (themePref() === 'auto' && resolvedTheme() === id);
+
+  const themeSwatch = (p: typeof PALETTES[number]) => (
     <button
-      onClick={() => void setThemePref(pref)}
-      data-testid={`theme-${pref}`}
+      onClick={() => void setThemePref(p.id as ThemePref)}
+      data-testid={`theme-${p.id}`}
+      title={p.label}
       style={{
         flex: '1',
-        padding: '8px 0',
-        'border-radius': '9px',
-        'font-size': '14px',
-        'font-weight': '500',
-        background: themePref() === pref ? 'var(--bg-elevated)' : 'transparent',
-        color: themePref() === pref ? 'var(--text)' : 'var(--text-secondary)',
-        'box-shadow': themePref() === pref ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+        display: 'flex',
+        'flex-direction': 'column',
+        'align-items': 'center',
+        gap: '6px',
+        padding: '6px 0 10px',
+        background: 'transparent',
       }}
     >
-      {label}
+      <span style={{
+        display: 'block',
+        width: '100%',
+        height: '44px',
+        'border-radius': '10px',
+        background: p.bg,
+        border: paletteSelected(p.id)
+          ? '2.5px solid var(--blue)'
+          : '1.5px solid rgba(128,128,128,0.25)',
+        'box-shadow': paletteSelected(p.id)
+          ? '0 0 0 2px var(--blue)'
+          : 'none',
+        transition: 'box-shadow 0.15s, border-color 0.15s',
+      }} />
+      <span style={{
+        'font-size': '12px',
+        'font-weight': paletteSelected(p.id) ? '600' : '400',
+        color: paletteSelected(p.id) ? 'var(--text)' : 'var(--text-secondary)',
+        'letter-spacing': '-0.1px',
+      }}>{p.label}</span>
     </button>
   );
 
@@ -114,10 +136,21 @@ export function SettingsScreen(): JSX.Element {
   return (
     <ScreenChrome title="Settings" icon={<Icon name="settings" size={28} color="var(--text-secondary)" />}>
       <Section title="Appearance">
-        <div style={{ display: 'flex', gap: '4px', padding: '8px 0' }}>
-          {themeButton('auto', 'Auto')}
-          {themeButton('light', 'Light')}
-          {themeButton('dark', 'Dark')}
+        <div style={{ display: 'flex', gap: '8px', padding: '8px 0' }}>
+          {PALETTES.map(themeSwatch)}
+        </div>
+        <div style={{ display: 'flex', 'justify-content': 'flex-end', padding: '0 0 8px' }}>
+          <button
+            onClick={() => void setThemePref('auto')}
+            data-testid="theme-auto"
+            style={{
+              'font-size': '12px',
+              color: themePref() === 'auto' ? 'var(--blue)' : 'var(--text-tertiary)',
+              'font-weight': themePref() === 'auto' ? '600' : '400',
+            }}
+          >
+            {themePref() === 'auto' ? '✓ ' : ''}Follow system
+          </button>
         </div>
       </Section>
 
