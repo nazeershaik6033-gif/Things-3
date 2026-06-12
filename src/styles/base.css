@@ -25,6 +25,7 @@ body {
 }
 
 #root {
+  height: 100vh; /* fallback for Safari < 15.4 */
   height: 100dvh;
   overflow: hidden;
   position: relative;
