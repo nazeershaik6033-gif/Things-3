@@ -64,19 +64,52 @@ export async function importIcsText(text: string, sourceUrl: string): Promise<nu
   return events.length;
 }
 
+/** Users often paste the wrong Google Calendar link. Convert the shapes we
+ *  can, and flag the ones we can't so the error message can be specific. */
+export function normalizeCalendarUrl(raw: string): { url: string; fromEmbed: boolean } {
+  let url = raw.trim();
+  // Calendar apps hand out webcal:// links — same thing over HTTPS
+  if (url.startsWith('webcal://')) url = 'https://' + url.slice('webcal://'.length);
+  // Google "Embed" link: extract the calendar id and try the public feed.
+  // (Works only for public calendars — private ones need the Secret address.)
+  const embed = /calendar\.google\.com\/calendar\/embed/.test(url);
+  if (embed) {
+    try {
+      const src = new URL(url).searchParams.get('src');
+      if (src) {
+        return {
+          url: `https://calendar.google.com/calendar/ical/${encodeURIComponent(src)}/public/basic.ics`,
+          fromEmbed: true,
+        };
+      }
+    } catch {
+      /* unparseable: fall through */
+    }
+    return { url, fromEmbed: true };
+  }
+  return { url, fromEmbed: false };
+}
+
+const EMBED_HELP =
+  'That looks like Google’s “Embed” link. Please paste the “Secret address ' +
+  'in iCal format” instead (it ends in .ics): Google Calendar → Settings → ' +
+  'your calendar → Integrate calendar → Secret address in iCal format.';
+
 export async function refreshCalendar(force = false): Promise<CalendarStatus | null> {
-  const url = await getSetting<string>('icsUrl', '');
-  if (!url) return null;
+  const rawUrl = await getSetting<string>('icsUrl', '');
+  if (!rawUrl) return null;
   const last = await getSetting<number>('lastIcsFetch', 0);
   if (!force && Date.now() - last < 60 * 60 * 1000) return null;
   // Empty/cleared proxy field must not disable sync — fall back to default
   const proxy = (await getSetting<string>('icsProxy', DEFAULT_PROXY)).trim() || DEFAULT_PROXY;
+  const { url, fromEmbed } = normalizeCalendarUrl(rawUrl);
   try {
     const text = await fetchIcsText(url, proxy);
-    const count = await importIcsText(text, url);
+    const count = await importIcsText(text, rawUrl);
     await setSetting('lastIcsFetch', Date.now());
     return { ok: true, message: `Updated — ${count} events synced.` };
   } catch (e) {
+    if (fromEmbed) return { ok: false, message: EMBED_HELP };
     return { ok: false, message: e instanceof Error ? e.message : 'Calendar update failed.' };
   }
 }

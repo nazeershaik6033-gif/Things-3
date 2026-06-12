@@ -6,6 +6,7 @@ import { push } from '../app/navigation';
 import { todayStr, toDateStr, fromDateStr, formatTime } from '../domain/dates';
 import type { CalendarEvent, DateStr } from '../db/models';
 import { Icon } from '../ui/Icon';
+import { googleCalendarEventUrl } from '../domain/googleCal';
 import { ScreenChrome } from './common';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -172,6 +173,21 @@ export function CalendarScreen(): JSX.Element {
             )}
           </For>
         </Show>
+      </div>
+
+      <div style={{ padding: '0 16px 10px' }}>
+        <button
+          data-testid="cal-add-event"
+          onClick={() => window.open(googleCalendarEventUrl({ date: selected() }), '_blank')}
+          style={{ display: 'inline-flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}
+        >
+          <Icon name="plus" size={15} />
+          Add event in Google Calendar
+        </button>
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-top': '4px', 'line-height': '1.45' }}>
+          Opens Google Calendar pre-filled for this day — save there and it appears
+          here on the next refresh. Set the reminder in Google Calendar too.
+        </div>
       </div>
 
       <Show when={status()}>

@@ -202,7 +202,8 @@ export function SettingsScreen(): JSX.Element {
       <Section title="Google Calendar">
         <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 6px', 'line-height': '1.5' }}>
           In Google Calendar (web): Settings → your calendar → <b>Integrate calendar</b> →
-          copy the <b>Secret address in iCal format</b>, then paste it here.
+          copy the <b>Secret address in iCal format</b> (it ends in <b>.ics</b>), then paste it
+          here. Not the “Embed” or “Public URL” link — those won’t work for private calendars.
         </div>
         <input
           value={icsUrl()}

@@ -118,3 +118,54 @@ test('sync still works when proxy field is cleared (Google-style CORS block)', a
   // The field restored itself to the default proxy
   await expect(page.getByPlaceholder('CORS proxy prefix (optional)')).toHaveValue(/corsproxy/);
 });
+
+test('pasting a Google "Embed" link auto-converts to the public feed', async ({ page }) => {
+  const today = new Date();
+  const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  // The app should request the converted public ical URL, not the embed page
+  await page.route('https://calendar.google.com/calendar/ical/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/calendar',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: icsFixture(compact),
+    }),
+  );
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page
+    .getByTestId('ics-url')
+    .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com&ctz=Asia%2FKolkata');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+});
+
+test('private embed link that cannot be fetched explains which link to copy', async ({ page }) => {
+  // Both direct and proxied fetches fail (private calendar)
+  await page.route('https://calendar.google.com/calendar/ical/**', (r) => r.abort('failed'));
+  await page.route('https://corsproxy.io/**', (r) => r.abort('failed'));
+  await page.route('https://api.allorigins.win/**', (r) => r.abort('failed'));
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page
+    .getByTestId('ics-url')
+    .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Secret address in iCal format/).first()).toBeVisible({ timeout: 15_000 });
+});
+
+test('Add event opens Google Calendar pre-filled for the selected day', async ({ page, context }) => {
+  await context.route('https://calendar.google.com/calendar/render**', (r) =>
+    r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }),
+  );
+  await loadSeeded(page);
+  await page.getByTestId('home-calendar').click();
+  const popupPromise = context.waitForEvent('page');
+  await page.getByTestId('cal-add-event').click();
+  const popup = await popupPromise;
+  expect(popup.url()).toContain('calendar.google.com/calendar/render');
+  expect(popup.url()).toContain('action=TEMPLATE');
+  await popup.close();
+});
