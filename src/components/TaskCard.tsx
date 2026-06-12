@@ -9,6 +9,7 @@ import { expandedTaskId, setExpandedTaskId, addGrace, removeGrace } from '../app
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative, todayStr } from '../domain/dates';
 import { buildReminderIcs } from '../domain/ics';
+import { googleCalendarEventUrl } from '../domain/googleCal';
 import { Checkbox } from '../ui/Checkbox';
 import { Icon } from '../ui/Icon';
 import { TagPill } from '../ui/TagPill';
@@ -32,6 +33,20 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
   const initialDate = props.task.startDate && props.task.startDate >= today ? props.task.startDate : today;
   const [date, setDate] = createSignal(initialDate);
   const [time, setTime] = createSignal(props.task.reminderTime ?? '09:00');
+
+  const addToGoogle = () => {
+    void updateTask(props.task.id, { reminderTime: time() });
+    window.open(
+      googleCalendarEventUrl({
+        title: props.task.title || 'Reminder',
+        date: date(),
+        time: time(),
+        details: props.task.notes || undefined,
+      }),
+      '_blank',
+    );
+    props.onClose();
+  };
 
   const download = () => {
     void updateTask(props.task.id, { reminderTime: time() });
@@ -108,15 +123,33 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
           }}
         >
           <Icon name="bell" size={16} />
-          Add to Calendar
+          Apple Calendar
+        </button>
+        <button
+          onClick={addToGoogle}
+          data-testid="remind-google"
+          style={{
+            display: 'inline-flex',
+            'align-items': 'center',
+            gap: '6px',
+            padding: '9px 16px',
+            'border-radius': '10px',
+            background: 'var(--bg-inset)',
+            color: 'var(--text)',
+            'font-size': '15px',
+            'font-weight': '600',
+          }}
+        >
+          Google Calendar
         </button>
         <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>
           Cancel
         </button>
       </div>
       <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
-        Downloads a calendar event with an alert — open it and tap Add to
-        get an iPhone notification at this time.
+        Apple: downloads an event file — open it and tap Add for an iPhone
+        alert. Google: opens Google Calendar pre-filled — save there and set
+        its reminder; the event also shows in this app's Calendar.
       </div>
     </div>
   );

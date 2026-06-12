@@ -155,3 +155,17 @@ test('private embed link that cannot be fetched explains which link to copy', as
   await page.getByTestId('save-calendar').click();
   await expect(page.getByText(/Secret address in iCal format/).first()).toBeVisible({ timeout: 15_000 });
 });
+
+test('Add event opens Google Calendar pre-filled for the selected day', async ({ page, context }) => {
+  await context.route('https://calendar.google.com/calendar/render**', (r) =>
+    r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }),
+  );
+  await loadSeeded(page);
+  await page.getByTestId('home-calendar').click();
+  const popupPromise = context.waitForEvent('page');
+  await page.getByTestId('cal-add-event').click();
+  const popup = await popupPromise;
+  expect(popup.url()).toContain('calendar.google.com/calendar/render');
+  expect(popup.url()).toContain('action=TEMPLATE');
+  await popup.close();
+});
