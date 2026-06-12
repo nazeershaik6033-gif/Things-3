@@ -20,7 +20,10 @@ import { AnimatedRows } from '../components/AnimatedRows';
 import { ReorderGroup, type DropInfo } from '../components/ReorderGroup';
 import { MagicPlus, type MagicPlusDrop } from '../components/MagicPlus';
 import { CalendarBlock } from '../components/CalendarBlock';
-import { ScreenChrome, SectionHeading, EmptyState, createScheduler } from './common';
+import { ScreenChrome, SectionHeading, EmptyState, createScheduler, MenuRow } from './common';
+import { Sheet, SheetTitle } from '../ui/Sheet';
+import { groupByQuadrant, QUADRANTS, quadrantMeta } from '../domain/eisenhower';
+import type { EMQuadrant } from '../db/models';
 import type { TaskRowContext } from '../components/TaskRow';
 import type { QuickEntryState } from '../app/uiState';
 
@@ -38,12 +41,21 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   let scrollEl: HTMLDivElement | undefined;
   const [dragging] = createSignal(false);
 
+  const [priorityFor, setPriorityFor] = createSignal<string | null>(null);
+
   const ctx = createMemo<TaskRowContext>(() => ({
     tags: tags(),
     onSchedule: schedule,
     showWhen: props.list !== 'today',
     showEveningBadge: false,
+    onPriority: props.list === 'today' ? setPriorityFor : undefined,
   }));
+
+  const setPriority = (quadrant: EMQuadrant | null) => {
+    const id = priorityFor();
+    if (id) void updateTask(id, { priority: quadrant });
+    setPriorityFor(null);
+  };
 
   // ---- membership with completion grace ----
   // Tasks in the grace window are treated as still-open BEFORE any domain
@@ -84,9 +96,18 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   // ---------------------------------------------------------------- today --
   const todaySections = createMemo(() => todayTasks(visible(), currentDate()));
   const todayEvents = createMemo(() => events().filter((e) => e.date === currentDate()));
+  const dayQuadrants = createMemo(() => groupByQuadrant(todaySections().day));
 
   const handleTodayDrop = (info: DropInfo) => {
     const { day, evening } = todaySections();
+    // Dropping into a quadrant section adopts that quadrant (plain "day" = untriaged)
+    if (info.section.startsWith('day')) {
+      const dragged = [...day, ...evening].find((t) => t.id === info.key);
+      const quadrant = (info.section.startsWith('day:') ? info.section.slice(4) : null) as EMQuadrant | null;
+      if (dragged && (dragged.priority ?? null) !== quadrant) {
+        void updateTask(info.key, { priority: quadrant });
+      }
+    }
     const dragged = visible().find((t) => t.id === info.key);
     if (!dragged) return;
     const target = (info.section === 'evening' ? evening : day).filter((t) => t.id !== info.key);
@@ -193,7 +214,25 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
             fallback={<EmptyState icon={<ListIcon list="today" size={44} />} text="Take a moment to plan your day, or enjoy the calm." />}
           >
             <ReorderGroup onDrop={handleTodayDrop} scrollParent={() => scrollEl ?? null}>
-              <Rows items={todaySections().day} section="day" />
+              <Show when={dayQuadrants().unlabeled.length > 0}>
+                <Rows items={dayQuadrants().unlabeled} section="day" />
+              </Show>
+              <Key each={dayQuadrants().groups} by={(g) => g.meta.id}>
+                {(group) => (
+                  <>
+                    <SectionHeading
+                      label={group().meta.label}
+                      color={group().meta.color}
+                      trailing={
+                        <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'font-weight': '500' }}>
+                          {group().meta.desc}
+                        </span>
+                      }
+                    />
+                    <Rows items={group().tasks} section={`day:${group().meta.id}`} />
+                  </>
+                )}
+              </Key>
               <Show when={todaySections().evening.length > 0}>
                 <SectionHeading
                   label="This Evening"
@@ -263,6 +302,30 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         listEl={() => scrollEl ?? null}
       />
       <SchedulerHost />
+
+      <Show when={priorityFor()}>
+        <Sheet onClose={() => setPriorityFor(null)} dragAnywhere>
+          <SheetTitle>Priority</SheetTitle>
+          {QUADRANTS.map((q) => (
+            <MenuRow
+              icon={
+                <span style={{
+                  width: '14px', height: '14px', 'border-radius': '4px',
+                  background: q.color, display: 'inline-block',
+                }} />
+              }
+              label={`${q.label} — ${q.desc}`}
+              onClick={() => setPriority(q.id)}
+            />
+          ))}
+          <MenuRow
+            icon={<Icon name="close" size={16} color="var(--text-tertiary)" />}
+            label="Clear"
+            onClick={() => setPriority(null)}
+          />
+          <div style={{ height: '10px' }} />
+        </Sheet>
+      </Show>
     </>
   );
 }
