@@ -7,7 +7,8 @@ import { createLiveQuery } from '../db/liveQuery';
 import { trashTask, updateTask, completeTask, reopenTask } from '../db/mutations';
 import { expandedTaskId, setExpandedTaskId, addGrace, removeGrace } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
-import { formatDeadline, formatRelative } from '../domain/dates';
+import { formatDeadline, formatRelative, todayStr } from '../domain/dates';
+import { buildReminderIcs } from '../domain/ics';
 import { Checkbox } from '../ui/Checkbox';
 import { Icon } from '../ui/Icon';
 import { TagPill } from '../ui/TagPill';
@@ -21,7 +22,105 @@ function autosize(el: HTMLTextAreaElement): void {
   el.style.height = `${el.scrollHeight}px`;
 }
 
-type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | null;
+type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | null;
+
+/** Date+time picker that downloads a one-event .ics with an alarm —
+ *  opening it on iOS adds a Calendar alert (web apps can't write to the
+ *  native Reminders app directly). */
+function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
+  const today = todayStr();
+  const initialDate = props.task.startDate && props.task.startDate >= today ? props.task.startDate : today;
+  const [date, setDate] = createSignal(initialDate);
+  const [time, setTime] = createSignal(props.task.reminderTime ?? '09:00');
+
+  const download = () => {
+    void updateTask(props.task.id, { reminderTime: time() });
+    const ics = buildReminderIcs({
+      title: props.task.title || 'Reminder',
+      notes: props.task.notes,
+      date: date(),
+      time: time(),
+    });
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reminder-${date()}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+    props.onClose();
+  };
+
+  const inputStyle = {
+    padding: '10px 12px',
+    'border-radius': '10px',
+    background: 'var(--bg-inset)',
+    color: 'var(--text)',
+    'font-size': '16px',
+    border: 'none',
+    'color-scheme': 'inherit',
+  } as const;
+
+  return (
+    <div
+      data-testid="remind-picker"
+      style={{
+        display: 'flex',
+        'flex-direction': 'column',
+        gap: '10px',
+        padding: '10px 4px 6px',
+        'border-top': '1px solid var(--separator)',
+        'margin-top': '6px',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <input
+          type="date"
+          value={date()}
+          min={today}
+          onInput={(e) => setDate(e.currentTarget.value)}
+          data-testid="remind-date"
+          style={{ ...inputStyle, flex: '1' }}
+        />
+        <input
+          type="time"
+          value={time()}
+          onInput={(e) => setTime(e.currentTarget.value)}
+          data-testid="remind-time"
+          style={inputStyle}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: '14px', 'align-items': 'center' }}>
+        <button
+          onClick={download}
+          data-testid="remind-download"
+          style={{
+            display: 'inline-flex',
+            'align-items': 'center',
+            gap: '6px',
+            padding: '9px 16px',
+            'border-radius': '10px',
+            background: 'var(--blue)',
+            color: '#fff',
+            'font-size': '15px',
+            'font-weight': '600',
+          }}
+        >
+          <Icon name="bell" size={16} />
+          Add to Calendar
+        </button>
+        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>
+          Cancel
+        </button>
+      </div>
+      <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+        Downloads a calendar event with an alert — open it and tap Add to
+        get an iPhone notification at this time.
+      </div>
+    </div>
+  );
+}
 
 /** The expanded inline editor — Things' signature interaction. */
 function TaskCard(props: { task: Task }): JSX.Element {
@@ -264,6 +363,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
       >
         {actionButton(<Icon name="calendar" size={20} />, 'Schedule', () => setPicker('when'))}
         {actionButton(<Icon name="flag" size={20} />, 'Deadline', () => setPicker('deadline'))}
+        {actionButton(<Icon name="bell" size={20} />, 'Remind', () => setPicker('remind'))}
         {actionButton(<Icon name="tag" size={20} />, 'Tags', () => setPicker('tags'))}
         {actionButton(<Icon name="arrow-move" size={20} />, 'Move', () => setPicker('move'))}
         {actionButton(<Icon name="trash" size={20} />, 'Delete', () => {
@@ -277,6 +377,9 @@ function TaskCard(props: { task: Task }): JSX.Element {
       </Show>
       <Show when={picker() === 'deadline'}>
         <DeadlinePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'remind'}>
+        <RemindPicker task={t()} onClose={() => setPicker(null)} />
       </Show>
       <Show when={picker() === 'tags'}>
         <TagPicker task={t()} tags={tags()} onClose={() => setPicker(null)} />

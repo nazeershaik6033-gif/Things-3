@@ -194,3 +194,41 @@ export function defaultWindow(now: Date): { from: DateStr; to: DateStr } {
   const today = toDateStr(now);
   return { from: addDays(today, -60), to: addDays(today, 180) };
 }
+
+/** Escape text for ICS property values (RFC 5545 §3.3.11). */
+function escapeText(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+
+/** Build a downloadable single-event ICS with a display alarm at the event
+ *  time. Opening it on iOS offers "Add to Calendar", which then fires a
+ *  real notification — the closest a web app can get to system reminders. */
+export function buildReminderIcs(opts: {
+  title: string;
+  notes?: string;
+  date: DateStr; // local date
+  time: string; // "HH:mm" local
+}): string {
+  const compact = opts.date.replace(/-/g, '') + 'T' + opts.time.replace(':', '') + '00';
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const uid = `reminder-${compact}-${Math.random().toString(36).slice(2, 10)}@clarity`;
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Clarity//Reminder//EN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${compact}`, // floating local time
+    `SUMMARY:${escapeText(opts.title || 'Reminder')}`,
+    ...(opts.notes ? [`DESCRIPTION:${escapeText(opts.notes)}`] : []),
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeText(opts.title || 'Reminder')}`,
+    'TRIGGER:PT0S',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+  return lines.join('\r\n');
+}

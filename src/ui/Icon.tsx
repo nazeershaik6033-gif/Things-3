@@ -8,7 +8,7 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link';
+  | 'export' | 'import' | 'link' | 'bell';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -27,6 +27,12 @@ const PATHS: Record<IconName, () => JSX.Element> = {
       stroke="currentColor"
       stroke-linejoin="round"
     />
+  ),
+  bell: () => (
+    <>
+      <path d="M12 3a6 6 0 0 0-6 6v3.2c0 .9-.4 1.8-1 2.5l-1 1.1h16l-1-1.1c-.6-.7-1-1.6-1-2.5V9a6 6 0 0 0-6-6z" stroke-linejoin="round" />
+      <path d="M9.5 18.8a2.6 2.6 0 0 0 5 0" stroke-linecap="round" />
+    </>
   ),
   calendar: () => (
     <>
