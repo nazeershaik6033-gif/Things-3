@@ -57,6 +57,7 @@ export function newTask(partial: Partial<Task> = {}): Task {
     startDate: null,
     evening: false,
     deadline: null,
+    priority: null,
     projectId: null,
     headingId: null,
     areaId: null,
