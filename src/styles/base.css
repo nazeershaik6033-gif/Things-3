@@ -63,12 +63,16 @@ ol {
 /* Screens stack on top of each other for push/pop transitions */
 .screen {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   background: var(--bg-list);
   will-change: transform;
-  contain: layout style;
+  /* NOTE: no CSS containment — contain:paint breaks position:fixed children
+     in Safari; contain:layout causes invisible content on iOS in some builds */
 }
 
 .screen-scroll {

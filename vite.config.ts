@@ -14,13 +14,16 @@ export default defineConfig({
     solid(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/apple-touch-icon.png'],
+      // Don't list icons here — the manifest icons are already precached via
+      // globPatterns below, and duplicating them causes Workbox to choke on
+      // duplicate entries which breaks SW installation in Safari.
+      includeAssets: [],
       manifest: {
         name: 'Clarity',
         short_name: 'Clarity',
         description: 'A fast, beautiful to-do app that works entirely on your device.',
-        start_url: '.',
-        scope: '.',
+        start_url: '/Things-3/',
+        scope: '/Things-3/',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#f5f5f7',
@@ -32,15 +35,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        // Precache JS, CSS, HTML, SVG — PNGs are excluded here because the
+        // manifest icons array below already adds them; including both causes
+        // duplicate entries that break SW installation in Safari.
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: 'index.html',
+        // Prevent SW from intercepting non-app requests (e.g. GitHub Pages 404)
+        navigateFallbackDenylist: [/^\/(?!Things-3)/],
         clientsClaim: true,
         skipWaiting: true,
+        // Purge outdated caches from old SW versions on activation
+        cleanupOutdatedCaches: true,
       },
     }),
   ],
   build: {
-    // Safari 14+ compatibility; es2022 output throws on older iPhones
+    // Target Safari 14+ / ES2020 for maximum iPhone compatibility
     target: ['es2020', 'safari14'],
     sourcemap: false,
   },
