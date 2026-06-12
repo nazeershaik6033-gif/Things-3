@@ -31,7 +31,8 @@ export function SettingsScreen(): JSX.Element {
 
   onMount(async () => {
     setIcsUrl(await getSetting('icsUrl', ''));
-    setIcsProxy(await getSetting('icsProxy', DEFAULT_PROXY));
+    // Show the default if a previous save left the proxy empty
+    setIcsProxy((await getSetting('icsProxy', DEFAULT_PROXY)).trim() || DEFAULT_PROXY);
     if (navigator.storage?.estimate) {
       const est = await navigator.storage.estimate();
       const used = ((est.usage ?? 0) / 1024 / 1024).toFixed(1);
@@ -41,8 +42,11 @@ export function SettingsScreen(): JSX.Element {
   });
 
   const saveCalendar = async () => {
+    // Never persist an empty proxy — sync would silently break (CORS)
+    const proxy = icsProxy().trim() || DEFAULT_PROXY;
+    setIcsProxy(proxy);
     await setSetting('icsUrl', icsUrl().trim());
-    await setSetting('icsProxy', icsProxy().trim());
+    await setSetting('icsProxy', proxy);
     await setSetting('lastIcsFetch', 0);
     if (!icsUrl().trim()) {
       await db.calendarEvents.clear();

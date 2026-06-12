@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseICS, zonedEpoch } from '../../src/domain/ics';
+import { buildReminderIcs, parseICS, zonedEpoch } from '../../src/domain/ics';
 
 const OPTS = { calendarUrl: 'https://cal.example/feed.ics', from: '2026-06-01', to: '2026-08-31' };
 
@@ -131,5 +131,36 @@ describe('ICS parser', () => {
   it('tolerates garbage input without throwing', () => {
     expect(parseICS('not an ics file at all', OPTS)).toEqual([]);
     expect(parseICS('', OPTS)).toEqual([]);
+  });
+});
+
+describe('buildReminderIcs', () => {
+  it('produces a valid VEVENT with display alarm at the given local time', () => {
+    const ics = buildReminderIcs({ title: 'Call mom', date: '2026-07-01', time: '18:30' });
+    expect(ics).toContain('BEGIN:VCALENDAR');
+    expect(ics).toContain('DTSTART:20260701T183000');
+    expect(ics).toContain('SUMMARY:Call mom');
+    expect(ics).toContain('BEGIN:VALARM');
+    expect(ics).toContain('TRIGGER:PT0S');
+    expect(ics).toContain('END:VCALENDAR');
+  });
+
+  it('escapes special characters and includes notes', () => {
+    const ics = buildReminderIcs({
+      title: 'Lunch; with Bob, maybe',
+      notes: 'line1\nline2',
+      date: '2026-07-01',
+      time: '12:00',
+    });
+    expect(ics).toContain('SUMMARY:Lunch\\; with Bob\\, maybe');
+    expect(ics).toContain('DESCRIPTION:line1\\nline2');
+  });
+
+  it('round-trips through our own parser', () => {
+    const ics = buildReminderIcs({ title: 'Dentist', date: '2026-07-01', time: '09:00' });
+    const events = parseICS(ics, { calendarUrl: 'x', from: '2026-06-01', to: '2026-08-01' });
+    expect(events).toHaveLength(1);
+    expect(events[0]!.title).toBe('Dentist');
+    expect(events[0]!.date).toBe('2026-07-01');
   });
 });

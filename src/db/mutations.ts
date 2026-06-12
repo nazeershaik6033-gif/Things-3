@@ -138,8 +138,17 @@ export async function reopenTask(id: string): Promise<void> {
   await updateTask(id, { status: 'open', completedAt: null });
 }
 
+/** Trash timestamps double as cascade identity (restoreProject matches
+ *  tasks by the project's stamp), so they must never collide — strictly
+ *  monotonic even when calls land in the same millisecond. */
+let lastTrashStamp = 0;
+function trashStamp(): number {
+  lastTrashStamp = Math.max(Date.now(), lastTrashStamp + 1);
+  return lastTrashStamp;
+}
+
 export async function trashTask(id: string): Promise<void> {
-  await updateTask(id, { trashedAt: Date.now() });
+  await updateTask(id, { trashedAt: trashStamp() });
 }
 
 export async function restoreTask(id: string): Promise<void> {
@@ -284,7 +293,7 @@ export async function reopenProject(id: string): Promise<void> {
 export async function trashProject(id: string): Promise<void> {
   const p = await db.projects.get(id);
   if (!p) return;
-  const now = Date.now();
+  const now = trashStamp();
   const ops: Op[] = [{
     table: 'projects', key: id, before: p,
     after: { ...p, trashedAt: now, modifiedAt: now } satisfies Project,
