@@ -90,3 +90,31 @@ test('Calendar screen shows month grid with events from home row', async ({ page
   await page.getByTestId('calendar-refresh').click();
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
 });
+
+test('sync still works when proxy field is cleared (Google-style CORS block)', async ({ page }) => {
+  const today = new Date();
+  const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  // Direct fetch fails like Google (no CORS header → browser blocks it)
+  await page.route('https://calendar.google.com/calendar/ical/secret/basic.ics', (route) =>
+    route.abort('failed'),
+  );
+  // Default proxy serves the feed
+  await page.route('https://corsproxy.io/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/calendar',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: icsFixture(compact),
+    }),
+  );
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page.getByTestId('ics-url').fill('https://calendar.google.com/calendar/ical/secret/basic.ics');
+  // Simulate the user having cleared the proxy field
+  await page.getByPlaceholder('CORS proxy prefix (optional)').fill('');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+  // The field restored itself to the default proxy
+  await expect(page.getByPlaceholder('CORS proxy prefix (optional)')).toHaveValue(/corsproxy/);
+});
