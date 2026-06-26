@@ -1,4 +1,4 @@
-import { createMemo, createSignal, Show, type JSX } from 'solid-js';
+import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
 import { Key } from '@solid-primitives/keyed';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
@@ -7,14 +7,16 @@ import type { BuiltinList } from '../app/navigation';
 import type { Task } from '../db/models';
 import {
   inInbox, inToday, inUpcoming, inAnytime, inSomeday,
-  todayTasks, upcomingGroups, groupByHome, todaySortKey,
+  todayTasks, upcomingGroups, priorGroups, groupByHome, todaySortKey,
+  type PriorGroup,
 } from '../domain/smartLists';
 import { graceIds } from '../app/uiState';
 import { keyAtIndex, sortByOrderKey } from '../db/ordering';
 import {
-  moveTask, reorderToday, setTaskOrder, updateTask,
+  moveTask, reopenTask, reorderToday, setTaskOrder, updateTask,
 } from '../db/mutations';
 import { Icon, ListIcon } from '../ui/Icon';
+import { Checkbox } from '../ui/Checkbox';
 import { ExpandableTask } from '../components/TaskCard';
 import { AnimatedRows } from '../components/AnimatedRows';
 import { ReorderGroup, type DropInfo } from '../components/ReorderGroup';
@@ -22,7 +24,7 @@ import { MagicPlus, type MagicPlusDrop } from '../components/MagicPlus';
 import { CalendarBlock } from '../components/CalendarBlock';
 import { ScreenChrome, SectionHeading, EmptyState, createScheduler, MenuRow } from './common';
 import { Sheet, SheetTitle } from '../ui/Sheet';
-import { groupByQuadrant, QUADRANTS, quadrantMeta } from '../domain/eisenhower';
+import { QUADRANTS } from '../domain/eisenhower';
 import { setOverlayOpen } from '../app/pomodoro';
 import type { EMQuadrant } from '../db/models';
 import type { TaskRowContext } from '../components/TaskRow';
@@ -57,6 +59,11 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
     if (id) void updateTask(id, { priority: quadrant });
     setPriorityFor(null);
   };
+
+  // Prior groups (for Upcoming view): use ALL tasks (not just filtered visible)
+  const priorData = createMemo(() =>
+    props.list === 'upcoming' ? priorGroups(tasks(), currentDate()) : [],
+  );
 
   // ---- membership with completion grace ----
   // Tasks in the grace window are treated as still-open BEFORE any domain
@@ -97,27 +104,26 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   // ---------------------------------------------------------------- today --
   const todaySections = createMemo(() => todayTasks(visible(), currentDate()));
   const todayEvents = createMemo(() => events().filter((e) => e.date === currentDate()));
-  const dayQuadrants = createMemo(() => groupByQuadrant(todaySections().day));
-
   const handleTodayDrop = (info: DropInfo) => {
-    const { day, evening } = todaySections();
-    // Dropping into a quadrant section adopts that quadrant (plain "day" = untriaged)
-    if (info.section.startsWith('day')) {
-      const dragged = [...day, ...evening].find((t) => t.id === info.key);
-      const quadrant = (info.section.startsWith('day:') ? info.section.slice(4) : null) as EMQuadrant | null;
-      if (dragged && (dragged.priority ?? null) !== quadrant) {
-        void updateTask(info.key, { priority: quadrant });
-      }
-    }
+    const sections = todaySections();
     const dragged = visible().find((t) => t.id === info.key);
     if (!dragged) return;
-    const target = (info.section === 'evening' ? evening : day).filter((t) => t.id !== info.key);
+    type Sec = 'morning' | 'afternoon' | 'ungrouped' | 'tonight';
+    const sec = info.section as Sec;
+    const sectionTasks: Task[] = sections[sec] ?? sections.ungrouped;
+    const target = sectionTasks.filter((t) => t.id !== info.key);
     const ids = target.map((t) => t.id);
     ids.splice(Math.min(info.index, ids.length), 0, info.key);
-    const wantsEvening = info.section === 'evening';
+    const wantsEvening = sec === 'tonight';
+    const wantsReminder: string | null =
+      sec === 'morning' ? 'morning' : sec === 'afternoon' ? 'afternoon' : null;
     void (async () => {
-      if (dragged.evening !== wantsEvening) {
-        await updateTask(dragged.id, { evening: wantsEvening, startDate: dragged.startDate ?? currentDate() });
+      if (dragged.evening !== wantsEvening || dragged.reminderTime !== wantsReminder) {
+        await updateTask(dragged.id, {
+          evening: wantsEvening,
+          reminderTime: wantsReminder,
+          startDate: dragged.startDate ?? currentDate(),
+        });
       }
       await reorderToday(ids);
     })();
@@ -180,7 +186,12 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
       return { destination: { bucket: 'inbox' }, orderKey: keyAtIndex(items, idx < 0 ? items.length : idx) };
     }
     if (props.list === 'today') {
-      return { destination: {}, startDate: currentDate(), evening: drop.section === 'evening' };
+      const sec = drop.section;
+      return {
+        destination: {},
+        startDate: currentDate(),
+        evening: sec === 'tonight',
+      };
     }
     if (props.list === 'anytime' || props.list === 'someday') {
       const group = homeGroups().find((g) => sectionIdOf(g) === drop.section);
@@ -227,36 +238,34 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         <Show when={props.list === 'today'}>
           <CalendarBlock events={todayEvents()} />
           <Show
-            when={todaySections().day.length + todaySections().evening.length > 0}
+            when={todaySections().morning.length + todaySections().afternoon.length + todaySections().ungrouped.length + todaySections().tonight.length > 0}
             fallback={<EmptyState icon={<ListIcon list="today" size={44} />} text="Take a moment to plan your day, or enjoy the calm." />}
           >
             <ReorderGroup onDrop={handleTodayDrop} scrollParent={() => scrollEl ?? null}>
-              <Show when={dayQuadrants().unlabeled.length > 0}>
-                <Rows items={dayQuadrants().unlabeled} section="day" />
-              </Show>
-              <Key each={dayQuadrants().groups} by={(g) => g.meta.id}>
-                {(group) => (
-                  <>
-                    <SectionHeading
-                      label={group().meta.label}
-                      color={group().meta.color}
-                      trailing={
-                        <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'font-weight': '500' }}>
-                          {group().meta.desc}
-                        </span>
-                      }
-                    />
-                    <Rows items={group().tasks} section={`day:${group().meta.id}`} />
-                  </>
-                )}
-              </Key>
-              <Show when={todaySections().evening.length > 0}>
+              <Show when={todaySections().morning.length > 0}>
                 <SectionHeading
-                  label="This Evening"
+                  label="Morning"
+                  color="var(--text)"
+                  trailing={<Icon name="sunrise" size={15} color="var(--yellow)" />}
+                />
+                <Rows items={todaySections().morning} section="morning" />
+              </Show>
+              <Rows items={todaySections().ungrouped} section="ungrouped" />
+              <Show when={todaySections().afternoon.length > 0}>
+                <SectionHeading
+                  label="Afternoon"
+                  color="var(--text)"
+                  trailing={<Icon name="sun" size={15} color="var(--yellow)" />}
+                />
+                <Rows items={todaySections().afternoon} section="afternoon" />
+              </Show>
+              <Show when={todaySections().tonight.length > 0}>
+                <SectionHeading
+                  label="Tonight"
                   color="var(--text)"
                   trailing={<Icon name="moon" size={15} color="var(--purple)" />}
                 />
-                <Rows items={todaySections().evening} section="evening" />
+                <Rows items={todaySections().tonight} section="tonight" />
               </Show>
             </ReorderGroup>
           </Show>
@@ -284,6 +293,74 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                 </Show>
               )}
             </Key>
+          </Show>
+
+          {/* Prior: past dates in the current month */}
+          <Show when={priorData().length > 0}>
+            <div style={{ padding: '24px 16px 4px', 'border-bottom': '1px solid var(--separator)' }}>
+              <span style={{ 'font-size': '16px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+                Prior
+              </span>
+            </div>
+            <For each={priorData()}>
+              {(group: PriorGroup) => (
+                <div>
+                  <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '14px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
+                    <span style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)', 'min-width': '24px' }}>
+                      {group.kind === 'day' ? group.sublabel : ''}
+                    </span>
+                    <span style={{ 'font-size': '15px', 'font-weight': '500', color: 'var(--text-secondary)' }}>
+                      {group.label}
+                    </span>
+                  </div>
+                  {/* Calendar events for this prior day */}
+                  <Show when={group.kind === 'day'}>
+                    <div style={{ padding: '0 16px' }}>
+                      <CalendarBlock compact events={events().filter((e) => e.date === group.date)} />
+                    </div>
+                  </Show>
+                  {/* Overdue open tasks — use ExpandableTask so they're editable */}
+                  <For each={group.overdueTasks}>
+                    {(task) => (
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', 'z-index': '1', display: 'flex', 'align-items': 'center', gap: '4px', 'pointer-events': 'none' }}>
+                          <span style={{ 'font-size': '11px', 'font-weight': '600', color: 'var(--red)', background: 'color-mix(in srgb, var(--red) 12%, transparent)', padding: '2px 6px', 'border-radius': '4px' }}>
+                            overdue
+                          </span>
+                        </div>
+                        <ExpandableTask task={taskById().get(task.id) ?? task} ctx={ctx()} />
+                      </div>
+                    )}
+                  </For>
+                  {/* Completed tasks from this day */}
+                  <For each={group.completedTasks}>
+                    {(task) => (
+                      <div style={{ display: 'flex', 'align-items': 'center', gap: '12px', padding: '10px 16px', opacity: '0.7' }}>
+                        <Checkbox
+                          checked
+                          canceled={task.status === 'canceled'}
+                          onToggle={() => void reopenTask(task.id)}
+                        />
+                        <span style={{
+                          flex: '1',
+                          color: 'var(--text-secondary)',
+                          'text-decoration': 'line-through',
+                          'text-decoration-color': 'var(--text-tertiary)',
+                          overflow: 'hidden',
+                          'text-overflow': 'ellipsis',
+                          'white-space': 'nowrap',
+                        }}>
+                          {task.title || '—'}
+                        </span>
+                        <Show when={task.status === 'canceled'}>
+                          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>canceled</span>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              )}
+            </For>
           </Show>
         </Show>
 

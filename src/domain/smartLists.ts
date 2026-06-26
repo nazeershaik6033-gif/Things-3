@@ -1,6 +1,6 @@
 import type { Task, Project, Heading, Area, DateStr } from '../db/models';
 import { byOrderKey, sortByOrderKey } from '../db/ordering';
-import { addDays, dateStrOf, monthName, yearOf } from './dates';
+import { addDays, dateStrOf, dayOfMonth, daysBetween, detectTimeOfDay, monthName, weekdayName, yearOf } from './dates';
 
 /** Pure membership predicates + grouping for every built-in list.
  *  `today` always comes from the caller (the reactive currentDate signal). */
@@ -23,10 +23,10 @@ export function inboxTasks(tasks: Task[]): Task[] {
 
 export function inToday(t: Task, today: DateStr): boolean {
   if (!liveOpen(t)) return false;
-  return (
-    (t.startDate !== null && t.startDate <= today) ||
-    (t.deadline !== null && t.deadline <= today)
-  );
+  // Only tasks explicitly scheduled for today — past startDates go to Prior
+  if (t.startDate !== null) return t.startDate === today;
+  // Tasks with no start date surface in Today when their deadline is due/overdue
+  return t.deadline !== null && t.deadline <= today;
 }
 
 /** Keyed rows sort by todayOrderKey; rows that drifted in (rollover, deadline)
@@ -36,17 +36,30 @@ export function todaySortKey(t: Task): string {
 }
 
 export interface TodayLists {
-  day: Task[];
-  evening: Task[];
+  morning: Task[];
+  afternoon: Task[];
+  ungrouped: Task[];
+  tonight: Task[];
 }
 
 export function todayTasks(tasks: Task[], today: DateStr): TodayLists {
   const members = tasks.filter((t) => inToday(t, today));
   members.sort((a, b) => (todaySortKey(a) < todaySortKey(b) ? -1 : 1));
-  return {
-    day: members.filter((t) => !t.evening),
-    evening: members.filter((t) => t.evening),
-  };
+  const morning: Task[] = [];
+  const afternoon: Task[] = [];
+  const ungrouped: Task[] = [];
+  const tonight: Task[] = [];
+  for (const t of members) {
+    if (t.evening) { tonight.push(t); continue; }
+    if (t.reminderTime === 'morning') { morning.push(t); continue; }
+    if (t.reminderTime === 'afternoon') { afternoon.push(t); continue; }
+    const detected = detectTimeOfDay(t.title);
+    if (detected === 'morning') morning.push(t);
+    else if (detected === 'afternoon') afternoon.push(t);
+    else if (detected === 'evening') tonight.push(t);
+    else ungrouped.push(t);
+  }
+  return { morning, afternoon, ungrouped, tonight };
 }
 
 export function isOverdue(t: Task, today: DateStr): boolean {
@@ -173,6 +186,75 @@ export function groupByHome(
     const tasks = members.filter((t) => !t.projectId && t.areaId === a.id);
     if (tasks.length) groups.push({ kind: 'area', id: a.id, title: a.title, tasks: sortByOrderKey(tasks) });
   }
+  return groups;
+}
+
+// --------------------------------------------------------------- prior -----
+
+export interface PriorGroup {
+  kind: 'day' | 'earlier';
+  date: DateStr;
+  label: string;
+  sublabel: string;
+  completedTasks: Task[];
+  overdueTasks: Task[];
+}
+
+/** Dates within the current month before today, plus an "Earlier" bucket for
+ *  open tasks whose startDate is from a prior month. Newest day first. */
+export function priorGroups(tasks: Task[], today: DateStr): PriorGroup[] {
+  const monthStart = `${today.slice(0, 7)}-01` as DateStr;
+  const dayMap = new Map<DateStr, { completed: Task[]; overdue: Task[] }>();
+
+  for (const t of tasks) {
+    if (!isLive(t)) continue;
+    // Completed/canceled tasks from this month (before today)
+    if (t.completedAt !== null) {
+      const d = dateStrOf(t.completedAt);
+      if (d >= monthStart && d < today) {
+        const e = dayMap.get(d) ?? { completed: [], overdue: [] };
+        e.completed.push(t);
+        dayMap.set(d, e);
+      }
+    }
+    // Open tasks scheduled for a past day this month
+    if (isOpen(t) && t.startDate !== null && t.startDate >= monthStart && t.startDate < today) {
+      const e = dayMap.get(t.startDate) ?? { completed: [], overdue: [] };
+      e.overdue.push(t);
+      dayMap.set(t.startDate, e);
+    }
+  }
+
+  const sorted = ([...dayMap.keys()] as DateStr[]).sort().reverse();
+  const groups: PriorGroup[] = sorted.map((d) => {
+    const e = dayMap.get(d)!;
+    const diff = daysBetween(d, today);
+    const label = diff === 1 ? 'Yesterday' : diff < 7 ? weekdayName(d) : `${monthName(d).slice(0, 3)} ${dayOfMonth(d)}`;
+    return {
+      kind: 'day',
+      date: d,
+      label,
+      sublabel: String(dayOfMonth(d)),
+      completedTasks: e.completed.sort((a, b) => b.completedAt! - a.completedAt!),
+      overdueTasks: sortByOrderKey(e.overdue),
+    };
+  });
+
+  // Tasks from before this month still open → "Earlier" bucket
+  const earlierOverdue = sortByOrderKey(
+    tasks.filter((t) => isLive(t) && isOpen(t) && t.startDate !== null && t.startDate < monthStart),
+  );
+  if (earlierOverdue.length > 0) {
+    groups.push({
+      kind: 'earlier',
+      date: addDays(monthStart, -1),
+      label: 'Earlier',
+      sublabel: '',
+      completedTasks: [],
+      overdueTasks: earlierOverdue,
+    });
+  }
+
   return groups;
 }
 

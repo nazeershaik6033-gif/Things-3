@@ -200,7 +200,12 @@ function TaskCard(props: { task: Task }): JSX.Element {
   );
 
   const whenLabel = () => {
-    if (t().startDate && t().startDate! <= currentDate()) return t().evening ? 'This Evening' : 'Today';
+    if (t().startDate && t().startDate! <= currentDate()) {
+      if (t().evening) return 'Tonight';
+      if (t().reminderTime === 'morning') return 'Morning';
+      if (t().reminderTime === 'afternoon') return 'Afternoon';
+      return 'Today';
+    }
     if (t().startDate) return formatRelative(t().startDate!, currentDate());
     if (t().bucket === 'someday') return 'Someday';
     return null;
@@ -350,10 +355,17 @@ function TaskCard(props: { task: Task }): JSX.Element {
                 'font-weight': '500',
               }}
             >
-              <Show
-                when={whenLabel() === 'This Evening'}
-                fallback={<Icon name={whenLabel() === 'Someday' ? 'archive' : 'star'} size={13} color={whenLabel() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />}
-              >
+              <Show when={whenLabel() === 'Tonight'} fallback={
+                <Show when={whenLabel() === 'Morning'} fallback={
+                  <Show when={whenLabel() === 'Afternoon'} fallback={
+                    <Icon name={whenLabel() === 'Someday' ? 'archive' : 'star'} size={13} color={whenLabel() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />
+                  }>
+                    <Icon name="sun" size={13} color="var(--yellow)" />
+                  </Show>
+                }>
+                  <Icon name="sunrise" size={13} color="var(--yellow)" />
+                </Show>
+              }>
                 <Icon name="moon" size={13} color="var(--purple)" />
               </Show>
               {whenLabel()}
@@ -432,10 +444,14 @@ export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.
   let lastH = 0;
   const expanded = () => expandedTaskId() === props.task.id;
 
-  // If the row leaves this list while expanded (scheduled away, moved),
-  // clear the expanded state so no stale backdrop lingers.
+  // When the row unmounts (e.g., task moves to a new group), defer clearing
+  // expandedTaskId so a new ExpandableTask for the same task can mount first
+  // and inherit the expanded state (fixes Upcoming date-change editing).
   onCleanup(() => {
-    if (expandedTaskId() === props.task.id) setExpandedTaskId(null);
+    const id = props.task.id;
+    requestAnimationFrame(() => {
+      if (expandedTaskId() === id) setExpandedTaskId(null);
+    });
   });
 
   onMount(() => {

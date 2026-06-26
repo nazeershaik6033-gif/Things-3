@@ -24,7 +24,7 @@ test('swipe left opens the schedule picker', async ({ page }) => {
   await page.getByTestId('home-inbox').click();
   await swipe(page, '.task-row:has-text("New idea: balcony garden")', -160);
   await expect(page.getByText('When', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
   await expect(page.getByText('New idea: balcony garden')).toBeHidden();
   // Now in Today
   await page.getByTestId('back-button').last().click();
@@ -48,16 +48,16 @@ test('long-press drag reorders within the inbox and persists', async ({ page }) 
   expect(await page.locator('[data-reorder-row] .task-row').first().textContent()).not.toBe(first);
 });
 
-test('drag between Today and This Evening moves the task', async ({ page }) => {
+test('drag between Today and Tonight moves the task', async ({ page }) => {
   await page.getByTestId('home-today').click();
-  await expect(page.getByText('This Evening')).toBeVisible();
-  // 'Water the plants' is in This Evening; drag it far up into the day section
-  const eveningRow = '[data-reorder-row][data-section="evening"]';
+  await expect(page.getByText('Tonight')).toBeVisible();
+  // 'Water the plants' is in Tonight; drag it far up into the day section
+  const eveningRow = '[data-reorder-row][data-section="tonight"]';
   await expect(page.locator(eveningRow)).toHaveCount(1);
   await longPressDrag(page, eveningRow, -260);
   await page.waitForTimeout(600);
-  // The evening section is now empty → heading hidden, task in day section
-  await expect(page.getByText('This Evening')).toBeHidden();
+  // The Tonight section is now empty → heading hidden, task in day section
+  await expect(page.getByText('Tonight')).toBeHidden();
   await expect(page.getByText('Water the plants')).toBeVisible();
 });
 

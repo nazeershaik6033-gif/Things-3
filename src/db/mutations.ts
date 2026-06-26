@@ -32,6 +32,8 @@ export async function applyOps(ops: Op[]): Promise<void> {
 
 export type When =
   | { type: 'today' }
+  | { type: 'morning' }
+  | { type: 'afternoon' }
   | { type: 'evening' }
   | { type: 'date'; date: DateStr }
   | { type: 'someday' }
@@ -115,13 +117,15 @@ export async function updateTask(id: string, patch: Partial<Task>): Promise<void
 export async function setTaskWhen(id: string, when: When): Promise<void> {
   const today = todayStr();
   const patch: Partial<Task> =
-    when.type === 'today' ? { startDate: today, evening: false }
-    : when.type === 'evening' ? { startDate: today, evening: true }
-    : when.type === 'date' ? { startDate: when.date, evening: false, bucket: 'anytime' }
-    : when.type === 'someday' ? { startDate: null, evening: false, bucket: 'someday' }
-    : when.type === 'anytime' ? { startDate: null, evening: false, bucket: 'anytime' }
-    : { startDate: null, evening: false }; // clear
-  if (when.type === 'today' || when.type === 'evening') {
+    when.type === 'today' ? { startDate: today, evening: false, reminderTime: null }
+    : when.type === 'morning' ? { startDate: today, evening: false, reminderTime: 'morning' }
+    : when.type === 'afternoon' ? { startDate: today, evening: false, reminderTime: 'afternoon' }
+    : when.type === 'evening' ? { startDate: today, evening: true, reminderTime: null }
+    : when.type === 'date' ? { startDate: when.date, evening: false, reminderTime: null, bucket: 'anytime' }
+    : when.type === 'someday' ? { startDate: null, evening: false, reminderTime: null, bucket: 'someday' }
+    : when.type === 'anytime' ? { startDate: null, evening: false, reminderTime: null, bucket: 'anytime' }
+    : { startDate: null, evening: false, reminderTime: null }; // clear
+  if (when.type === 'today' || when.type === 'morning' || when.type === 'afternoon' || when.type === 'evening') {
     const t = await db.tasks.get(id);
     if (t && t.bucket !== 'anytime') patch.bucket = 'anytime';
   }
