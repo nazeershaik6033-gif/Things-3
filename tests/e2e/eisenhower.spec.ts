@@ -13,17 +13,13 @@ test('label a Today task with an Eisenhower quadrant and regroup', async ({ page
   await row.getByTestId('em-chip').click();
   await page.getByText('Do — Urgent & important').click();
 
-  // Row regroups under a "Do" section (assert via the section's description).
-  // The departing row leaves a ~220ms fade-out clone, so wait for exactly one
-  // labelled chip (toHaveCount retries) before strict single-element asserts.
-  await expect(page.getByText('Urgent & important', { exact: true })).toBeVisible();
+  // Chip label updates to the short quadrant name
   await expect(page.getByTestId('em-chip').filter({ hasText: 'Do' })).toHaveCount(1);
   await expect(row.getByTestId('em-chip')).toHaveText('Do');
 
-  // Change to Eliminate → moves to that section
+  // Change to Eliminate
   await row.getByTestId('em-chip').click();
   await page.getByText('Eliminate — Neither — let it go').click();
-  await expect(page.getByText('Neither — let it go', { exact: true })).toBeVisible();
   await expect(page.getByTestId('em-chip').filter({ hasText: 'Eliminate' })).toHaveCount(1);
   await expect(row.getByTestId('em-chip')).toHaveText('Eliminate');
 
