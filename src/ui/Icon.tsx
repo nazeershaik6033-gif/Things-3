@@ -195,6 +195,7 @@ export function ListIcon(props: { list: string; size?: number }): JSX.Element {
     inbox: { name: 'inbox', color: 'var(--blue)' },
     today: { name: 'star', color: 'var(--yellow)' },
     upcoming: { name: 'calendar', color: 'var(--red)' },
+    prior: { name: 'logbook', color: 'var(--tan)' },
     anytime: { name: 'layers', color: 'var(--teal)' },
     someday: { name: 'archive', color: 'var(--tan)' },
     logbook: { name: 'logbook', color: 'var(--green)' },

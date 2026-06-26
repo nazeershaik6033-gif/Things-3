@@ -103,6 +103,7 @@ export function HomeScreen(): JSX.Element {
           <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px', padding: '2px 0' }}>
             {listRow('today', 'Today', counts().today)}
             {listRow('upcoming', 'Upcoming')}
+            {listRow('prior', 'Prior')}
             {listRow('anytime', 'Anytime')}
             {listRow('someday', 'Someday')}
           </div>
