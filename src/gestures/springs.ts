@@ -118,13 +118,13 @@ export function createSpring(
 /** Presets tuned for iOS feel. */
 export const SPRING = {
   /** Screens, sheets: brisk but soft landing */
-  nav: { stiffness: 320, damping: 34 },
+  nav: { stiffness: 680, damping: 52 },
   /** Row snap-back after swipe */
-  snappy: { stiffness: 480, damping: 38 },
+  snappy: { stiffness: 680, damping: 52 },
   /** Drag clone following / FLIP moves */
-  flip: { stiffness: 420, damping: 36 },
+  flip: { stiffness: 560, damping: 46 },
   /** Bouncy accents (FAB return) */
-  bouncy: { stiffness: 380, damping: 26 },
+  bouncy: { stiffness: 480, damping: 30 },
 } as const satisfies Record<string, SpringOpts>;
 
 /** Rubber-band resistance past a boundary (iOS overscroll curve). */
