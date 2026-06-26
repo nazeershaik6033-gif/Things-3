@@ -31,7 +31,7 @@ import type { TaskRowContext } from '../components/TaskRow';
 import type { QuickEntryState } from '../app/uiState';
 
 const TITLES: Record<string, string> = {
-  inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', anytime: 'Anytime', someday: 'Someday',
+  inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', prior: 'Prior', anytime: 'Anytime', someday: 'Someday',
 };
 
 export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
@@ -60,9 +60,9 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
     setPriorityFor(null);
   };
 
-  // Prior groups (for Upcoming view): use ALL tasks (not just filtered visible)
+  // Prior groups: used by the standalone Prior screen
   const priorData = createMemo(() =>
-    props.list === 'upcoming' ? priorGroups(tasks(), currentDate()) : [],
+    props.list === 'prior' ? priorGroups(tasks(), currentDate()) : [],
   );
 
   // ---- membership with completion grace ----
@@ -294,18 +294,17 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               )}
             </Key>
           </Show>
+        </Show>
 
-          {/* Prior: past dates in the current month */}
-          <Show when={priorData().length > 0}>
-            <div style={{ padding: '24px 16px 4px', 'border-bottom': '1px solid var(--separator)' }}>
-              <span style={{ 'font-size': '16px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
-                Prior
-              </span>
-            </div>
+        <Show when={props.list === 'prior'}>
+          <Show
+            when={priorData().length > 0}
+            fallback={<EmptyState icon={<ListIcon list="prior" size={44} />} text="Completed and overdue to-dos from earlier this month will appear here." />}
+          >
             <For each={priorData()}>
               {(group: PriorGroup) => (
                 <div>
-                  <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '14px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
+                  <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '16px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
                     <span style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)', 'min-width': '24px' }}>
                       {group.kind === 'day' ? group.sublabel : ''}
                     </span>
@@ -313,17 +312,15 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                       {group.label}
                     </span>
                   </div>
-                  {/* Calendar events for this prior day */}
                   <Show when={group.kind === 'day'}>
                     <div style={{ padding: '0 16px' }}>
                       <CalendarBlock compact events={events().filter((e) => e.date === group.date)} />
                     </div>
                   </Show>
-                  {/* Overdue open tasks — use ExpandableTask so they're editable */}
                   <For each={group.overdueTasks}>
                     {(task) => (
                       <div style={{ position: 'relative' }}>
-                        <div style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', 'z-index': '1', display: 'flex', 'align-items': 'center', gap: '4px', 'pointer-events': 'none' }}>
+                        <div style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', 'z-index': '1', 'pointer-events': 'none' }}>
                           <span style={{ 'font-size': '11px', 'font-weight': '600', color: 'var(--red)', background: 'color-mix(in srgb, var(--red) 12%, transparent)', padding: '2px 6px', 'border-radius': '4px' }}>
                             overdue
                           </span>
@@ -332,7 +329,6 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                       </div>
                     )}
                   </For>
-                  {/* Completed tasks from this day */}
                   <For each={group.completedTasks}>
                     {(task) => (
                       <div style={{ display: 'flex', 'align-items': 'center', gap: '12px', padding: '10px 16px', opacity: '0.7' }}>

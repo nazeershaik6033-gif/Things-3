@@ -7,7 +7,7 @@ import { release, tryClaim } from '../gestures/arbiter';
  *  Hash URLs keep GitHub Pages + browser/PWA back behavior consistent. */
 
 export type BuiltinList =
-  | 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'trash';
+  | 'inbox' | 'today' | 'upcoming' | 'prior' | 'anytime' | 'someday' | 'logbook' | 'trash';
 
 export type Route =
   | { name: 'home' }
@@ -23,7 +23,7 @@ export interface StackEntry {
   key: number;
 }
 
-const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'trash'];
+const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'prior', 'anytime', 'someday', 'logbook', 'trash'];
 
 export function hashFor(route: Route): string {
   switch (route.name) {
