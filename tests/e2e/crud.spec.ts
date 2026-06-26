@@ -20,7 +20,7 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
   await page.getByText('Write the report').click();
   await expect(page.locator('[data-task-card]')).toBeVisible();
   await page.getByRole('button', { name: 'Schedule' }).click();
-  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
 
   // Scheduling moves it out of the Inbox (card closes with it)
   await expect(page.getByText('Write the report')).toBeHidden();
@@ -154,17 +154,17 @@ test('new project: create, add heading, complete project', async ({ page }) => {
   await expect(page.getByText('Clean the windows')).toBeVisible();
 });
 
-test('evening tasks: quick entry from Today evening section', async ({ page }) => {
+test('evening tasks: quick entry from Today tonight section', async ({ page }) => {
   await page.getByTestId('home-today').click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Stretch before bed');
-  // Set to This Evening via the When chip
+  // Set to Tonight via the When chip
   await page.getByRole('button', { name: 'When' }).click();
-  await page.getByRole('button', { name: 'This Evening' }).click();
+  await page.getByRole('button', { name: 'Tonight' }).click();
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByTestId('quick-entry-save')).toBeHidden();
 
-  // It lands under the This Evening section
-  await expect(page.getByText('This Evening')).toBeVisible();
+  // It lands under the Tonight section
+  await expect(page.getByText('Tonight')).toBeVisible();
   await expect(page.getByText('Stretch before bed')).toBeVisible();
 });

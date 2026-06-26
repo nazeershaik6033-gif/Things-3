@@ -8,7 +8,7 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link' | 'bell';
+  | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -146,6 +146,23 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   ),
   link: () => (
     <path d="M10 14.5 14 10.5M8.5 12 6 14.5a3.5 3.5 0 0 0 5 5l2.5-2.5M15.5 12 18 9.5a3.5 3.5 0 0 0-5-5l-2.5 2.5" stroke-linecap="round" />
+  ),
+  sunrise: () => (
+    <>
+      <path d="M5 15.5a7 7 0 0 1 14 0" stroke-linecap="round" />
+      <path d="M2.5 15.5h19" stroke-linecap="round" />
+      <path d="M12 3v2.5M18.5 6.5l-1.7 1.7M21 12.5h-2.5M5.5 6.5l1.7 1.7M3 12.5h2.5" stroke-linecap="round" />
+    </>
+  ),
+  sun: () => (
+    <>
+      <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.25" stroke="none" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke-linecap="round" />
+    </>
+  ),
+  pencil: () => (
+    <path d="M14.5 4 20 9.5 8 21.5l-5.5.5.5-5.5L14.5 4ZM17.5 6.5l-12 12" stroke-linecap="round" stroke-linejoin="round" />
   ),
 };
 

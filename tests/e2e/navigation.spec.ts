@@ -32,7 +32,7 @@ test('today shows seeded tasks in day and evening sections', async ({ page }) =>
   await page.getByTestId('home-today').click();
   await expect(page.getByText('Buy groceries')).toBeVisible();
   await expect(page.getByText('Book flights')).toBeVisible();
-  await expect(page.getByText('This Evening')).toBeVisible();
+  await expect(page.getByText('Tonight')).toBeVisible();
   await expect(page.getByText('Water the plants')).toBeVisible();
   // Overdue deadline appears in Today with a red flag
   await expect(page.getByText('Call the dentist')).toBeVisible();

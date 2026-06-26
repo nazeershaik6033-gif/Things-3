@@ -102,3 +102,35 @@ export function formatTime(epochMs: number): string {
   h = h % 12 || 12;
   return m === 0 ? `${h} ${ampm}` : `${h}:${String(m).padStart(2, '0')} ${ampm}`;
 }
+
+/** Detect morning/afternoon/evening preference from task title text.
+ *  Looks for keywords and 12/24-hour time patterns. */
+export function detectTimeOfDay(title: string): 'morning' | 'afternoon' | 'evening' | null {
+  const t = title.toLowerCase();
+  if (/\bmorning\b/.test(t)) return 'morning';
+  if (/\bafternoon\b|\blunch\b|\bnoon\b/.test(t)) return 'afternoon';
+  if (/\bevening\b|\btonight\b|\bnight\b/.test(t)) return 'evening';
+
+  // Numeric 12-hour: "9am", "2:30pm"
+  const h12 = /(\d{1,2})(?::\d{2})?\s*(am|pm)/.exec(t);
+  if (h12) {
+    let h = parseInt(h12[1]!, 10);
+    const ap = h12[2]!;
+    if (ap === 'pm' && h !== 12) h += 12;
+    if (ap === 'am' && h === 12) h = 0;
+    if (h >= 5 && h < 12) return 'morning';
+    if (h >= 12 && h < 18) return 'afternoon';
+    return 'evening';
+  }
+
+  // 24-hour: "14:00", "09:30"
+  const h24 = /\b(\d{2}):(\d{2})\b/.exec(t);
+  if (h24) {
+    const h = parseInt(h24[1]!, 10);
+    if (h >= 5 && h < 12) return 'morning';
+    if (h >= 12 && h < 18) return 'afternoon';
+    return 'evening';
+  }
+
+  return null;
+}

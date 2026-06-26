@@ -84,7 +84,7 @@ describe('ICS parser', () => {
     expect(e!.title).toBe('Dinner with friends, then a movie about nothing');
   });
 
-  it('skips recurring and cancelled events', () => {
+  it('expands recurring events and skips cancelled events', () => {
     const ics = wrap(
       'BEGIN:VEVENT',
       'UID:rec1', 'SUMMARY:Weekly sync', 'DTSTART:20260611T100000Z',
@@ -94,7 +94,12 @@ describe('ICS parser', () => {
       'UID:can1', 'SUMMARY:Cancelled mtg', 'DTSTART:20260611T110000Z', 'STATUS:CANCELLED',
       'END:VEVENT',
     );
-    expect(parseICS(ics, OPTS)).toHaveLength(0);
+    const events = parseICS(ics, OPTS);
+    // Thursdays from 2026-06-11 through 2026-08-31: Jun 11,18,25 + Jul 2,9,16,23,30 + Aug 6,13,20,27 = 12
+    expect(events).toHaveLength(12);
+    expect(events.every((e) => e.title === 'Weekly sync')).toBe(true);
+    // Cancelled event must still be excluded
+    expect(events.some((e) => e.title === 'Cancelled mtg')).toBe(false);
   });
 
   it('filters events outside the window', () => {
