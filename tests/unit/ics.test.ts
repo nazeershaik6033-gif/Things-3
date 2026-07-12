@@ -84,17 +84,94 @@ describe('ICS parser', () => {
     expect(e!.title).toBe('Dinner with friends, then a movie about nothing');
   });
 
-  it('skips recurring and cancelled events', () => {
+  it('skips cancelled events', () => {
     const ics = wrap(
-      'BEGIN:VEVENT',
-      'UID:rec1', 'SUMMARY:Weekly sync', 'DTSTART:20260611T100000Z',
-      'RRULE:FREQ=WEEKLY;BYDAY=TH',
-      'END:VEVENT',
       'BEGIN:VEVENT',
       'UID:can1', 'SUMMARY:Cancelled mtg', 'DTSTART:20260611T110000Z', 'STATUS:CANCELLED',
       'END:VEVENT',
     );
     expect(parseICS(ics, OPTS)).toHaveLength(0);
+  });
+
+  it('skips recurring events with an unsupported FREQ', () => {
+    const ics = wrap(
+      'BEGIN:VEVENT',
+      'UID:sec1', 'SUMMARY:Every ping', 'DTSTART:20260611T100000Z',
+      'RRULE:FREQ=SECONDLY;INTERVAL=30',
+      'END:VEVENT',
+    );
+    expect(parseICS(ics, OPTS)).toHaveLength(0);
+  });
+
+  it('expands a weekly recurring event on its BYDAY weekdays', () => {
+    // 2026-06-11 is a Thursday.
+    const ics = wrap(
+      'BEGIN:VEVENT',
+      'UID:rec1', 'SUMMARY:Weekly sync', 'DTSTART:20260611T100000Z', 'DTEND:20260611T103000Z',
+      'RRULE:FREQ=WEEKLY;BYDAY=TH',
+      'END:VEVENT',
+    );
+    const events = parseICS(ics, { ...OPTS, from: '2026-06-01', to: '2026-06-30' });
+    expect(events.map((e) => e.date)).toEqual(['2026-06-11', '2026-06-18', '2026-06-25']);
+    expect(events.every((e) => e.title === 'Weekly sync')).toBe(true);
+    expect(events[0]!.end! - events[0]!.start!).toBe(30 * 60 * 1000);
+  });
+
+  it('honors EXDATE on a recurring series', () => {
+    const ics = wrap(
+      'BEGIN:VEVENT',
+      'UID:rec2', 'SUMMARY:Standup', 'DTSTART:20260601T090000Z',
+      'RRULE:FREQ=DAILY',
+      'EXDATE:20260603T090000Z',
+      'END:VEVENT',
+    );
+    const events = parseICS(ics, { ...OPTS, from: '2026-06-01', to: '2026-06-05' });
+    expect(events.map((e) => e.date)).toEqual(['2026-06-01', '2026-06-02', '2026-06-04', '2026-06-05']);
+  });
+
+  it('honors COUNT and UNTIL on a recurring series', () => {
+    const countIcs = wrap(
+      'BEGIN:VEVENT', 'UID:c1', 'SUMMARY:Three times', 'DTSTART:20260601T090000Z',
+      'RRULE:FREQ=DAILY;COUNT=3', 'END:VEVENT',
+    );
+    expect(parseICS(countIcs, { ...OPTS, from: '2026-06-01', to: '2026-06-30' }).map((e) => e.date))
+      .toEqual(['2026-06-01', '2026-06-02', '2026-06-03']);
+
+    const untilIcs = wrap(
+      'BEGIN:VEVENT', 'UID:u1', 'SUMMARY:Until soon', 'DTSTART:20260601T090000Z',
+      'RRULE:FREQ=DAILY;UNTIL=20260603T090000Z', 'END:VEVENT',
+    );
+    expect(parseICS(untilIcs, { ...OPTS, from: '2026-06-01', to: '2026-06-30' }).map((e) => e.date))
+      .toEqual(['2026-06-01', '2026-06-02', '2026-06-03']);
+  });
+
+  it('expands a monthly recurring event on a fixed day-of-month', () => {
+    const ics = wrap(
+      'BEGIN:VEVENT', 'UID:m1', 'SUMMARY:Rent', 'DTSTART;VALUE=DATE:20260601',
+      'RRULE:FREQ=MONTHLY', 'END:VEVENT',
+    );
+    const events = parseICS(ics, { ...OPTS, from: '2026-06-01', to: '2026-08-31' });
+    expect(events.map((e) => e.date)).toEqual(['2026-06-01', '2026-07-01', '2026-08-01']);
+    expect(events.every((e) => e.allDay)).toBe(true);
+  });
+
+  it('expands a monthly recurring event on the nth weekday (BYDAY ordinal)', () => {
+    // 2026-06-11 is the 2nd Thursday of June.
+    const ics = wrap(
+      'BEGIN:VEVENT', 'UID:m2', 'SUMMARY:Board meeting', 'DTSTART:20260611T140000Z',
+      'RRULE:FREQ=MONTHLY;BYDAY=2TH', 'END:VEVENT',
+    );
+    const events = parseICS(ics, { ...OPTS, from: '2026-06-01', to: '2026-08-31' });
+    expect(events.map((e) => e.date)).toEqual(['2026-06-11', '2026-07-09', '2026-08-13']);
+  });
+
+  it('expands a yearly recurring event on the same month/day', () => {
+    const ics = wrap(
+      'BEGIN:VEVENT', 'UID:y1', 'SUMMARY:Birthday', 'DTSTART;VALUE=DATE:20250620',
+      'RRULE:FREQ=YEARLY', 'END:VEVENT',
+    );
+    const events = parseICS(ics, { ...OPTS, from: '2026-01-01', to: '2027-12-31' });
+    expect(events.map((e) => e.date)).toEqual(['2026-06-20', '2027-06-20']);
   });
 
   it('filters events outside the window', () => {

@@ -8,7 +8,7 @@ import { createTask, type TaskDestination, type When } from '../db/mutations';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
-import { formatRelative } from '../domain/dates';
+import { addDays, formatRelative } from '../domain/dates';
 import type { ChecklistItem, DateStr } from '../db/models';
 import {
   WhenSheet, DeadlineSheet, DestinationSheet, destinationOptions,
@@ -194,6 +194,14 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
                     <Icon name="moon" size={13} color="var(--purple)" />
                   </Show>
                   {whenChip()}
+                </button>
+              </Show>
+              <Show when={whenChip() === 'Today'}>
+                <button
+                  onClick={() => applyWhen({ type: 'date', date: addDays(currentDate(), 1) })}
+                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': '13px', 'font-weight': '500', color: 'var(--text-secondary)' }}
+                >
+                  Tomorrow
                 </button>
               </Show>
               <Show when={deadline()}>

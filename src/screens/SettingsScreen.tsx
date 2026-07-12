@@ -164,7 +164,8 @@ export function SettingsScreen(): JSX.Element {
           Events show in Today and Upcoming, read-only. Many calendar hosts block direct browser
           access (CORS); the proxy prefix works around that. Public proxies can see your calendar
           URL — for privacy, host your own tiny proxy (see the project README) or import a .ics
-          file instead. Recurring events aren’t expanded yet.
+          file instead. Recurring events repeat using their daily/weekly/monthly/yearly pattern;
+          unusual custom recurrence rules may not be fully supported.
         </div>
       </Section>
 

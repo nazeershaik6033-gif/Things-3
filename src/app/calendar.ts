@@ -12,15 +12,22 @@ export interface CalendarStatus {
   message: string;
 }
 
+/** "webcal://" is a signal to open in a calendar app, not a fetchable
+ *  scheme — normalize it the way every calendar client does. */
+function normalizeIcsUrl(url: string): string {
+  return url.replace(/^webcal:\/\//i, 'https://');
+}
+
 export async function fetchIcsText(url: string, proxyPrefix: string): Promise<string> {
+  const target = normalizeIcsUrl(url);
   try {
-    const direct = await fetch(url, { mode: 'cors' });
+    const direct = await fetch(target, { mode: 'cors' });
     if (direct.ok) return await direct.text();
   } catch {
     /* CORS or network failure: fall through to proxy */
   }
   if (!proxyPrefix) throw new Error('Calendar host blocks browser requests and no proxy is set.');
-  const res = await fetch(proxyPrefix + encodeURIComponent(url));
+  const res = await fetch(proxyPrefix + encodeURIComponent(target));
   if (!res.ok) throw new Error(`Calendar fetch failed (HTTP ${res.status}).`);
   return await res.text();
 }
