@@ -1,4 +1,4 @@
-import { For, type JSX } from 'solid-js';
+import { Index, type JSX } from 'solid-js';
 import { nanoid } from 'nanoid';
 import type { ChecklistItem } from '../db/models';
 
@@ -30,43 +30,43 @@ export function ChecklistEditor(props: {
 
   return (
     <div style={{ padding: '2px 0' }}>
-      <For each={props.items}>
+      <Index each={props.items}>
         {(item) => (
           <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '3px 0' }}>
             <button
-              onClick={() => update(item.id, { completed: !item.completed })}
-              aria-label={item.completed ? 'Uncheck' : 'Check'}
+              onClick={() => update(item().id, { completed: !item().completed })}
+              aria-label={item().completed ? 'Uncheck' : 'Check'}
               style={{
                 width: '17px',
                 height: '17px',
                 'border-radius': '50%',
-                border: item.completed ? 'none' : '1.5px solid var(--check-border)',
-                background: item.completed ? 'var(--blue)' : 'transparent',
+                border: item().completed ? 'none' : '1.5px solid var(--check-border)',
+                background: item().completed ? 'var(--blue)' : 'transparent',
                 display: 'flex',
                 'align-items': 'center',
                 'justify-content': 'center',
                 flex: 'none',
               }}
             >
-              {item.completed && (
+              {item().completed && (
                 <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 6.5l2.5 2.5L10 3" />
                 </svg>
               )}
             </button>
             <input
-              data-checklist-id={item.id}
-              value={item.title}
+              data-checklist-id={item().id}
+              value={item().title}
               placeholder="Checklist item"
-              onInput={(e) => update(item.id, { title: e.currentTarget.value })}
+              onInput={(e) => update(item().id, { title: e.currentTarget.value })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  focusItem(insertAfter(item.id));
-                } else if (e.key === 'Backspace' && item.title === '') {
+                  focusItem(insertAfter(item().id));
+                } else if (e.key === 'Backspace' && item().title === '') {
                   e.preventDefault();
-                  const idx = props.items.findIndex((i) => i.id === item.id);
-                  remove(item.id);
+                  const idx = props.items.findIndex((i) => i.id === item().id);
+                  remove(item().id);
                   const prev = props.items[idx - 1];
                   if (prev) focusItem(prev.id);
                 }
@@ -74,14 +74,14 @@ export function ChecklistEditor(props: {
               style={{
                 flex: '1',
                 'font-size': '15px',
-                color: item.completed ? 'var(--text-secondary)' : 'var(--text)',
-                'text-decoration': item.completed ? 'line-through' : 'none',
+                color: item().completed ? 'var(--text-secondary)' : 'var(--text)',
+                'text-decoration': item().completed ? 'line-through' : 'none',
                 padding: '2px 0',
               }}
             />
           </div>
         )}
-      </For>
+      </Index>
       <button
         // pointerdown (not click): fires before a focused textarea blurs and
         // reflows the card, so the tap can't get lost mid-layout

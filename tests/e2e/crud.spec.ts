@@ -79,6 +79,24 @@ test('quick entry with notes, checklist, tags, deadline and destination', async 
   await expect(page.getByText('0/1')).toBeVisible(); // checklist chip
 });
 
+test('typing keystroke-by-keystroke into a 2nd+ checklist item keeps focus', async ({ page }) => {
+  await page.getByTestId('magic-plus').click();
+  await page.getByPlaceholder('New To-Do').fill('Trip packing list');
+  await page.getByRole('button', { name: 'Checklist' }).click();
+
+  await page.getByText('+ Add item').click();
+  const first = page.locator('input[data-checklist-id]').nth(0);
+  await first.pressSequentially('Passport', { delay: 20 });
+  await expect(first).toHaveValue('Passport');
+  await first.press('Enter');
+
+  const second = page.locator('input[data-checklist-id]').nth(1);
+  await expect(second).toBeFocused();
+  await second.pressSequentially('Toothbrush', { delay: 20 });
+  await expect(second).toHaveValue('Toothbrush');
+  await expect(second).toBeFocused();
+});
+
 test('edit title, notes and checklist inline; data persists', async ({ page }) => {
   await page.getByTestId('home-inbox').click();
   await page.getByText('New idea: balcony garden').click();

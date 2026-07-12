@@ -34,6 +34,23 @@ export function addDays(s: DateStr, n: number): DateStr {
   return toDateStr(d);
 }
 
+export function addMonths(s: DateStr, n: number): DateStr {
+  const d = fromDateStr(s);
+  d.setMonth(d.getMonth() + n);
+  return toDateStr(d);
+}
+
+export function addYears(s: DateStr, n: number): DateStr {
+  const d = fromDateStr(s);
+  d.setFullYear(d.getFullYear() + n);
+  return toDateStr(d);
+}
+
+/** JS weekday index: 0=Sunday .. 6=Saturday. */
+export function weekdayOf(s: DateStr): number {
+  return fromDateStr(s).getDay();
+}
+
 /** Whole days from `from` to `to` (positive if `to` is later). DST-safe. */
 export function daysBetween(from: DateStr, to: DateStr): number {
   const a = fromDateStr(from);
