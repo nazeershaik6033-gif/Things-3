@@ -7,7 +7,7 @@ import { release, tryClaim } from '../gestures/arbiter';
  *  Hash URLs keep GitHub Pages + browser/PWA back behavior consistent. */
 
 export type BuiltinList =
-  | 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'trash';
+  | 'inbox' | 'today' | 'upcoming' | 'prior' | 'anytime' | 'someday' | 'logbook' | 'trash';
 
 export type Route =
   | { name: 'home' }
@@ -15,6 +15,7 @@ export type Route =
   | { name: 'project'; id: string }
   | { name: 'area'; id: string }
   | { name: 'tag'; id: string }
+  | { name: 'calendar' }
   | { name: 'settings' };
 
 export interface StackEntry {
@@ -22,7 +23,7 @@ export interface StackEntry {
   key: number;
 }
 
-const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'trash'];
+const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'prior', 'anytime', 'someday', 'logbook', 'trash'];
 
 export function hashFor(route: Route): string {
   switch (route.name) {
@@ -31,6 +32,7 @@ export function hashFor(route: Route): string {
     case 'project': return `#/project/${route.id}`;
     case 'area': return `#/area/${route.id}`;
     case 'tag': return `#/tag/${route.id}`;
+    case 'calendar': return '#/calendar';
     case 'settings': return '#/settings';
   }
 }
@@ -40,6 +42,7 @@ export function parseHash(hash: string): Route {
   const head = parts[0];
   if (!head) return { name: 'home' };
   if ((BUILTINS as string[]).includes(head)) return { name: 'list', list: head as BuiltinList };
+  if (head === 'calendar') return { name: 'calendar' };
   if (head === 'settings') return { name: 'settings' };
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };

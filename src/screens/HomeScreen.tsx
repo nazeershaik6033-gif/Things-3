@@ -103,11 +103,18 @@ export function HomeScreen(): JSX.Element {
           <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px', padding: '2px 0' }}>
             {listRow('today', 'Today', counts().today)}
             {listRow('upcoming', 'Upcoming')}
+            {listRow('prior', 'Prior')}
             {listRow('anytime', 'Anytime')}
             {listRow('someday', 'Someday')}
           </div>
 
           <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px', padding: '2px 0' }}>
+            <HomeRow
+              testid="home-calendar"
+              icon={<Icon name="calendar" size={21} color="var(--red)" />}
+              label="Calendar"
+              onClick={() => push({ name: 'calendar' })}
+            />
             {listRow('logbook', 'Logbook')}
             {listRow('trash', 'Trash')}
           </div>

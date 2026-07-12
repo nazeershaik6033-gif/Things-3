@@ -1,15 +1,9 @@
 import type { CalendarEvent, DateStr } from '../db/models';
-import {
-  addDays, addMonths, addYears, dateStrOf, dayOfMonth, toDateStr, weekdayOf,
-} from './dates';
+import { addDays, dateStrOf, fromDateStr, toDateStr } from './dates';
 
-/** Minimal iCalendar (RFC 5545) parser for read-only calendar display.
- *  Supports single VEVENTs: timed (UTC, TZID, floating) and all-day
- *  (VALUE=DATE), including multi-day expansion. Recurring events (RRULE)
- *  are expanded for the common patterns Google Calendar produces —
- *  DAILY/WEEKLY/MONTHLY/YEARLY with INTERVAL, COUNT, UNTIL, BYDAY,
- *  BYMONTHDAY and EXDATE. Rules using other frequencies (SECONDLY etc.)
- *  or that fail to parse are skipped. RDATE is not supported. */
+/** iCalendar (RFC 5545) parser for read-only calendar display.
+ *  Supports single VEVENTs and recurring events (RRULE) for
+ *  DAILY / WEEKLY / MONTHLY / YEARLY frequencies within the display window. */
 
 interface RawEvent {
   uid: string;
@@ -21,7 +15,6 @@ interface RawEvent {
   dtendTzid: string | null;
   dtendIsDate: boolean;
   rrule: string | null;
-  exdates: string[];
   status: string | null;
 }
 
@@ -70,7 +63,7 @@ function parseRawEvents(src: string): RawEvent[] {
     if (!parsed) continue;
     const { name, params, value } = parsed;
     if (name === 'BEGIN' && value.toUpperCase() === 'VEVENT') {
-      cur = { uid: '', summary: '', dtstartTzid: null, dtstartIsDate: false, dtend: null, dtendTzid: null, dtendIsDate: false, rrule: null, exdates: [], status: null };
+      cur = { uid: '', summary: '', dtstartTzid: null, dtstartIsDate: false, dtend: null, dtendTzid: null, dtendIsDate: false, rrule: null, status: null };
     } else if (name === 'END' && value.toUpperCase() === 'VEVENT') {
       if (cur && cur.dtstart) events.push(cur as RawEvent);
       cur = null;
@@ -89,12 +82,6 @@ function parseRawEvents(src: string): RawEvent[] {
           cur.dtendIsDate = params.get('VALUE') === 'DATE' || /^\d{8}$/.test(value);
           break;
         case 'RRULE': cur.rrule = value; break;
-        case 'EXDATE':
-          for (const part of value.split(',')) {
-            const m = /^(\d{4})(\d{2})(\d{2})/.exec(part.trim());
-            if (m) cur.exdates!.push(`${m[1]}-${m[2]}-${m[3]}`);
-          }
-          break;
         case 'STATUS': cur.status = value.toUpperCase(); break;
       }
     }
@@ -148,209 +135,142 @@ function parseDateValue(value: string): DateStr | null {
   return `${m[1]}-${m[2]}-${m[3]}`;
 }
 
+// ------------------------------------------------------------------ RRULE --
+
+const DOW_MAP: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+
+interface RRule {
+  freq: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  interval: number;
+  untilDate: DateStr | null;
+  count: number | null;
+  byDay: string[];      // e.g. ['MO', 'WE', 'FR']
+  byMonthDay: number[]; // e.g. [15]
+}
+
+function parseRRule(value: string): RRule | null {
+  const p = new Map<string, string>();
+  for (const part of value.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq > 0) p.set(part.slice(0, eq).toUpperCase(), part.slice(eq + 1));
+  }
+  const freq = p.get('FREQ')?.toUpperCase();
+  if (freq !== 'DAILY' && freq !== 'WEEKLY' && freq !== 'MONTHLY' && freq !== 'YEARLY') return null;
+
+  let untilDate: DateStr | null = null;
+  const until = p.get('UNTIL');
+  if (until) {
+    const m = /^(\d{4})(\d{2})(\d{2})/.exec(until);
+    if (m) untilDate = `${m[1]}-${m[2]}-${m[3]}`;
+  }
+
+  return {
+    freq,
+    interval: Math.max(1, parseInt(p.get('INTERVAL') ?? '1', 10) || 1),
+    untilDate,
+    count: p.has('COUNT') ? (parseInt(p.get('COUNT')!, 10) || null) : null,
+    byDay: (p.get('BYDAY') ?? '').split(',').filter(Boolean).map((d) => d.toUpperCase().replace(/^[-+]?\d+/, '')),
+    byMonthDay: (p.get('BYMONTHDAY') ?? '').split(',').filter(Boolean).map(Number).filter((n) => n >= 1 && n <= 31),
+  };
+}
+
+/** Expand an RRULE into occurrence dates within [opts.from, opts.to].
+ *  startDateStr is the DTSTART calendar date (local YYYY-MM-DD). */
+function expandRRuleDates(rule: RRule, startDateStr: DateStr, opts: { from: DateStr; to: DateStr }): DateStr[] {
+  const results: DateStr[] = [];
+  const maxOccurrences = Math.min(rule.count ?? 10_000, 10_000);
+  let occurrenceCount = 0;
+
+  if (rule.freq === 'DAILY') {
+    let cur = fromDateStr(startDateStr);
+    while (occurrenceCount < maxOccurrences) {
+      const ds = toDateStr(cur) as DateStr;
+      if (rule.untilDate && ds > rule.untilDate) break;
+      if (ds > opts.to) break;
+      if (ds >= opts.from) results.push(ds);
+      occurrenceCount++;
+      cur.setDate(cur.getDate() + rule.interval);
+    }
+  } else if (rule.freq === 'WEEKLY') {
+    const startD = fromDateStr(startDateStr);
+    const byday = rule.byDay.length > 0
+      ? rule.byDay.map((d) => DOW_MAP[d]).filter((n): n is number => n !== undefined)
+      : [startD.getDay()];
+
+    // Align to the Sunday of the start-date's week
+    const weekSun = new Date(startD);
+    weekSun.setDate(weekSun.getDate() - weekSun.getDay());
+
+    while (occurrenceCount < maxOccurrences) {
+      const weekDates = byday
+        .map((dow) => {
+          const d = new Date(weekSun);
+          d.setDate(d.getDate() + dow);
+          return toDateStr(d) as DateStr;
+        })
+        .filter((ds) => ds >= startDateStr)
+        .sort();
+
+      let pastWindow = false;
+      for (const ds of weekDates) {
+        if (rule.untilDate && ds > rule.untilDate) { pastWindow = true; break; }
+        if (ds > opts.to) { pastWindow = true; break; }
+        if (ds >= opts.from) results.push(ds);
+        occurrenceCount++;
+        if (occurrenceCount >= maxOccurrences) { pastWindow = true; break; }
+      }
+      if (pastWindow) break;
+      weekSun.setDate(weekSun.getDate() + 7 * rule.interval);
+      if ((toDateStr(weekSun) as DateStr) > opts.to) break;
+    }
+  } else if (rule.freq === 'MONTHLY') {
+    let cur = fromDateStr(startDateStr);
+    const startDay = cur.getDate();
+
+    while (occurrenceCount < maxOccurrences) {
+      const days = rule.byMonthDay.length > 0 ? rule.byMonthDay : [startDay];
+      const monthDates = days
+        .map((day) => {
+          const d = new Date(cur.getFullYear(), cur.getMonth(), day);
+          return isNaN(d.getTime()) ? null : (toDateStr(d) as DateStr);
+        })
+        .filter((ds): ds is DateStr => ds !== null && ds >= startDateStr)
+        .sort();
+
+      let pastWindow = false;
+      for (const ds of monthDates) {
+        if (rule.untilDate && ds > rule.untilDate) { pastWindow = true; break; }
+        if (ds > opts.to) { pastWindow = true; break; }
+        if (ds >= opts.from) results.push(ds);
+        occurrenceCount++;
+        if (occurrenceCount >= maxOccurrences) { pastWindow = true; break; }
+      }
+      if (pastWindow) break;
+      cur.setMonth(cur.getMonth() + rule.interval);
+      if ((toDateStr(cur) as DateStr) > opts.to) break;
+    }
+  } else if (rule.freq === 'YEARLY') {
+    let cur = fromDateStr(startDateStr);
+    while (occurrenceCount < maxOccurrences) {
+      const ds = toDateStr(cur) as DateStr;
+      if (rule.untilDate && ds > rule.untilDate) break;
+      if (ds > opts.to) break;
+      if (ds >= opts.from) results.push(ds);
+      occurrenceCount++;
+      cur.setFullYear(cur.getFullYear() + rule.interval);
+    }
+  }
+
+  return results;
+}
+
+// ----------------------------------------------------------------- parse ---
+
 export interface ParseOptions {
   calendarUrl: string;
   /** Only emit events whose date falls inside [from, to]. */
   from: DateStr;
   to: DateStr;
-}
-
-type Freq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
-const FREQS: Freq[] = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
-const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-
-interface ByDay {
-  /** null = every such weekday; otherwise 1st/2nd/.../-1 (last) within the period. */
-  ordinal: number | null;
-  /** JS weekday index, 0=Sunday. */
-  day: number;
-}
-
-interface RRule {
-  freq: Freq;
-  interval: number;
-  count: number | null;
-  until: DateStr | null;
-  byDay: ByDay[] | null;
-  byMonthDay: number[] | null;
-}
-
-function parseByDay(token: string): ByDay | null {
-  const m = /^([+-]?\d+)?(SU|MO|TU|WE|TH|FR|SA)$/.exec(token.trim().toUpperCase());
-  if (!m) return null;
-  return { ordinal: m[1] ? parseInt(m[1], 10) : null, day: DAY_CODES.indexOf(m[2]!) };
-}
-
-/** Parses a subset of RFC 5545 RRULE covering the patterns Google Calendar
- *  and most other hosts actually emit. Returns null for unsupported shapes
- *  (SECONDLY/MINUTELY/HOURLY, BYSETPOS, etc.) so the caller can skip safely. */
-function parseRRule(value: string): RRule | null {
-  const map = new Map<string, string>();
-  for (const part of value.split(';')) {
-    const eq = part.indexOf('=');
-    if (eq > 0) map.set(part.slice(0, eq).toUpperCase(), part.slice(eq + 1));
-  }
-  const freq = map.get('FREQ')?.toUpperCase();
-  if (!freq || !FREQS.includes(freq as Freq)) return null;
-  const interval = Math.max(1, parseInt(map.get('INTERVAL') ?? '1', 10) || 1);
-  const count = map.has('COUNT') ? parseInt(map.get('COUNT')!, 10) : null;
-  const until = map.has('UNTIL') ? parseDateValue(map.get('UNTIL')!) : null;
-  const byDay = map.has('BYDAY')
-    ? map.get('BYDAY')!.split(',').map(parseByDay).filter((b): b is ByDay => b !== null)
-    : null;
-  const byMonthDay = map.has('BYMONTHDAY')
-    ? map.get('BYMONTHDAY')!.split(',').map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n))
-    : null;
-  return { freq: freq as Freq, interval, count, until, byDay: byDay?.length ? byDay : null, byMonthDay: byMonthDay?.length ? byMonthDay : null };
-}
-
-/** nth (1-based, or negative from the end) weekday `day` within the month
- *  containing `monthAnchor` (any DateStr in that month). Null if out of range. */
-function nthWeekdayOfMonth(monthAnchor: DateStr, day: number, ordinal: number): DateStr | null {
-  const month = monthAnchor.slice(0, 7);
-  const first = `${month}-01` as DateStr;
-  if (ordinal > 0) {
-    let d = first;
-    while (weekdayOf(d) !== day) d = addDays(d, 1);
-    const result = addDays(d, (ordinal - 1) * 7);
-    return result.slice(0, 7) === month ? result : null;
-  }
-  let d = addDays(addMonths(first, 1), -1); // last day of month
-  while (weekdayOf(d) !== day) d = addDays(d, -1);
-  const result = addDays(d, (ordinal + 1) * 7);
-  return result.slice(0, 7) === month ? result : null;
-}
-
-/** The nth day-of-month (1-based, or negative from the end) within the
- *  month containing `monthAnchor`. Null if the month is too short. */
-function nthDayOfMonth(monthAnchor: DateStr, n: number): DateStr | null {
-  const month = monthAnchor.slice(0, 7);
-  const first = `${month}-01` as DateStr;
-  const d = n > 0 ? addDays(first, n - 1) : addDays(addMonths(first, 1), n);
-  return d.slice(0, 7) === month ? d : null;
-}
-
-function* dailyDates(start: DateStr, interval: number): Generator<DateStr> {
-  let d = start;
-  for (;;) {
-    yield d;
-    d = addDays(d, interval);
-  }
-}
-
-function* weeklyDates(start: DateStr, interval: number, byDay: ByDay[] | null): Generator<DateStr> {
-  const days = (byDay?.length ? byDay.map((b) => b.day) : [weekdayOf(start)]).sort((a, b) => a - b);
-  let weekStart = addDays(start, -((weekdayOf(start) + 6) % 7)); // Monday of start's week
-  for (;;) {
-    for (const day of days) yield addDays(weekStart, (day + 6) % 7);
-    weekStart = addDays(weekStart, 7 * interval);
-  }
-}
-
-function* monthlyDates(start: DateStr, interval: number, byDay: ByDay[] | null, byMonthDay: number[] | null): Generator<DateStr> {
-  let monthAnchor = start;
-  for (;;) {
-    const candidates: DateStr[] = [];
-    if (byDay?.length) {
-      for (const b of byDay) {
-        const d = nthWeekdayOfMonth(monthAnchor, b.day, b.ordinal ?? 1);
-        if (d) candidates.push(d);
-      }
-    } else if (byMonthDay?.length) {
-      for (const n of byMonthDay) {
-        const d = nthDayOfMonth(monthAnchor, n);
-        if (d) candidates.push(d);
-      }
-    } else {
-      const d = nthDayOfMonth(monthAnchor, dayOfMonth(start));
-      if (d) candidates.push(d);
-    }
-    candidates.sort();
-    yield* candidates;
-    monthAnchor = addMonths(monthAnchor, interval);
-  }
-}
-
-function* yearlyDates(start: DateStr, interval: number): Generator<DateStr> {
-  let d = start;
-  for (;;) {
-    yield d;
-    d = addYears(d, interval);
-  }
-}
-
-function candidateDates(rule: RRule, start: DateStr): Generator<DateStr> {
-  switch (rule.freq) {
-    case 'DAILY': return dailyDates(start, rule.interval);
-    case 'WEEKLY': return weeklyDates(start, rule.interval, rule.byDay);
-    case 'MONTHLY': return monthlyDates(start, rule.interval, rule.byDay, rule.byMonthDay);
-    case 'YEARLY': return yearlyDates(start, rule.interval);
-  }
-}
-
-const RECURRENCE_GUARD = 20_000;
-
-/** Expands an RRULE into occurrence dates within [from, to], honoring
- *  COUNT/UNTIL against the full series (not just the visible window) and
- *  dropping EXDATEs. */
-function expandRecurrence(
-  rule: RRule, start: DateStr, exdates: Set<string>, from: DateStr, to: DateStr,
-): DateStr[] {
-  const out: DateStr[] = [];
-  let occurrences = 0;
-  let guard = 0;
-  for (const d of candidateDates(rule, start)) {
-    if (d < start) continue; // weekly can yield dates before DTSTART in its first week
-    if (rule.until && d > rule.until) break;
-    occurrences++;
-    if (rule.count !== null && occurrences > rule.count) break;
-    if (!exdates.has(d) && d >= from && d <= to) out.push(d);
-    if (d > to) break;
-    guard++;
-    if (guard >= RECURRENCE_GUARD) break;
-  }
-  return out;
-}
-
-/** Expands a recurring VEVENT into its individual occurrences within the window. */
-function expandRawEvent(raw: RawEvent, rule: RRule, title: string, opts: ParseOptions): CalendarEvent[] {
-  const out: CalendarEvent[] = [];
-  const exdates = new Set(raw.exdates);
-  const anchor = parseDateValue(raw.dtstart);
-  if (!anchor) return out;
-
-  if (raw.dtstartIsDate) {
-    for (const d of expandRecurrence(rule, anchor, exdates, opts.from, opts.to)) {
-      out.push({
-        id: `${opts.calendarUrl}#${raw.uid || title}#${d}`,
-        date: d, start: null, end: null, title, allDay: true,
-        calendarUrl: opts.calendarUrl,
-      });
-    }
-    return out;
-  }
-
-  const baseStart = parseDateTime(raw.dtstart, raw.dtstartTzid);
-  const baseEnd = raw.dtend ? parseDateTime(raw.dtend, raw.dtendTzid) : null;
-  const durationMs = baseStart !== null && baseEnd !== null ? baseEnd - baseStart : null;
-  const timePart = raw.dtstart.slice(8); // "T130000Z" or "T130000"
-  // Widen the naive-date window by a day so timezone shifts across the
-  // boundary don't drop a real occurrence; the precise date is re-checked below.
-  const widenedFrom = addDays(opts.from, -1);
-  const widenedTo = addDays(opts.to, 1);
-  for (const d of expandRecurrence(rule, anchor, exdates, widenedFrom, widenedTo)) {
-    const value = `${d.replace(/-/g, '')}${timePart}`;
-    const start = parseDateTime(value, raw.dtstartTzid);
-    if (start === null) continue;
-    const date = dateStrOf(start);
-    if (date < opts.from || date > opts.to) continue;
-    out.push({
-      id: `${opts.calendarUrl}#${raw.uid || title}#${value}`,
-      date, start, end: durationMs !== null ? start + durationMs : null, title, allDay: false,
-      calendarUrl: opts.calendarUrl,
-    });
-  }
-  return out;
 }
 
 export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
@@ -360,16 +280,64 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
     const title = raw.summary || '(No title)';
 
     if (raw.rrule) {
+      // Recurring event: expand within the display window
       const rule = parseRRule(raw.rrule);
-      if (!rule) continue; // unsupported recurrence shape: skip for safety
-      out.push(...expandRawEvent(raw, rule, title, opts));
+      if (!rule) continue;
+
+      if (raw.dtstartIsDate) {
+        const startDateStr = parseDateValue(raw.dtstart);
+        if (!startDateStr) continue;
+        // Duration for all-day recurring events
+        const durationDays = (() => {
+          if (!raw.dtend) return 1;
+          const endStr = parseDateValue(raw.dtend);
+          if (!endStr) return 1;
+          const ms = fromDateStr(endStr).getTime() - fromDateStr(startDateStr).getTime();
+          return Math.max(1, Math.round(ms / 86_400_000));
+        })();
+
+        for (const occDate of expandRRuleDates(rule, startDateStr, opts)) {
+          for (let i = 0; i < durationDays; i++) {
+            const d = i === 0 ? occDate : addDays(occDate, i);
+            if (d >= opts.from && d <= opts.to) {
+              out.push({
+                id: `${opts.calendarUrl}#${raw.uid || title}#${occDate}+${i}`,
+                date: d, start: null, end: null, title, allDay: true,
+                calendarUrl: opts.calendarUrl,
+              });
+            }
+          }
+        }
+      } else {
+        // Timed recurring event
+        const startMs = parseDateTime(raw.dtstart, raw.dtstartTzid);
+        if (startMs === null) continue;
+        const endMs = raw.dtend ? parseDateTime(raw.dtend, raw.dtendTzid) : null;
+        const durationMs = endMs !== null ? endMs - startMs : 0;
+        const startDateStr = dateStrOf(startMs);
+        // Time-of-day offset from midnight (local)
+        const startLocal = new Date(startMs);
+        const midnightMs = new Date(startLocal.getFullYear(), startLocal.getMonth(), startLocal.getDate()).getTime();
+        const timeOffset = startMs - midnightMs;
+
+        for (const occDate of expandRRuleDates(rule, startDateStr, opts)) {
+          const occMidnight = fromDateStr(occDate).getTime();
+          const occStart = occMidnight + timeOffset;
+          const occEnd = durationMs > 0 ? occStart + durationMs : null;
+          out.push({
+            id: `${opts.calendarUrl}#${raw.uid || title}#${occDate}`,
+            date: occDate, start: occStart, end: occEnd, title, allDay: false,
+            calendarUrl: opts.calendarUrl,
+          });
+        }
+      }
       continue;
     }
 
+    // Non-recurring events (original handling)
     if (raw.dtstartIsDate) {
       const start = parseDateValue(raw.dtstart);
       if (!start) continue;
-      // DTEND for all-day events is EXCLUSIVE per RFC 5545
       const endExclusive = raw.dtend ? parseDateValue(raw.dtend) : null;
       let d = start;
       let guard = 0;
@@ -405,8 +373,47 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
   return out;
 }
 
-/** Default display window for calendar subscriptions. */
+/** Default display window for calendar subscriptions: 60 days back so the
+ *  month calendar can show recent past events, 180 forward for browsing. */
 export function defaultWindow(now: Date): { from: DateStr; to: DateStr } {
   const today = toDateStr(now);
-  return { from: today, to: addDays(today, 90) };
+  return { from: addDays(today, -60), to: addDays(today, 180) };
+}
+
+/** Escape text for ICS property values (RFC 5545 §3.3.11). */
+function escapeText(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+
+/** Build a downloadable single-event ICS with a display alarm at the event
+ *  time. Opening it on iOS offers "Add to Calendar", which then fires a
+ *  real notification — the closest a web app can get to system reminders. */
+export function buildReminderIcs(opts: {
+  title: string;
+  notes?: string;
+  date: DateStr; // local date
+  time: string; // "HH:mm" local
+}): string {
+  const compact = opts.date.replace(/-/g, '') + 'T' + opts.time.replace(':', '') + '00';
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const uid = `reminder-${compact}-${Math.random().toString(36).slice(2, 10)}@clarity`;
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Clarity//Reminder//EN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${compact}`, // floating local time
+    `SUMMARY:${escapeText(opts.title || 'Reminder')}`,
+    ...(opts.notes ? [`DESCRIPTION:${escapeText(opts.notes)}`] : []),
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeText(opts.title || 'Reminder')}`,
+    'TRIGGER:PT0S',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+  return lines.join('\r\n');
 }

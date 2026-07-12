@@ -8,7 +8,7 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link';
+  | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -27,6 +27,12 @@ const PATHS: Record<IconName, () => JSX.Element> = {
       stroke="currentColor"
       stroke-linejoin="round"
     />
+  ),
+  bell: () => (
+    <>
+      <path d="M12 3a6 6 0 0 0-6 6v3.2c0 .9-.4 1.8-1 2.5l-1 1.1h16l-1-1.1c-.6-.7-1-1.6-1-2.5V9a6 6 0 0 0-6-6z" stroke-linejoin="round" />
+      <path d="M9.5 18.8a2.6 2.6 0 0 0 5 0" stroke-linecap="round" />
+    </>
   ),
   calendar: () => (
     <>
@@ -141,6 +147,23 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   link: () => (
     <path d="M10 14.5 14 10.5M8.5 12 6 14.5a3.5 3.5 0 0 0 5 5l2.5-2.5M15.5 12 18 9.5a3.5 3.5 0 0 0-5-5l-2.5 2.5" stroke-linecap="round" />
   ),
+  sunrise: () => (
+    <>
+      <path d="M5 15.5a7 7 0 0 1 14 0" stroke-linecap="round" />
+      <path d="M2.5 15.5h19" stroke-linecap="round" />
+      <path d="M12 3v2.5M18.5 6.5l-1.7 1.7M21 12.5h-2.5M5.5 6.5l1.7 1.7M3 12.5h2.5" stroke-linecap="round" />
+    </>
+  ),
+  sun: () => (
+    <>
+      <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.25" stroke="none" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke-linecap="round" />
+    </>
+  ),
+  pencil: () => (
+    <path d="M14.5 4 20 9.5 8 21.5l-5.5.5.5-5.5L14.5 4ZM17.5 6.5l-12 12" stroke-linecap="round" stroke-linejoin="round" />
+  ),
 };
 
 export function Icon(props: {
@@ -172,6 +195,7 @@ export function ListIcon(props: { list: string; size?: number }): JSX.Element {
     inbox: { name: 'inbox', color: 'var(--blue)' },
     today: { name: 'star', color: 'var(--yellow)' },
     upcoming: { name: 'calendar', color: 'var(--red)' },
+    prior: { name: 'logbook', color: 'var(--tan)' },
     anytime: { name: 'layers', color: 'var(--teal)' },
     someday: { name: 'archive', color: 'var(--tan)' },
     logbook: { name: 'logbook', color: 'var(--green)' },

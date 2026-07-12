@@ -3,6 +3,8 @@
 export type DateStr = string;
 
 export type TaskStatus = 'open' | 'completed' | 'canceled';
+/** Eisenhower Matrix quadrant for day planning. */
+export type EMQuadrant = 'do' | 'schedule' | 'delegate' | 'eliminate';
 export type Bucket = 'inbox' | 'anytime' | 'someday';
 
 export interface ChecklistItem {
@@ -21,6 +23,7 @@ export interface Task {
   startDate: DateStr | null; // <= today means "in Today"
   evening: boolean;
   deadline: DateStr | null;
+  priority: EMQuadrant | null; // Eisenhower quadrant, user-set
   projectId: string | null;
   headingId: string | null; // implies projectId
   areaId: string | null; // loose task directly in an area

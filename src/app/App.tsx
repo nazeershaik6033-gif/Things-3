@@ -6,6 +6,8 @@ import {
 import { startDateTicker } from './currentDate';
 import { startTheme } from './theme';
 import { startCalendarSync } from './calendar';
+import { startPomodoroClock } from './pomodoro';
+import { PomodoroMiniBar, PomodoroOverlay } from '../components/PomodoroTimer';
 import { createPan } from '../gestures/createPan';
 import { closeOpenRow } from '../gestures/arbiter';
 import { setExpandedTaskId, expandedTaskId } from './uiState';
@@ -17,6 +19,7 @@ import { TagScreen } from '../screens/TagScreen';
 import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { CalendarScreen } from '../screens/CalendarScreen';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -33,6 +36,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'project': return <ProjectScreen id={r.id} />;
     case 'area': return <AreaScreen id={r.id} />;
     case 'tag': return <TagScreen id={r.id} />;
+    case 'calendar': return <CalendarScreen />;
     case 'settings': return <SettingsScreen />;
   }
 }
@@ -58,6 +62,7 @@ export function App(): JSX.Element {
     startDateTicker();
     startNavigation();
     startCalendarSync();
+    startPomodoroClock();
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses
@@ -93,6 +98,8 @@ export function App(): JSX.Element {
       <SearchOverlay />
       <QuickEntry />
       <InstallCoachMark />
+      <PomodoroMiniBar />
+      <PomodoroOverlay />
     </div>
   );
 }
