@@ -99,3 +99,9 @@ ol {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Focus Timer overtime pulse */
+@keyframes pomo-flash {
+  from { opacity: 0.06; }
+  to { opacity: 0.18; }
+}
