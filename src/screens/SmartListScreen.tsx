@@ -217,12 +217,12 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         trailing={
           props.list === 'today' ? (
             <button
-              aria-label="Pomodoro timer"
+              aria-label="Focus timer"
               data-testid="pomo-open"
               onClick={() => setOverlayOpen(true)}
               style={{ padding: '8px 12px', 'font-size': '20px', 'line-height': '1' }}
             >
-              🍅
+              🎯
             </button>
           ) : undefined
         }

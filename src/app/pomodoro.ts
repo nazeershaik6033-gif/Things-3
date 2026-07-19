@@ -1,157 +1,187 @@
 import { createSignal } from 'solid-js';
+import { nanoid } from 'nanoid';
 import {
-  POMODORO_DEFAULTS, nextPhase, phaseDurationMs,
-  type Phase, type PomodoroConfig,
+  FOCUS_DEFAULTS, MAX_RECORDS, clampMinutes, makeRecord, recordsOnDay, sumSeconds,
+  elapsedSec,
+  type FocusState, type FocusTheme, type Mode, type Presets,
 } from '../domain/pomodoro';
 import { getSetting, setSetting } from '../db/mutations';
-import { todayStr } from '../domain/dates';
 
-/** Timestamp-based timer state: survives reload and background tabs (iOS
- *  pauses JS when the PWA is hidden, so remaining time is always derived
- *  from the clock, never from tick counting). */
+/** Focus Timer store. Wall-clock based: a running session survives reload and
+ *  background tabs (iOS suspends JS when the PWA is hidden), so the display is
+ *  always derived from `startedAt`, never from tick counting. The whole feature
+ *  state lives in one settings row, written on every change. */
 
-interface TimerState {
-  phase: Phase;
-  round: number;
-  /** Epoch ms when the current phase ends; null = idle. */
-  endsAt: number | null;
-  /** Remaining ms while paused; null = not paused. */
-  pausedRemaining: number | null;
-}
+const KEY = 'focusTimer';
 
-const IDLE: TimerState = { phase: 'work', round: 1, endsAt: null, pausedRemaining: null };
-const LS_KEY = 'clarity-pomodoro';
-
-const [state, setState] = createSignal<TimerState>(IDLE);
-const [config, setConfig] = createSignal<PomodoroConfig>(POMODORO_DEFAULTS);
+const [focusState, setFocusStateSignal] = createSignal<FocusState>(FOCUS_DEFAULTS);
 const [overlayOpen, setOverlayOpen] = createSignal(false);
-const [doneToday, setDoneToday] = createSignal(0);
-const [soundOn, setSoundOn] = createSignal(true);
-/** 1-second heartbeat so time displays re-render. */
+/** ~2 Hz heartbeat so the running clock re-renders. */
 const [now, setNow] = createSignal(Date.now());
 
-export { state as pomodoroState, config as pomodoroConfig, overlayOpen, setOverlayOpen, doneToday, soundOn, now };
+export { focusState, overlayOpen, setOverlayOpen, now };
 
-export function isActive(): boolean {
-  const s = state();
-  return s.endsAt !== null || s.pausedRemaining !== null;
+/** Seconds of focus logged today — shown in Settings and the records header. */
+export function doneTodaySec(): number {
+  const focus = focusState().records.filter((r) => r.mode === 'focus');
+  return sumSeconds(recordsOnDay(focus, now()));
 }
 
-export function isPaused(): boolean {
-  return state().pausedRemaining !== null;
+export function hasActiveSession(): boolean {
+  return focusState().session !== null;
 }
 
-export function remainingMs(): number {
-  const s = state();
-  if (s.pausedRemaining !== null) return s.pausedRemaining;
-  if (s.endsAt === null) return phaseDurationMs(s.phase, config());
-  return Math.max(0, s.endsAt - now());
+function persist(s: FocusState): void {
+  void setSetting(KEY, s);
 }
 
-function persist(s: TimerState): void {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(s));
-  } catch {
-    /* private mode */
-  }
+/** Reducer-style update: every mutation goes through here so it persists. */
+function mutate(fn: (s: FocusState) => FocusState): void {
+  const next = fn(focusState());
+  setFocusStateSignal(next);
+  persist(next);
 }
 
-function update(s: TimerState): void {
-  setState(s);
-  persist(s);
+// --------------------------------------------------------------- sessions ---
+
+export function startSession(mode: Mode, plannedMin: number, tag: string): void {
+  mutate((s) => ({
+    ...s,
+    session: { id: nanoid(), mode, plannedMin: clampMinutes(plannedMin), startedAt: Date.now(), tag },
+  }));
+  notifiedFor = null;
 }
 
-export function startPomodoro(): void {
-  const s = state();
-  update({ ...s, endsAt: Date.now() + remainingMs(), pausedRemaining: null });
+/** Finish the current session — logs it (focus sessions surface in records). */
+export function finishSession(): void {
+  const s = focusState().session;
+  if (!s) return;
+  const rec = makeRecord(s, Date.now());
+  mutate((st) => ({
+    ...st,
+    session: null,
+    lastTag: s.tag || st.lastTag,
+    records: [rec, ...st.records].slice(0, MAX_RECORDS),
+  }));
 }
 
-export function pausePomodoro(): void {
-  const s = state();
-  if (s.endsAt === null) return;
-  update({ ...s, pausedRemaining: Math.max(0, s.endsAt - Date.now()), endsAt: null });
+/** Abandon the current session without logging it. */
+export function discardSession(): void {
+  mutate((s) => ({ ...s, session: null }));
 }
 
-export function stopPomodoro(): void {
-  update(IDLE);
+export function setSessionTag(tag: string): void {
+  mutate((s) => (s.session ? { ...s, session: { ...s.session, tag } } : s));
 }
 
-/** Advance to the next phase (manually via Skip, or on natural completion). */
-export function skipPhase(autostart = false, completed = false): void {
-  const s = state();
-  if (completed && s.phase === 'work') {
-    void recordDone();
-  }
-  const nxt = nextPhase(s.phase, s.round, config());
-  update({
-    phase: nxt.phase,
-    round: nxt.round,
-    endsAt: autostart ? Date.now() + phaseDurationMs(nxt.phase, config()) : null,
-    pausedRemaining: null,
+// -------------------------------------------------------------- settings ---
+
+export function setTheme(theme: FocusTheme): void {
+  mutate((s) => ({ ...s, theme }));
+}
+
+export function toggleTheme(): void {
+  mutate((s) => ({ ...s, theme: s.theme === 'black' ? 'white' : 'black' }));
+}
+
+export function setPreset(i: number, value: number): void {
+  mutate((s) => {
+    const presets = [...s.presets] as Presets;
+    presets[i] = clampMinutes(value);
+    return { ...s, presets };
   });
 }
 
-async function recordDone(): Promise<void> {
-  const today = todayStr();
-  const log = await getSetting<{ date: string; count: number }>('pomodoroLog', { date: today, count: 0 });
-  const count = (log.date === today ? log.count : 0) + 1;
-  await setSetting('pomodoroLog', { date: today, count });
-  setDoneToday(count);
+export function setBreakMin(value: number): void {
+  mutate((s) => ({ ...s, breakMin: clampMinutes(value) }));
 }
 
-export async function updatePomodoroConfig(patch: Partial<PomodoroConfig>): Promise<void> {
-  const cfg = { ...config(), ...patch };
-  setConfig(cfg);
-  await setSetting('pomodoro', cfg);
+export function setLongMin(value: number): void {
+  mutate((s) => ({ ...s, longMin: clampMinutes(value) }));
 }
 
-export async function setPomodoroSound(on: boolean): Promise<void> {
-  setSoundOn(on);
-  await setSetting('pomodoroSound', on);
+export function addTag(raw: string): void {
+  const tag = raw.trim().toUpperCase();
+  if (!tag) return;
+  mutate((s) => (s.tags.includes(tag) ? s : { ...s, tags: [...s.tags, tag] }));
 }
 
-function beep(): void {
-  if (!soundOn()) return;
+export function removeTag(tag: string): void {
+  mutate((s) => ({ ...s, tags: s.tags.filter((t) => t !== tag) }));
+}
+
+export function deleteRecord(id: string): void {
+  mutate((s) => ({ ...s, records: s.records.filter((r) => r.id !== id) }));
+}
+
+// ----------------------------------------------------- notifications/clock ---
+
+export function requestNotifyPermission(): void {
   try {
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.9);
-    osc.onended = () => void ctx.close();
-  } catch {
-    /* no audio available */
-  }
-}
-
-export function startPomodoroClock(): void {
-  // Restore persisted state and settings
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) setState({ ...IDLE, ...(JSON.parse(raw) as TimerState) });
-  } catch {
-    /* corrupt/unavailable */
-  }
-  void getSetting<PomodoroConfig>('pomodoro', POMODORO_DEFAULTS).then((cfg) =>
-    setConfig({ ...POMODORO_DEFAULTS, ...cfg }),
-  );
-  void getSetting<boolean>('pomodoroSound', true).then(setSoundOn);
-  void getSetting<{ date: string; count: number }>('pomodoroLog', { date: '', count: 0 }).then((log) =>
-    setDoneToday(log.date === todayStr() ? log.count : 0),
-  );
-
-  setInterval(() => {
-    setNow(Date.now());
-    const s = state();
-    if (s.endsAt !== null && Date.now() >= s.endsAt) {
-      beep();
-      skipPhase(true, true); // natural completion: log + auto-start next phase
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      void Notification.requestPermission();
     }
-  }, 1000);
+  } catch {
+    /* unsupported */
+  }
+}
+
+function buzz(pattern: number | number[]): void {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* unsupported */
+  }
+}
+
+function notify(title: string, body: string): void {
+  try {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (navigator.serviceWorker?.ready) {
+      void navigator.serviceWorker.ready
+        .then((reg) => reg.showNotification(title, {
+          body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'focus-timer',
+        }))
+        .catch(() => {
+          try { new Notification(title, { body }); } catch { /* ignore */ }
+        });
+    } else {
+      new Notification(title, { body });
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Session id we've already announced "time's up" for, so it fires once. */
+let notifiedFor: string | null = null;
+
+export function startFocusClock(): void {
+  void getSetting<FocusState | null>(KEY, null).then((saved) => {
+    if (saved) setFocusStateSignal({ ...FOCUS_DEFAULTS, ...saved });
+    const s = focusState().session;
+    // A session finished-by-clock while we were away shouldn't re-announce.
+    if (s && elapsedSec(s, Date.now()) >= s.plannedMin * 60) notifiedFor = s.id;
+  });
+
+  const tick = (): void => {
+    setNow(Date.now());
+    const s = focusState().session;
+    if (!s || notifiedFor === s.id) return;
+    if (elapsedSec(s, Date.now()) >= s.plannedMin * 60) {
+      notifiedFor = s.id;
+      buzz([130, 90, 130]);
+      notify(
+        s.mode === 'focus' ? 'Focus time is up' : 'Break is over',
+        s.mode === 'focus'
+          ? `${s.plannedMin} minutes done — the clock keeps going until you tap Done.`
+          : 'Time to get back to it.',
+      );
+    }
+  };
+
+  setInterval(tick, 500);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tick();
+  });
 }
