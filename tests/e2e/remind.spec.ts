@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, currentScreen } from './helpers';
 
 test('Remind downloads an .ics calendar alert for the task', async ({ page }) => {
   await loadSeeded(page);
   await page.getByTestId('home-today').click();
 
   // Expand a seeded task and open the Remind picker
-  await page.getByText('Buy groceries').click();
+  await currentScreen(page).getByText('Buy groceries').click();
   await page.getByRole('button', { name: 'Remind' }).click();
   await expect(page.getByTestId('remind-picker')).toBeVisible();
 
@@ -33,7 +33,7 @@ test('Remind via Google Calendar opens a pre-filled template', async ({ page, co
   );
   await loadSeeded(page);
   await page.getByTestId('home-today').click();
-  await page.getByText('Buy groceries').click();
+  await currentScreen(page).getByText('Buy groceries').click();
   await page.getByRole('button', { name: 'Remind' }).click();
   await page.getByTestId('remind-time').fill('18:30');
   const popupPromise = context.waitForEvent('page');

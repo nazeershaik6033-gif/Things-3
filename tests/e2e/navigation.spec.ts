@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, currentScreen } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -30,22 +30,24 @@ test('navigate into every built-in list and back', async ({ page }) => {
 
 test('today shows seeded tasks in day and evening sections', async ({ page }) => {
   await page.getByTestId('home-today').click();
-  await expect(page.getByText('Buy groceries')).toBeVisible();
-  await expect(page.getByText('Book flights')).toBeVisible();
-  await expect(page.getByText('Tonight')).toBeVisible();
-  await expect(page.getByText('Water the plants')).toBeVisible();
+  const screen = currentScreen(page);
+  await expect(screen.getByText('Buy groceries')).toBeVisible();
+  await expect(screen.getByText('Book flights')).toBeVisible();
+  await expect(screen.getByText('Tonight')).toBeVisible();
+  await expect(screen.getByText('Water the plants')).toBeVisible();
   // Overdue deadline appears in Today with a red flag
-  await expect(page.getByText('Call the dentist')).toBeVisible();
-  await expect(page.getByText('yesterday')).toBeVisible();
+  await expect(screen.getByText('Call the dentist')).toBeVisible();
+  await expect(screen.getByText('yesterday')).toBeVisible();
 });
 
 test('project screen shows headings, progress and logged toggle', async ({ page }) => {
   await page.getByText('Vacation in Rome').click();
   await expect(page.getByTestId('project-title')).toHaveValue('Vacation in Rome');
   await expect(page.getByPlaceholder('Heading')).toHaveValue('Before we go');
-  await expect(page.getByText('Book flights')).toBeVisible();
+  const screen = currentScreen(page);
+  await expect(screen.getByText('Book flights')).toBeVisible();
   // Completed-today task stays visible inline (struck through)
-  await expect(page.getByText('Make packing list')).toBeVisible();
+  await expect(screen.getByText('Make packing list')).toBeVisible();
 });
 
 test('upcoming groups by day and month', async ({ page }) => {
@@ -58,7 +60,7 @@ test('upcoming groups by day and month', async ({ page }) => {
 test('deep link to a list works after reload', async ({ page }) => {
   await page.getByTestId('home-today').click();
   await page.reload();
-  await expect(page.getByText('Buy groceries')).toBeVisible();
+  await expect(currentScreen(page).getByText('Buy groceries')).toBeVisible();
   // back still goes home
   await page.getByTestId('back-button').last().click();
   await expect(page.getByTestId('home-inbox')).toBeVisible();
