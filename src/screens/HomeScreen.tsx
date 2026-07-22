@@ -7,7 +7,7 @@ import { Icon, ListIcon } from '../ui/Icon';
 import { ProgressPie } from '../ui/ProgressPie';
 import { Sheet, SheetTitle } from '../ui/Sheet';
 import { setSearchOpen, setQuickEntry } from '../app/uiState';
-import { sidebarCounts, isLive, isOpen, projectProgress } from '../domain/smartLists';
+import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
 import { MagicPlus } from '../components/MagicPlus';
@@ -51,6 +51,42 @@ function HomeRow(props: {
   );
 }
 
+/** Subtle strip above Quick Find: today's count plus what's up next, so you
+ *  get the gist without opening the Today list. Hidden when Today is empty. */
+function TodayBanner(props: { count: number; next: string | null }): JSX.Element {
+  return (
+    <Show when={props.count > 0}>
+      <button
+        data-testid="today-banner"
+        onClick={() => push({ name: 'list', list: 'today' })}
+        class="no-select"
+        style={{
+          display: 'flex',
+          'align-items': 'center',
+          gap: '7px',
+          width: 'calc(100% - 32px)',
+          margin: '0 16px 8px',
+          padding: '8px 12px',
+          'border-radius': '11px',
+          background: 'var(--bg-inset)',
+          'text-align': 'left',
+        }}
+      >
+        <Icon name="star" size={14} color="var(--yellow)" />
+        <span style={{
+          flex: '1', 'font-size': '13px', color: 'var(--text-secondary)',
+          overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
+        }}>
+          <span style={{ color: 'var(--text)', 'font-weight': '600' }}>
+            {props.count} {props.count === 1 ? 'thing' : 'things'} today
+          </span>
+          <Show when={props.next}> · Next: {props.next}</Show>
+        </span>
+      </button>
+    </Show>
+  );
+}
+
 export function HomeScreen(): JSX.Element {
   const tasks = createLiveQuery(() => db.tasks.toArray(), []);
   const projects = createLiveQuery(() => db.projects.toArray(), []);
@@ -58,6 +94,12 @@ export function HomeScreen(): JSX.Element {
   const [newListOpen, setNewListOpen] = createSignal(false);
 
   const counts = createMemo(() => sidebarCounts(tasks(), currentDate()));
+  const todaySections = createMemo(() => todayTasks(tasks(), currentDate()));
+  const nextTodayTitle = createMemo(() => {
+    const s = todaySections();
+    const t = s.morning[0] ?? s.ungrouped[0] ?? s.afternoon[0] ?? s.tonight[0];
+    return t ? t.title || 'Untitled' : null;
+  });
   const liveProjects = createMemo(() => sortByOrderKey(projects().filter((p) => isLive(p) && isOpen(p))));
   const standaloneProjects = createMemo(() => liveProjects().filter((p) => !p.areaId));
   const sortedAreas = createMemo(() => sortByOrderKey(areas()));
@@ -76,6 +118,8 @@ export function HomeScreen(): JSX.Element {
     <>
       <div class="screen-scroll" style={{ background: 'var(--bg)' }}>
         <div style={{ padding: `calc(var(--safe-top) + 10px) 0 0` }}>
+          <TodayBanner count={counts().today} next={nextTodayTitle()} />
+
           <button
             onClick={() => setSearchOpen(true)}
             data-testid="search-bar"
