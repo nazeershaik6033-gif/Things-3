@@ -50,6 +50,7 @@ export function startSession(mode: Mode, plannedMin: number, tag: string): void 
     session: { id: nanoid(), mode, plannedMin: clampMinutes(plannedMin), startedAt: Date.now(), tag },
   }));
   notifiedFor = null;
+  if (mode === 'focus') void acquireWakeLock();
 }
 
 /** Finish the current session — logs it (focus sessions surface in records). */
@@ -63,11 +64,13 @@ export function finishSession(): void {
     lastTag: s.tag || st.lastTag,
     records: [rec, ...st.records].slice(0, MAX_RECORDS),
   }));
+  releaseWakeLock();
 }
 
 /** Abandon the current session without logging it. */
 export function discardSession(): void {
   mutate((s) => ({ ...s, session: null }));
+  releaseWakeLock();
 }
 
 export function setSessionTag(tag: string): void {
@@ -112,6 +115,37 @@ export function removeTag(tag: string): void {
 
 export function deleteRecord(id: string): void {
   mutate((s) => ({ ...s, records: s.records.filter((r) => r.id !== id) }));
+}
+
+// -------------------------------------------------------------- wake lock ---
+
+/** iOS suspends all page JS (including our countdown/notification timer) the
+ *  moment the screen locks, even with the PWA "open" in the background — this
+ *  is OS-level power management, not something a web page can override. The
+ *  Screen Wake Lock API is the only fully-local way around it: hold the
+ *  screen on for the duration of a running focus session so the timer can
+ *  actually reach zero and fire its notification on time. Released the
+ *  moment the session ends, is discarded, or the tab is hidden. */
+let wakeLock: WakeLockSentinel | null = null;
+
+async function acquireWakeLock(): Promise<void> {
+  try {
+    if (!('wakeLock' in navigator) || wakeLock) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch {
+    /* unsupported, denied, or blocked (e.g. low battery mode) — silently skip */
+  }
+}
+
+function releaseWakeLock(): void {
+  const lock = wakeLock;
+  wakeLock = null;
+  try {
+    void lock?.release();
+  } catch {
+    /* ignore */
+  }
 }
 
 // ----------------------------------------------------- notifications/clock ---
@@ -182,6 +216,11 @@ export function startFocusClock(): void {
 
   setInterval(tick, 500);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') tick();
+    if (document.visibilityState !== 'visible') return;
+    tick();
+    // The wake lock auto-releases on hide; reacquire it if a focus session
+    // is still running so the screen stays on until it's actually done.
+    const s = focusState().session;
+    if (s && s.mode === 'focus') void acquireWakeLock();
   });
 }

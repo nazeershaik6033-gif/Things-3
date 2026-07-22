@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, swipe, longPressDrag } from './helpers';
+import { loadSeeded, swipe, longPressDrag, currentScreen } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -58,7 +58,7 @@ test('drag between Today and Tonight moves the task', async ({ page }) => {
   await page.waitForTimeout(600);
   // The Tonight section is now empty → heading hidden, task in day section
   await expect(page.getByText('Tonight')).toBeHidden();
-  await expect(page.getByText('Water the plants')).toBeVisible();
+  await expect(currentScreen(page).getByText('Water the plants')).toBeVisible();
 });
 
 test('magic plus drag-to-position inserts at that spot', async ({ page }) => {

@@ -6,6 +6,13 @@ export async function loadSeeded(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="home-inbox"]');
 }
 
+/** The topmost screen in the navigation stack. Prior screens stay mounted
+ *  underneath (for the back-swipe animation), so scope text/role lookups here
+ *  to avoid matching stale content on a screen further down the stack. */
+export function currentScreen(page: Page) {
+  return page.locator('.screen').last();
+}
+
 /** Load the app fresh and empty. */
 export async function loadEmpty(page: Page): Promise<void> {
   await page.goto('.');
