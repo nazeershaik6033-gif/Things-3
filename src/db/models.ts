@@ -91,3 +91,59 @@ export interface CalendarEvent {
   allDay: boolean;
   calendarUrl: string; // source subscription (or 'file' for imports)
 }
+
+// ---- Boards (Trello-style Kanban) ------------------------------------------
+// A self-contained section separate from tasks/projects: boards hold lists
+// (columns), lists hold cards. Ordering uses the same fractional orderKey
+// scheme as tasks; each list is its own orderKey scope for its cards.
+
+export interface Board {
+  id: string;
+  title: string;
+  color: string; // accent color token (e.g. 'var(--blue)')
+  orderKey: string;
+  archived: boolean;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+export interface BoardList {
+  id: string;
+  boardId: string;
+  title: string;
+  orderKey: string; // within the board
+  archived: boolean;
+}
+
+export interface BoardLabel {
+  id: string;
+  boardId: string; // board-scoped
+  title: string;
+  color: string; // color token
+}
+
+export interface CardComment {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
+export interface Card {
+  id: string;
+  boardId: string;
+  listId: string;
+  title: string;
+  description: string; // markdown source
+  checklist: ChecklistItem[]; // order = array order
+  labelIds: string[]; // -> BoardLabel.id
+  cover: string | null; // color token for the cover strip, or null
+  due: DateStr | null;
+  dueTime: string | null; // "HH:mm" local, optional; drives reminders
+  reminded: boolean; // set once a due reminder has fired
+  completed: boolean;
+  comments: CardComment[]; // newest appended last
+  orderKey: string; // fractional index within its list
+  archived: boolean;
+  createdAt: number;
+  modifiedAt: number;
+}

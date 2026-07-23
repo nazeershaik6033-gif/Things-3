@@ -7,7 +7,9 @@ import { todayStr } from '../domain/dates';
 /** Every write flows through this module. Ops carry before/after images so an
  *  undo ring buffer can be layered on later (iteration 2) without rewrites. */
 
-type TableName = 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents';
+type TableName =
+  | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
+  | 'boards' | 'boardLists' | 'boardLabels' | 'cards';
 
 export interface Op {
   table: TableName;

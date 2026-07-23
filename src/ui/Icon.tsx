@@ -8,7 +8,8 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil';
+  | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil'
+  | 'board' | 'clock' | 'comment';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -163,6 +164,22 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   ),
   pencil: () => (
     <path d="M14.5 4 20 9.5 8 21.5l-5.5.5.5-5.5L14.5 4ZM17.5 6.5l-12 12" stroke-linecap="round" stroke-linejoin="round" />
+  ),
+  board: () => (
+    <>
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" fill="currentColor" opacity="0.18" stroke="none" />
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <path d="M8.5 8v8M15.5 8v5" stroke-linecap="round" />
+    </>
+  ),
+  clock: () => (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" stroke-linecap="round" stroke-linejoin="round" />
+    </>
+  ),
+  comment: () => (
+    <path d="M4 5.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V16.5H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
   ),
 };
 

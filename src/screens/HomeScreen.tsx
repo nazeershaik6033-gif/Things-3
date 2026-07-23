@@ -10,6 +10,7 @@ import { setSearchOpen, setQuickEntry } from '../app/uiState';
 import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
+import { createBoard } from '../db/boardMutations';
 import { MagicPlus } from '../components/MagicPlus';
 import { MenuRow } from './common';
 
@@ -159,6 +160,15 @@ export function HomeScreen(): JSX.Element {
               label="Calendar"
               onClick={() => push({ name: 'calendar' })}
             />
+            <HomeRow
+              testid="home-boards"
+              icon={<Icon name="board" size={23} color="var(--blue)" />}
+              label="Boards"
+              onClick={() => push({ name: 'boards' })}
+            />
+          </div>
+
+          <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px', padding: '2px 0' }}>
             {listRow('logbook', 'Logbook')}
             {listRow('trash', 'Trash')}
           </div>
@@ -241,6 +251,14 @@ export function HomeScreen(): JSX.Element {
             onClick={() => {
               setNewListOpen(false);
               void createArea('').then((id) => push({ name: 'area', id }));
+            }}
+          />
+          <MenuRow
+            icon={<Icon name="board" size={20} color="var(--blue)" />}
+            label="New Board"
+            onClick={() => {
+              setNewListOpen(false);
+              void createBoard({ title: '' }).then((id) => push({ name: 'board', id }));
             }}
           />
           <div style={{ height: '10px' }} />

@@ -16,7 +16,11 @@ export type Route =
   | { name: 'area'; id: string }
   | { name: 'tag'; id: string }
   | { name: 'calendar' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'boards' }
+  | { name: 'board'; id: string }
+  | { name: 'boardCalendar'; id: string }
+  | { name: 'card'; id: string };
 
 export interface StackEntry {
   route: Route;
@@ -34,6 +38,10 @@ export function hashFor(route: Route): string {
     case 'tag': return `#/tag/${route.id}`;
     case 'calendar': return '#/calendar';
     case 'settings': return '#/settings';
+    case 'boards': return '#/boards';
+    case 'board': return `#/board/${route.id}`;
+    case 'boardCalendar': return `#/board/${route.id}/calendar`;
+    case 'card': return `#/card/${route.id}`;
   }
 }
 
@@ -47,6 +55,13 @@ export function parseHash(hash: string): Route {
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };
   if (head === 'tag' && parts[1]) return { name: 'tag', id: parts[1] };
+  if (head === 'boards') return { name: 'boards' };
+  if (head === 'board' && parts[1]) {
+    return parts[2] === 'calendar'
+      ? { name: 'boardCalendar', id: parts[1] }
+      : { name: 'board', id: parts[1] };
+  }
+  if (head === 'card' && parts[1]) return { name: 'card', id: parts[1] };
   return { name: 'home' };
 }
 
