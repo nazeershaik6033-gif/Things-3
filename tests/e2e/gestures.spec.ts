@@ -25,11 +25,13 @@ test('swipe left opens the schedule picker', async ({ page }) => {
   await swipe(page, '.task-row:has-text("New idea: balcony garden")', -160);
   await expect(page.getByText('When', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
-  await expect(page.getByText('New idea: balcony garden')).toBeHidden();
+  // Scoped to the top screen: scheduling this task for today can make it the
+  // Home banner's "Next: …" pick, and Home stays mounted underneath Inbox.
+  await expect(currentScreen(page).getByText('New idea: balcony garden')).toBeHidden();
   // Now in Today
   await page.getByTestId('back-button').last().click();
   await page.getByTestId('home-today').click();
-  await expect(page.getByText('New idea: balcony garden')).toBeVisible();
+  await expect(currentScreen(page).getByText('New idea: balcony garden')).toBeVisible();
 });
 
 test('long-press drag reorders within the inbox and persists', async ({ page }) => {

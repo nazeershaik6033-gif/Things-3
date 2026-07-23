@@ -69,6 +69,52 @@ test('create a board, add a list and a card; it persists across reload', async (
   await expect(page.getByText('Passport')).toBeVisible();
 });
 
+test('typing keystroke-by-keystroke into a list title keeps focus', async ({ page }) => {
+  // Regression test: an unkeyed <For> over the lists array remounted the
+  // column (and its focused title input) on every keystroke, since each
+  // write round-trips through the live query and re-fetches a brand-new
+  // array of objects — only the first character ever landed.
+  await loadEmpty(page);
+  await page.getByTestId('new-list').click();
+  await page.getByRole('button', { name: 'New Board' }).click();
+  await page.getByTestId('add-list').click();
+
+  const listTitle = page.getByTestId('list-title').first();
+  await listTitle.pressSequentially('Backlog', { delay: 20 });
+  await expect(listTitle).toHaveValue('Backlog');
+  await expect(listTitle).toBeFocused();
+});
+
+test('typing keystroke-by-keystroke into a label name keeps focus', async ({ page }) => {
+  // A fresh board has no seeded labels, so exactly one row exists here —
+  // Dexie's row order isn't creation order, so this sidesteps needing to
+  // pick "the new one" out of several.
+  await loadEmpty(page);
+  await page.getByTestId('new-list').click();
+  await page.getByRole('button', { name: 'New Board' }).click();
+  await page.getByTestId('board-menu').click();
+  await page.getByRole('button', { name: 'Manage Labels' }).click();
+
+  await page.getByPlaceholder('New label…').fill('Urgent');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+
+  const labelInput = page.getByPlaceholder('Label name');
+  await expect(labelInput).toHaveValue('Urgent');
+  await labelInput.click(); // focus; a fresh click's cursor position isn't guaranteed
+  await labelInput.press('End');
+  await labelInput.pressSequentially(' now', { delay: 20 });
+  await expect(labelInput).toHaveValue('Urgent now');
+  await expect(labelInput).toBeFocused();
+});
+
+test('Settings has a Boards guide and its Open Boards button navigates there', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await expect(currentScreen(page).getByText(/Trello-style board/)).toBeVisible();
+  await page.getByTestId('open-boards').click();
+  await expect(currentScreen(page).getByText('Product Roadmap')).toBeVisible();
+});
+
 test('card checklist and labels update the card badges', async ({ page }) => {
   await loadSeeded(page);
   await page.getByTestId('home-boards').click();
