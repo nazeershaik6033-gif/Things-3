@@ -1,4 +1,5 @@
 import { createMemo, createSignal, For, Show, onCleanup, type JSX } from 'solid-js';
+import { Key } from '@solid-primitives/keyed';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { back, push } from '../app/navigation';
@@ -140,11 +141,14 @@ export function BoardScreen(props: { id: string }): JSX.Element {
           background: 'var(--bg)',
         }}
       >
-        <For each={sortedLists()}>
+        {/* Keyed by id: a plain <For> would remount this column (and its
+            focused title input) on every keystroke, since each write round-
+            trips through the live query and re-fetches a brand-new object. */}
+        <Key each={sortedLists()} by={(l) => l.id}>
           {(list) => (
             <div
               data-board-list
-              data-list-id={list.id}
+              data-list-id={list().id}
               style={{
                 width: `${COLUMN_WIDTH}px`,
                 'flex': 'none',
@@ -158,38 +162,38 @@ export function BoardScreen(props: { id: string }): JSX.Element {
             >
               <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '10px 8px 6px 12px' }}>
                 <input
-                  value={list.title}
+                  value={list().title}
                   placeholder="List name"
                   data-testid="list-title"
-                  onInput={(e) => void updateList(list.id, { title: e.currentTarget.value })}
+                  onInput={(e) => void updateList(list().id, { title: e.currentTarget.value })}
                   style={{ flex: '1', 'font-weight': '600', 'font-size': '15px', 'min-width': '0' }}
                 />
                 <span style={{ color: 'var(--text-tertiary)', 'font-size': '13px', 'font-variant-numeric': 'tabular-nums' }}>
-                  {cardsByList().get(list.id)?.length ?? 0}
+                  {cardsByList().get(list().id)?.length ?? 0}
                 </span>
-                <button aria-label="List menu" onClick={() => setListMenu(list.id)} style={{ color: 'var(--text-tertiary)', padding: '4px', display: 'flex' }}>
+                <button aria-label="List menu" onClick={() => setListMenu(list().id)} style={{ color: 'var(--text-tertiary)', padding: '4px', display: 'flex' }}>
                   <Icon name="ellipsis" size={16} />
                 </button>
               </div>
 
               <div data-list-cards style={{ 'overflow-y': 'auto', padding: '2px 8px 0', 'flex': '1' }}>
-                <For each={cardsByList().get(list.id) ?? []}>
+                <Key each={cardsByList().get(list().id) ?? []} by={(c) => c.id}>
                   {(card) => (
                     <BoardCard
-                      card={card}
+                      card={card()}
                       labels={labels()}
-                      onOpen={() => push({ name: 'card', id: card.id })}
+                      onOpen={() => push({ name: 'card', id: card().id })}
                     />
                   )}
-                </For>
+                </Key>
               </div>
 
               <Show
-                when={composerFor() === list.id}
+                when={composerFor() === list().id}
                 fallback={
                   <button
                     data-testid="add-card"
-                    onClick={() => { setComposerFor(list.id); setDraft(''); }}
+                    onClick={() => { setComposerFor(list().id); setDraft(''); }}
                     style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-secondary)', 'font-size': '14px', padding: '10px 12px' }}
                   >
                     <Icon name="plus" size={15} /> Add a card
@@ -208,10 +212,10 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                       e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') { e.preventDefault(); addCard(list.id); }
+                      if (e.key === 'Enter') { e.preventDefault(); addCard(list().id); }
                       else if (e.key === 'Escape') setComposerFor(null);
                     }}
-                    onBlur={() => addCard(list.id)}
+                    onBlur={() => addCard(list().id)}
                     style={{
                       width: '100%',
                       background: 'var(--bg-card)',
@@ -223,7 +227,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                     }}
                   />
                   <div style={{ display: 'flex', gap: '10px', 'margin-top': '6px', 'align-items': 'center' }}>
-                    <button onClick={() => addCard(list.id)} style={{ color: '#fff', background: 'var(--blue)', padding: '6px 14px', 'border-radius': '8px', 'font-weight': '600', 'font-size': '14px' }}>
+                    <button onClick={() => addCard(list().id)} style={{ color: '#fff', background: 'var(--blue)', padding: '6px 14px', 'border-radius': '8px', 'font-weight': '600', 'font-size': '14px' }}>
                       Add
                     </button>
                     <button onClick={() => setComposerFor(null)} style={{ color: 'var(--text-secondary)', padding: '6px', display: 'flex' }}>
@@ -234,7 +238,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
               </Show>
             </div>
           )}
-        </For>
+        </Key>
 
         {/* Add-list column */}
         <button
@@ -319,22 +323,23 @@ function LabelManager(props: { boardId: string; labels: BoardLabel[]; onClose: (
     <Sheet onClose={props.onClose}>
       <SheetTitle>Labels</SheetTitle>
       <div style={{ 'max-height': '50dvh', 'overflow-y': 'auto', padding: '0 16px' }}>
-        <For each={props.labels}>
+        {/* Keyed by id — see the lists loop above for why. */}
+        <Key each={props.labels} by={(l) => l.id}>
           {(label) => (
             <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '6px 0' }}>
-              <span style={{ width: '22px', height: '22px', 'border-radius': '6px', background: label.color, flex: 'none' }} />
+              <span style={{ width: '22px', height: '22px', 'border-radius': '6px', background: label().color, flex: 'none' }} />
               <input
-                value={label.title}
+                value={label().title}
                 placeholder="Label name"
-                onInput={(e) => void updateLabel(label.id, { title: e.currentTarget.value })}
+                onInput={(e) => void updateLabel(label().id, { title: e.currentTarget.value })}
                 style={{ flex: '1', 'font-size': '15px' }}
               />
-              <button aria-label="Delete label" onClick={() => void deleteLabel(label.id)} style={{ color: 'var(--red)', padding: '4px', display: 'flex' }}>
+              <button aria-label="Delete label" onClick={() => void deleteLabel(label().id)} style={{ color: 'var(--red)', padding: '4px', display: 'flex' }}>
                 <Icon name="trash" size={17} />
               </button>
             </div>
           )}
-        </For>
+        </Key>
       </div>
       <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap', padding: '10px 16px 4px' }}>
         <For each={LABEL_COLORS}>

@@ -6,6 +6,7 @@ import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
+import { push } from '../app/navigation';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
 
@@ -174,6 +175,40 @@ export function SettingsScreen(): JSX.Element {
             running into overtime, so you're never cut off mid-thought. Finished focus sessions
             are logged automatically. Presets, tags and theme all live inside the timer (open it
             with the 🎯 button in Today). Focused today: {formatHrMin(doneTodaySec())}.
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Boards">
+        <div style={{ padding: '10px 0' }}>
+          <button
+            data-testid="open-boards"
+            onClick={() => push({ name: 'boards' })}
+            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}
+          >
+            Open Boards
+          </button>
+          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': '1.6' }}>
+            A Trello-style board for projects that work better as columns than a checklist —
+            each <b>board</b> holds <b>lists</b> (its columns, like To Do / Doing / Done), and
+            each list holds <b>cards</b>.
+            <br /><br />
+            <b>Get started:</b> from Home, tap <b>Boards</b> → <b>New Board</b>, then <b>Add
+            list</b> to create a column and <b>+ Add a card</b> inside it.
+            <br /><br />
+            <b>Organize:</b> long-press a card to drag it up/down within a list or across to
+            another list — it drops where you release. To reorder a whole list instead, use its
+            <b>⋯</b> menu → Move Left/Right.
+            <br /><br />
+            <b>Card details:</b> tap a card to open it full-screen — add a description,
+            checklist, colored labels, a cover color, a due date (with an optional time), and
+            comments. The board's <b>⋯</b> menu manages labels for the whole board.
+            <br /><br />
+            <b>Calendar view:</b> the calendar icon in a board's header shows every card with a
+            due date as an agenda, grouped by day.
+            <br /><br />
+            Due-date reminders are local notifications shown while the app is open — there's no
+            push server, so they won't arrive if the app or tab is fully closed.
           </div>
         </div>
       </Section>
