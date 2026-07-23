@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
+  Board, BoardList, BoardLabel, Card,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -11,6 +12,10 @@ export class ClarityDB extends Dexie {
   tags!: EntityTable<Tag, 'id'>;
   settings!: EntityTable<Setting, 'key'>;
   calendarEvents!: EntityTable<CalendarEvent, 'id'>;
+  boards!: EntityTable<Board, 'id'>;
+  boardLists!: EntityTable<BoardList, 'id'>;
+  boardLabels!: EntityTable<BoardLabel, 'id'>;
+  cards!: EntityTable<Card, 'id'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -24,6 +29,14 @@ export class ClarityDB extends Dexie {
       tags: 'id',
       settings: 'key',
       calendarEvents: 'id, date, calendarUrl',
+    });
+    // v2: Trello-style boards. Purely additive — new tables only, so no
+    // .upgrade() is needed; existing rows are untouched.
+    this.version(2).stores({
+      boards: 'id, orderKey, archived',
+      boardLists: 'id, boardId, archived',
+      boardLabels: 'id, boardId',
+      cards: 'id, boardId, listId, due, archived',
     });
   }
 }

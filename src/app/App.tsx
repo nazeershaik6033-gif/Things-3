@@ -8,6 +8,7 @@ import { startTheme } from './theme';
 import { startCalendarSync } from './calendar';
 import { startFocusClock } from './pomodoro';
 import { FocusTimerMiniBar, FocusTimerOverlay } from '../components/PomodoroTimer';
+import { startReminders } from './reminders';
 import { createPan } from '../gestures/createPan';
 import { closeOpenRow } from '../gestures/arbiter';
 import { setExpandedTaskId, expandedTaskId } from './uiState';
@@ -20,6 +21,10 @@ import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
+import { BoardsScreen } from '../screens/BoardsScreen';
+import { BoardScreen } from '../screens/BoardScreen';
+import { BoardCalendarScreen } from '../screens/BoardCalendarScreen';
+import { CardScreen } from '../screens/CardScreen';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -38,6 +43,10 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'tag': return <TagScreen id={r.id} />;
     case 'calendar': return <CalendarScreen />;
     case 'settings': return <SettingsScreen />;
+    case 'boards': return <BoardsScreen />;
+    case 'board': return <BoardScreen id={r.id} />;
+    case 'boardCalendar': return <BoardCalendarScreen id={r.id} />;
+    case 'card': return <CardScreen id={r.id} />;
   }
 }
 
@@ -63,6 +72,7 @@ export function App(): JSX.Element {
     startNavigation();
     startCalendarSync();
     startFocusClock();
+    startReminders();
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses
