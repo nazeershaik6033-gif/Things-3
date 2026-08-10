@@ -34,9 +34,11 @@ test('today shows seeded tasks in day and evening sections', async ({ page }) =>
   await expect(page.getByText('Book flights')).toBeVisible();
   await expect(page.getByText('This Evening')).toBeVisible();
   await expect(page.getByText('Water the plants')).toBeVisible();
-  // Overdue deadline appears in Today with a red flag
-  await expect(page.getByText('Call the dentist')).toBeVisible();
-  await expect(page.getByText('yesterday')).toBeVisible();
+  // Overdue deadline appears in Today with a red flag. Scope to the top screen:
+  // Home's overdue widget names the same to-do underneath.
+  const today = page.locator('.screen').last();
+  await expect(today.getByText('Call the dentist')).toBeVisible();
+  await expect(today.getByText('yesterday')).toBeVisible();
 });
 
 test('project screen shows headings, progress and logged toggle', async ({ page }) => {

@@ -117,8 +117,13 @@ export function createSpring(
 
 /** Presets tuned for iOS feel. */
 export const SPRING = {
-  /** Screens, sheets: brisk but soft landing */
-  nav: { stiffness: 320, damping: 34 },
+  /** Screens, sheets: brisk but soft landing.
+   *  The rest thresholds matter as much as the stiffness here. These springs
+   *  travel a whole viewport, and the default sub-pixel thresholds keep them
+   *  "animating" for ~350ms after the motion is visually over — during which
+   *  navigation refuses the next tap. Resting at half a pixel is invisible and
+   *  hands control back roughly twice as fast. */
+  nav: { stiffness: 320, damping: 34, restDelta: 0.5, restSpeed: 8 },
   /** Row snap-back after swipe */
   snappy: { stiffness: 480, damping: 38 },
   /** Drag clone following / FLIP moves */

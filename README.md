@@ -12,8 +12,13 @@ A fast, beautiful to-do app for iPhone — a love letter to [Things 3](https://c
 - To-dos with **markdown notes**, **checklists**, **tags**, start dates ("When") and **deadlines** with red overdue flags
 - **Signature interactions**: tap a row to expand it into an editing card in place; swipe right to complete; swipe left to schedule; long-press to drag-reorder (across sections); the draggable **Magic Plus** button — drop it where you want the new to-do
 - **Quick Find** search across everything
+- **Daily Routine**: a separate list of checks that resets every morning, with a completion ring, a streak counter and a 7-day history strip — habits never become overdue to-dos
+- **Calendar screen**: month grid with event dots, the whole month listed as one agenda, and the day you tap pinned to the top; plus a prefilled "Add event in Google Calendar" link
 - **Calendar events** (read-only) in Today and Upcoming via an iCal (.ics) subscription URL or file import
+- **Home widgets**: an Up Next card with a live countdown to your next event, an Overdue card, and a week strip that opens the full calendar
+- **Honest completion dates**: ticking a to-do whose day has passed asks when you actually finished it, and files it under that day in the Logbook
 - **Dark mode** — automatic with the system, or manual
+- **Motion**: spring-driven screen transitions where the covered screen recedes and dims, staggered entrances, and press feedback on every row — all of it respecting `prefers-reduced-motion`
 - **Backup**: one-tap JSON export / import
 - Day rollover at midnight moves scheduled items into Today automatically — even while the app is open
 
@@ -67,13 +72,19 @@ Architecture notes:
 
 - `src/domain/` — pure logic: smart-list membership predicates, date math (local `YYYY-MM-DD` strings, no timezone bugs), markdown parser (AST, no HTML injection surface), ICS parser
 - `src/db/` — Dexie schema, the single ops-based write path (`mutations.ts`, undo-ready), fractional-index ordering, export/import
-- `src/gestures/` — spring engine (one rAF loop, frame-rate independent), pan/long-press recognizers, gesture arbiter, FLIP helpers
+- `src/gestures/` — spring engine (one rAF loop, frame-rate independent), pan/long-press recognizers, gesture arbiter, FLIP helpers. Nav springs carry deliberately loose rest thresholds: the default sub-pixel ones keep a viewport-sized spring "animating" for ~350ms after the motion is visually over, and navigation refuses taps for that whole time
+- `src/app/motion.ts` — reduce-motion preference, entrance stagger, haptics
 - `src/app/navigation.ts` — custom screen stack with iOS push/pop springs and edge-swipe-back
 - All animations are transform/opacity-only (CI guards this), except the single contained expand-card height animation
 
+Two rules the animation code lives by, both learned the hard way and guarded in CI:
+
+- **Never animate a layout property.** `transform` and `opacity` only.
+- **Never read layout inside an animation frame.** A single `window.innerWidth` in a per-frame callback forces a synchronous layout after the transform you just wrote.
+
 ## Roadmap (iteration 2)
 
-Reminders (web push), repeating to-dos, undo — the schema already reserves fields for all three.
+Reminders (web push), repeating to-dos, undo — the schema already reserves fields for all three. Calendar events are still read-only: writing back to Google Calendar needs OAuth and a server, so the app hands you off to Google's own composer instead.
 
 ## License
 

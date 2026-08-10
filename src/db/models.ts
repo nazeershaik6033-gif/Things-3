@@ -79,6 +79,30 @@ export interface Setting {
   value: unknown;
 }
 
+/** A recurring daily check. Routine items are deliberately NOT tasks: they
+ *  never enter Inbox/Today, never reach the Logbook, and have no due date —
+ *  they are a habit surface with its own history. */
+export interface RoutineItem {
+  id: string;
+  title: string;
+  note: string;
+  orderKey: string;
+  /** Retiring an item keeps its history instead of deleting it. */
+  active: boolean;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+/** One tick of one routine item on one day. The id is `${date}:${itemId}`, so
+ *  ticking is idempotent and "reset at midnight" needs no job — a new day
+ *  simply has no rows yet. */
+export interface RoutineLog {
+  id: string;
+  date: DateStr;
+  itemId: string;
+  completedAt: number;
+}
+
 export interface CalendarEvent {
   id: string;
   date: DateStr; // local date the event occurs on

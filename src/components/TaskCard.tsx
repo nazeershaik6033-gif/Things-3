@@ -4,8 +4,9 @@ import {
 import type { Task } from '../db/models';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
-import { trashTask, updateTask, completeTask, reopenTask } from '../db/mutations';
-import { expandedTaskId, setExpandedTaskId, addGrace, removeGrace } from '../app/uiState';
+import { trashTask, updateTask } from '../db/mutations';
+import { toggleComplete } from '../app/completion';
+import { expandedTaskId, setExpandedTaskId } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative } from '../domain/dates';
 import { Checkbox } from '../ui/Checkbox';
@@ -109,15 +110,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
           <Checkbox
             checked={t().status !== 'open'}
             canceled={t().status === 'canceled'}
-            onToggle={() => {
-              if (t().status === 'open') {
-                void completeTask(t().id);
-                addGrace(t().id);
-              } else {
-                void reopenTask(t().id);
-                removeGrace(t().id);
-              }
-            }}
+            onToggle={() => toggleComplete(t())}
           />
         </div>
         <textarea

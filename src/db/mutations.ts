@@ -1,13 +1,18 @@
 import { nanoid } from 'nanoid';
 import { db } from './db';
-import type { Task, Project, Heading, Area, Tag, Bucket, DateStr } from './models';
+import type {
+  Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
+} from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
-import { todayStr } from '../domain/dates';
+import { fromDateStr, todayStr } from '../domain/dates';
+import { logId } from '../domain/routine';
 
 /** Every write flows through this module. Ops carry before/after images so an
  *  undo ring buffer can be layered on later (iteration 2) without rewrites. */
 
-type TableName = 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents';
+type TableName =
+  | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings'
+  | 'calendarEvents' | 'routineItems' | 'routineLogs';
 
 export interface Op {
   table: TableName;
@@ -127,11 +132,23 @@ export async function setTaskWhen(id: string, when: When): Promise<void> {
   await updateTask(id, patch);
 }
 
-export async function completeTask(id: string, canceled = false): Promise<void> {
+/** `at` backdates the entry — the overdue prompt passes the day the user says
+ *  they actually finished, which is what files it under that day's Logbook. */
+export async function completeTask(id: string, canceled = false, at?: number): Promise<void> {
   await updateTask(id, {
     status: canceled ? 'canceled' : 'completed',
-    completedAt: Date.now(),
+    completedAt: at ?? Date.now(),
   });
+}
+
+/** Epoch ms to stamp for "this was finished on `date`". Today keeps the real
+ *  clock time so ordering within today stays truthful; any other day lands at
+ *  local noon — safely inside that calendar day whatever the timezone. */
+export function completionTimeFor(date: DateStr, today: DateStr = todayStr()): number {
+  if (date === today) return Date.now();
+  const d = fromDateStr(date);
+  d.setHours(12, 0, 0, 0);
+  return d.getTime();
 }
 
 export async function reopenTask(id: string): Promise<void> {
@@ -284,12 +301,15 @@ export async function reopenProject(id: string): Promise<void> {
 export async function trashProject(id: string): Promise<void> {
   const p = await db.projects.get(id);
   if (!p) return;
-  const now = Date.now();
+  const tasks = await db.tasks.where('projectId').equals(id).toArray();
+  // The stamp IS the correlation key for restore, so it must not equal the
+  // stamp of a task trashed on its own — otherwise restoring the project would
+  // drag that task back too. Same-millisecond collisions are rare but real.
+  const now = Math.max(Date.now(), ...tasks.map((t) => (t.trashedAt ?? 0) + 1));
   const ops: Op[] = [{
     table: 'projects', key: id, before: p,
     after: { ...p, trashedAt: now, modifiedAt: now } satisfies Project,
   }];
-  const tasks = await db.tasks.where('projectId').equals(id).toArray();
   for (const t of tasks) {
     if (t.trashedAt === null) {
       ops.push({
@@ -443,6 +463,99 @@ export async function deleteTag(id: string): Promise<void> {
     });
   }
   await applyOps(ops);
+}
+
+// -------------------------------------------------------------- routine ----
+
+export function newRoutineItem(partial: Partial<RoutineItem> = {}): RoutineItem {
+  const now = Date.now();
+  return {
+    id: nanoid(),
+    title: '',
+    note: '',
+    orderKey: '',
+    active: true,
+    createdAt: now,
+    modifiedAt: now,
+    ...partial,
+  };
+}
+
+export async function createRoutineItem(title: string): Promise<string> {
+  const siblings = (await db.routineItems.toArray()).filter((i) => i.active);
+  const item = newRoutineItem({ title, orderKey: keyAtEnd(siblings) });
+  await applyOps([{ table: 'routineItems', key: item.id, before: null, after: item }]);
+  return item.id;
+}
+
+/** Seed several items in one pass, preserving the given order. */
+export async function createRoutineItems(titles: string[]): Promise<void> {
+  const siblings = (await db.routineItems.toArray()).filter((i) => i.active);
+  const ops: Op[] = [];
+  let prev: string | null = sortByOrderKey(siblings).at(-1)?.orderKey ?? null;
+  for (const title of titles) {
+    prev = keyBetween(prev, null);
+    const item = newRoutineItem({ title, orderKey: prev });
+    ops.push({ table: 'routineItems', key: item.id, before: null, after: item });
+  }
+  await applyOps(ops);
+}
+
+export async function updateRoutineItem(id: string, patch: Partial<RoutineItem>): Promise<void> {
+  const before = await db.routineItems.get(id);
+  if (!before) return;
+  const after: RoutineItem = { ...before, ...patch, modifiedAt: Date.now() };
+  await applyOps([{ table: 'routineItems', key: id, before, after }]);
+}
+
+/** Retire an item: it leaves today's checklist but its history stays intact,
+ *  so past streaks keep their meaning. */
+export async function archiveRoutineItem(id: string): Promise<void> {
+  await updateRoutineItem(id, { active: false });
+}
+
+/** Remove an item and every tick it ever recorded. */
+export async function deleteRoutineItem(id: string): Promise<void> {
+  const before = await db.routineItems.get(id);
+  if (!before) return;
+  const ops: Op[] = [{ table: 'routineItems', key: id, before, after: null }];
+  for (const log of await db.routineLogs.where('itemId').equals(id).toArray()) {
+    ops.push({ table: 'routineLogs', key: log.id, before: log, after: null });
+  }
+  await applyOps(ops);
+}
+
+export async function reorderRoutineItems(idsInNewOrder: string[]): Promise<void> {
+  const keys = rebalancedKeys(idsInNewOrder.length);
+  const ops: Op[] = [];
+  const now = Date.now();
+  for (let i = 0; i < idsInNewOrder.length; i++) {
+    const before = await db.routineItems.get(idsInNewOrder[i]!);
+    if (!before) continue;
+    ops.push({
+      table: 'routineItems', key: before.id, before,
+      after: { ...before, orderKey: keys[i]!, modifiedAt: now } satisfies RoutineItem,
+    });
+  }
+  await applyOps(ops);
+}
+
+/** Tick or untick one item for one day. Idempotent: the row id is the pair. */
+export async function setRoutineDone(
+  itemId: string,
+  date: DateStr,
+  done: boolean,
+): Promise<void> {
+  const key = logId(date, itemId);
+  const before = (await db.routineLogs.get(key)) ?? null;
+  if (done) {
+    if (before) return;
+    const after: RoutineLog = { id: key, date, itemId, completedAt: Date.now() };
+    await applyOps([{ table: 'routineLogs', key, before: null, after }]);
+  } else {
+    if (!before) return;
+    await applyOps([{ table: 'routineLogs', key, before, after: null }]);
+  }
 }
 
 // ------------------------------------------------------------- settings ----

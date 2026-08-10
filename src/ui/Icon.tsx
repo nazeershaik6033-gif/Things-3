@@ -8,7 +8,7 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link';
+  | 'export' | 'import' | 'link' | 'repeat' | 'flame' | 'clock' | 'grip';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -140,6 +140,36 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   ),
   link: () => (
     <path d="M10 14.5 14 10.5M8.5 12 6 14.5a3.5 3.5 0 0 0 5 5l2.5-2.5M15.5 12 18 9.5a3.5 3.5 0 0 0-5-5l-2.5 2.5" stroke-linecap="round" />
+  ),
+  repeat: () => (
+    <>
+      <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M20 3.6v5h-5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M4 20.4v-5h5" stroke-linecap="round" stroke-linejoin="round" />
+    </>
+  ),
+  flame: () => (
+    <>
+      <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" fill="currentColor" opacity="0.25" stroke="none" />
+      <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" stroke-linejoin="round" />
+    </>
+  ),
+  clock: () => (
+    <>
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="M12 7.2V12l3.2 2" stroke-linecap="round" stroke-linejoin="round" />
+    </>
+  ),
+  grip: () => (
+    <>
+      <circle cx="9" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="17" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="17" r="1.5" fill="currentColor" stroke="none" />
+    </>
   ),
 };
 

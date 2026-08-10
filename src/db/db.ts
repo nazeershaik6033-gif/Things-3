@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
+  RoutineItem, RoutineLog,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -11,6 +12,8 @@ export class ClarityDB extends Dexie {
   tags!: EntityTable<Tag, 'id'>;
   settings!: EntityTable<Setting, 'key'>;
   calendarEvents!: EntityTable<CalendarEvent, 'id'>;
+  routineItems!: EntityTable<RoutineItem, 'id'>;
+  routineLogs!: EntityTable<RoutineLog, 'id'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -24,6 +27,12 @@ export class ClarityDB extends Dexie {
       tags: 'id',
       settings: 'key',
       calendarEvents: 'id, date, calendarUrl',
+    });
+    // v2: daily routine. Purely additive — no .upgrade() needed, existing rows
+    // are untouched and the two new tables simply start empty.
+    this.version(2).stores({
+      routineItems: 'id, active, orderKey',
+      routineLogs: 'id, date, itemId',
     });
   }
 }

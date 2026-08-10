@@ -94,6 +94,22 @@ export function formatDeadline(deadline: DateStr, today: DateStr): string {
   return formatRelative(deadline, today);
 }
 
+/** "now" / "in 45m" / "in 3h 20m" for something later today. Returns null past
+ *  24 hours, where a calendar-relative label ("Tomorrow", "Friday") reads better. */
+export function formatCountdown(fromMs: number, toMs: number): string | null {
+  const diff = toMs - fromMs;
+  if (diff < 0) return 'now';
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `in ${minutes}m`;
+  if (minutes < 24 * 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m === 0 ? `in ${h}h` : `in ${h}h ${m}m`;
+  }
+  return null;
+}
+
 export function formatTime(epochMs: number): string {
   const d = new Date(epochMs);
   let h = d.getHours();
