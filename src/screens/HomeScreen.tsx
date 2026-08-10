@@ -9,10 +9,11 @@ import { ProgressPie } from '../ui/ProgressPie';
 import { ProgressRing } from '../ui/ProgressRing';
 import { Sheet, SheetTitle } from '../ui/Sheet';
 import { setSearchOpen, setQuickEntry } from '../app/uiState';
-import { sidebarCounts, isLive, isOpen, projectProgress } from '../domain/smartLists';
+import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { routineProgress } from '../domain/routine';
 import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
+import { createBoard } from '../db/boardMutations';
 import { MagicPlus } from '../components/MagicPlus';
 import { WidgetDeck, CalendarStrip } from '../components/HomeWidgets';
 import { MenuRow } from './common';
@@ -95,6 +96,42 @@ function HomeRow(props: {
   );
 }
 
+/** Subtle strip above Quick Find: today's count plus what's up next, so you
+ *  get the gist without opening the Today list. Hidden when Today is empty. */
+function TodayBanner(props: { count: number; next: string | null }): JSX.Element {
+  return (
+    <Show when={props.count > 0}>
+      <button
+        data-testid="today-banner"
+        onClick={() => push({ name: 'list', list: 'today' })}
+        class="no-select pressable"
+        style={{
+          display: 'flex',
+          'align-items': 'center',
+          gap: '7px',
+          width: 'calc(100% - 32px)',
+          margin: '0 16px 8px',
+          padding: '8px 12px',
+          'border-radius': '11px',
+          background: 'var(--bg-inset)',
+          'text-align': 'left',
+        }}
+      >
+        <Icon name="star" size={14} color="var(--yellow)" />
+        <span style={{
+          flex: '1', 'font-size': '13px', color: 'var(--text-secondary)',
+          overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
+        }}>
+          <span style={{ color: 'var(--text)', 'font-weight': '600' }}>
+            {props.count} {props.count === 1 ? 'thing' : 'things'} today
+          </span>
+          <Show when={props.next}> · Next: {props.next}</Show>
+        </span>
+      </button>
+    </Show>
+  );
+}
+
 /** One board: a titled card holding a group of destinations. */
 function Board(props: { title?: string; index: number; children: JSX.Element }): JSX.Element {
   return (
@@ -138,6 +175,12 @@ export function HomeScreen(): JSX.Element {
   const [newListOpen, setNewListOpen] = createSignal(false);
 
   const counts = createMemo(() => sidebarCounts(tasks(), currentDate()));
+  const todaySections = createMemo(() => todayTasks(tasks(), currentDate()));
+  const nextTodayTitle = createMemo(() => {
+    const s = todaySections();
+    const t = s.morning[0] ?? s.ungrouped[0] ?? s.afternoon[0] ?? s.tonight[0];
+    return t ? t.title || 'Untitled' : null;
+  });
   const liveProjects = createMemo(() => sortByOrderKey(projects().filter((p) => isLive(p) && isOpen(p))));
   const standaloneProjects = createMemo(() => liveProjects().filter((p) => !p.areaId));
   const sortedAreas = createMemo(() => sortByOrderKey(areas()));
@@ -158,6 +201,8 @@ export function HomeScreen(): JSX.Element {
     <>
       <div class="screen-scroll" style={{ background: 'var(--bg)' }}>
         <div style={{ padding: `calc(var(--safe-top) + 10px) 0 0` }}>
+          <TodayBanner count={counts().today} next={nextTodayTitle()} />
+
           <button
             onClick={() => setSearchOpen(true)}
             data-testid="search-bar"
@@ -185,7 +230,19 @@ export function HomeScreen(): JSX.Element {
 
           <div style={{ height: '10px' }} />
 
-          <Board title="Boards" index={0}>
+          {/* Boards sit directly below the calendar */}
+          <Board index={0}>
+            <HomeRow
+              testid="home-boards"
+              bold
+              tint="rgba(47, 124, 246, 0.12)"
+              icon={<Icon name="board" size={19} color="var(--blue)" />}
+              label="Boards"
+              onClick={() => push({ name: 'boards' })}
+            />
+          </Board>
+
+          <Board title="Lists" index={1}>
             {listRow('inbox', 'Inbox', 'rgba(47, 124, 246, 0.12)', counts().inbox)}
             {listRow('today', 'Today', 'rgba(247, 206, 70, 0.16)', counts().today)}
             <HomeRow
@@ -212,17 +269,18 @@ export function HomeScreen(): JSX.Element {
               onClick={() => push({ name: 'routine' })}
             />
             {listRow('upcoming', 'Upcoming', 'rgba(255, 59, 48, 0.11)')}
+            {listRow('prior', 'Prior', 'rgba(182, 120, 224, 0.12)')}
             {listRow('anytime', 'Anytime', 'rgba(76, 194, 232, 0.14)')}
             {listRow('someday', 'Someday', 'rgba(201, 168, 124, 0.16)')}
           </Board>
 
-          <Board index={1}>
+          <Board index={2}>
             {listRow('logbook', 'Logbook', 'rgba(83, 184, 85, 0.14)')}
             {listRow('trash', 'Trash', 'rgba(138, 138, 142, 0.14)')}
           </Board>
 
           <Show when={standaloneProjects().length > 0}>
-            <Board title="Projects" index={2}>
+            <Board title="Projects" index={3}>
               <For each={standaloneProjects()}>
                 {(p) => (
                   <HomeRow
@@ -237,7 +295,7 @@ export function HomeScreen(): JSX.Element {
 
           <For each={sortedAreas()}>
             {(area, i) => (
-              <Board index={3 + i()}>
+              <Board index={4 + i()}>
                 <HomeRow
                   bold
                   tint="rgba(76, 194, 232, 0.14)"
@@ -302,6 +360,14 @@ export function HomeScreen(): JSX.Element {
             onClick={() => {
               setNewListOpen(false);
               void createArea('').then((id) => push({ name: 'area', id }));
+            }}
+          />
+          <MenuRow
+            icon={<Icon name="board" size={20} color="var(--blue)" />}
+            label="New Board"
+            onClick={() => {
+              setNewListOpen(false);
+              void createBoard({ title: '' }).then((id) => push({ name: 'board', id }));
             }}
           />
           <div style={{ height: '10px' }} />

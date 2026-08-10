@@ -8,7 +8,7 @@ import { reduceMotion } from './motion';
  *  Hash URLs keep GitHub Pages + browser/PWA back behavior consistent. */
 
 export type BuiltinList =
-  | 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'trash';
+  | 'inbox' | 'today' | 'upcoming' | 'prior' | 'anytime' | 'someday' | 'logbook' | 'trash';
 
 export type Route =
   | { name: 'home' }
@@ -18,14 +18,18 @@ export type Route =
   | { name: 'tag'; id: string }
   | { name: 'calendar' }
   | { name: 'routine' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'boards' }
+  | { name: 'board'; id: string }
+  | { name: 'boardCalendar'; id: string }
+  | { name: 'card'; id: string };
 
 export interface StackEntry {
   route: Route;
   key: number;
 }
 
-const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'logbook', 'trash'];
+const BUILTINS: BuiltinList[] = ['inbox', 'today', 'upcoming', 'prior', 'anytime', 'someday', 'logbook', 'trash'];
 
 export function hashFor(route: Route): string {
   switch (route.name) {
@@ -37,6 +41,10 @@ export function hashFor(route: Route): string {
     case 'calendar': return '#/calendar';
     case 'routine': return '#/routine';
     case 'settings': return '#/settings';
+    case 'boards': return '#/boards';
+    case 'board': return `#/board/${route.id}`;
+    case 'boardCalendar': return `#/board/${route.id}/calendar`;
+    case 'card': return `#/card/${route.id}`;
   }
 }
 
@@ -45,12 +53,19 @@ export function parseHash(hash: string): Route {
   const head = parts[0];
   if (!head) return { name: 'home' };
   if ((BUILTINS as string[]).includes(head)) return { name: 'list', list: head as BuiltinList };
-  if (head === 'settings') return { name: 'settings' };
   if (head === 'calendar') return { name: 'calendar' };
+  if (head === 'settings') return { name: 'settings' };
   if (head === 'routine') return { name: 'routine' };
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };
   if (head === 'tag' && parts[1]) return { name: 'tag', id: parts[1] };
+  if (head === 'boards') return { name: 'boards' };
+  if (head === 'board' && parts[1]) {
+    return parts[2] === 'calendar'
+      ? { name: 'boardCalendar', id: parts[1] }
+      : { name: 'board', id: parts[1] };
+  }
+  if (head === 'card' && parts[1]) return { name: 'card', id: parts[1] };
   return { name: 'home' };
 }
 

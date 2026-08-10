@@ -162,3 +162,9 @@ ol {
     transform: none;
   }
 }
+
+/* Focus Timer overtime pulse */
+@keyframes pomo-flash {
+  from { opacity: 0.06; }
+  to { opacity: 0.18; }
+}

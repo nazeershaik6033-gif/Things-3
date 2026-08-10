@@ -178,14 +178,3 @@ export function nextEvent(
     });
   return upcoming[0] ?? null;
 }
-
-/** Prefilled Google Calendar composer for a day. Google reads local wall-clock
- *  times when they carry no zone suffix, which is what we want for "9am on
- *  the day the user tapped". */
-export function googleCalendarUrl(date: DateStr, startHour = 9, durationHours = 1): string {
-  const stamp = date.replace(/-/g, '');
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const from = `${stamp}T${pad(startHour)}0000`;
-  const to = `${stamp}T${pad(startHour + durationHours)}0000`;
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&dates=${from}/${to}`;
-}

@@ -19,8 +19,9 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
   // Expand inline, schedule for Today via the card's When picker
   await page.getByText('Write the report').click();
   await expect(page.locator('[data-task-card]')).toBeVisible();
+  // Scope to the card: Home's Up Next widget also matches "schedule"
   await page.locator('[data-task-card]').getByRole('button', { name: 'Schedule', exact: true }).click();
-  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
 
   // Scheduling moves it out of the Inbox (card closes with it)
   await expect(page.getByText('Write the report')).toBeHidden();
@@ -77,6 +78,24 @@ test('quick entry with notes, checklist, tags, deadline and destination', async 
   await page.getByText('Website Launch').click();
   await expect(page.getByText('Prepare slides')).toBeVisible();
   await expect(page.getByText('0/1')).toBeVisible(); // checklist chip
+});
+
+test('typing keystroke-by-keystroke into a 2nd+ checklist item keeps focus', async ({ page }) => {
+  await page.getByTestId('magic-plus').click();
+  await page.getByPlaceholder('New To-Do').fill('Trip packing list');
+  await page.getByRole('button', { name: 'Checklist' }).click();
+
+  await page.getByText('+ Add item').click();
+  const first = page.locator('input[data-checklist-id]').nth(0);
+  await first.pressSequentially('Passport', { delay: 20 });
+  await expect(first).toHaveValue('Passport');
+  await first.press('Enter');
+
+  const second = page.locator('input[data-checklist-id]').nth(1);
+  await expect(second).toBeFocused();
+  await second.pressSequentially('Toothbrush', { delay: 20 });
+  await expect(second).toHaveValue('Toothbrush');
+  await expect(second).toBeFocused();
 });
 
 test('edit title, notes and checklist inline; data persists', async ({ page }) => {
@@ -154,17 +173,17 @@ test('new project: create, add heading, complete project', async ({ page }) => {
   await expect(page.getByText('Clean the windows')).toBeVisible();
 });
 
-test('evening tasks: quick entry from Today evening section', async ({ page }) => {
+test('evening tasks: quick entry from Today tonight section', async ({ page }) => {
   await page.getByTestId('home-today').click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Stretch before bed');
-  // Set to This Evening via the When chip
+  // Set to Tonight via the When chip
   await page.getByRole('button', { name: 'When' }).click();
-  await page.getByRole('button', { name: 'This Evening' }).click();
+  await page.getByRole('button', { name: 'Tonight' }).click();
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByTestId('quick-entry-save')).toBeHidden();
 
-  // It lands under the This Evening section
-  await expect(page.getByText('This Evening')).toBeVisible();
+  // It lands under the Tonight section
+  await expect(page.getByText('Tonight')).toBeVisible();
   await expect(page.getByText('Stretch before bed')).toBeVisible();
 });

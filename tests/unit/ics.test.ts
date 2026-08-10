@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseICS, zonedEpoch } from '../../src/domain/ics';
+import { buildReminderIcs, parseICS, zonedEpoch } from '../../src/domain/ics';
 
 const OPTS = { calendarUrl: 'https://cal.example/feed.ics', from: '2026-06-01', to: '2026-08-31' };
 
@@ -84,7 +84,7 @@ describe('ICS parser', () => {
     expect(e!.title).toBe('Dinner with friends, then a movie about nothing');
   });
 
-  it('skips recurring and cancelled events', () => {
+  it('expands recurring events and skips cancelled events', () => {
     const ics = wrap(
       'BEGIN:VEVENT',
       'UID:rec1', 'SUMMARY:Weekly sync', 'DTSTART:20260611T100000Z',
@@ -94,7 +94,12 @@ describe('ICS parser', () => {
       'UID:can1', 'SUMMARY:Cancelled mtg', 'DTSTART:20260611T110000Z', 'STATUS:CANCELLED',
       'END:VEVENT',
     );
-    expect(parseICS(ics, OPTS)).toHaveLength(0);
+    const events = parseICS(ics, OPTS);
+    // Thursdays from 2026-06-11 through 2026-08-31: Jun 11,18,25 + Jul 2,9,16,23,30 + Aug 6,13,20,27 = 12
+    expect(events).toHaveLength(12);
+    expect(events.every((e) => e.title === 'Weekly sync')).toBe(true);
+    // Cancelled event must still be excluded
+    expect(events.some((e) => e.title === 'Cancelled mtg')).toBe(false);
   });
 
   it('filters events outside the window', () => {
@@ -131,5 +136,36 @@ describe('ICS parser', () => {
   it('tolerates garbage input without throwing', () => {
     expect(parseICS('not an ics file at all', OPTS)).toEqual([]);
     expect(parseICS('', OPTS)).toEqual([]);
+  });
+});
+
+describe('buildReminderIcs', () => {
+  it('produces a valid VEVENT with display alarm at the given local time', () => {
+    const ics = buildReminderIcs({ title: 'Call mom', date: '2026-07-01', time: '18:30' });
+    expect(ics).toContain('BEGIN:VCALENDAR');
+    expect(ics).toContain('DTSTART:20260701T183000');
+    expect(ics).toContain('SUMMARY:Call mom');
+    expect(ics).toContain('BEGIN:VALARM');
+    expect(ics).toContain('TRIGGER:PT0S');
+    expect(ics).toContain('END:VCALENDAR');
+  });
+
+  it('escapes special characters and includes notes', () => {
+    const ics = buildReminderIcs({
+      title: 'Lunch; with Bob, maybe',
+      notes: 'line1\nline2',
+      date: '2026-07-01',
+      time: '12:00',
+    });
+    expect(ics).toContain('SUMMARY:Lunch\\; with Bob\\, maybe');
+    expect(ics).toContain('DESCRIPTION:line1\\nline2');
+  });
+
+  it('round-trips through our own parser', () => {
+    const ics = buildReminderIcs({ title: 'Dentist', date: '2026-07-01', time: '09:00' });
+    const events = parseICS(ics, { calendarUrl: 'x', from: '2026-06-01', to: '2026-08-01' });
+    expect(events).toHaveLength(1);
+    expect(events[0]!.title).toBe('Dentist');
+    expect(events[0]!.date).toBe('2026-07-01');
   });
 });

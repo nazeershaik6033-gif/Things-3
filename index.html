@@ -60,7 +60,7 @@
       <h2>Something went wrong</h2>
       <p id="err-msg"></p>
       <pre id="err-stack"></pre>
-      <button onclick="location.reload()">Reload</button>
+      <button id="err-reset">Reset &amp; Reload</button>
     </div>
     <div id="root"></div>
     <script>
@@ -71,15 +71,74 @@
         document.getElementById('err-msg').textContent = msg || 'Unknown error';
         document.getElementById('err-stack').textContent = stack || '';
       }
+      // Full reset: unregister every service worker and delete every cache,
+      // then reload. Recovers from a stale/broken SW left by an old deploy
+      // (iOS Safari can keep serving dead assets, leaving the splash forever).
+      function fullReset() {
+        var reload = function () { location.reload(); };
+        var jobs = [];
+        try {
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+              return Promise.all(rs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+          if (window.caches && caches.keys) {
+            jobs.push(caches.keys().then(function (ks) {
+              return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+            }));
+          }
+        } catch (e) {}
+        Promise.all(jobs).then(reload, reload);
+      }
+      // Auto-recover at most once per tab so a real failure can't reload-loop.
+      function tryAutoRecover() {
+        try {
+          if (sessionStorage.getItem('clarity-recovered')) return false;
+          sessionStorage.setItem('clarity-recovered', '1');
+        } catch (e) { return false; }
+        fullReset();
+        return true;
+      }
+      document.getElementById('err-reset').addEventListener('click', fullReset);
+      // capture:true so failed resource loads (script/css 404s) land here too —
+      // they do not bubble, so a bubble-phase listener never sees them.
       window.addEventListener('error', function(e) {
-        if (!window.__appStarted) showError(e.message, e.error && e.error.stack);
-      });
+        if (window.__appStarted) return;
+        var t = e.target;
+        if (t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
+          if (!tryAutoRecover()) {
+            showError(
+              'The app could not load one of its files.',
+              'Failed: ' + (t.src || t.href || '?') +
+              '\n\nIf this keeps happening, clear this site’s data in ' +
+              'Settings → Safari → Advanced → Website Data, then reopen.'
+            );
+          }
+          return;
+        }
+        showError(e.message, e.error && e.error.stack);
+      }, true);
       window.addEventListener('unhandledrejection', function(e) {
         if (!window.__appStarted) {
           var r = e.reason;
           showError(r && r.message ? r.message : String(r), r && r.stack);
         }
       });
+      // Watchdog: if the app hasn't rendered after 8s, something is silently
+      // stuck (typically a wedged service worker). Recover automatically once;
+      // if it happens again in the same tab, show instructions instead.
+      setTimeout(function () {
+        if (window.__appStarted) return;
+        if (!tryAutoRecover()) {
+          showError(
+            'The app is taking too long to start.',
+            'A stored copy of the app may be corrupted. Tap “Reset & Reload” ' +
+            'below. If that does not help, clear this site’s data in ' +
+            'Settings → Safari → Advanced → Website Data, then reopen.'
+          );
+        }
+      }, 8000);
     </script>
     <script type="module" src="/src/index.tsx"></script>
   </body>

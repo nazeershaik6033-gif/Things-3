@@ -11,8 +11,9 @@ import { logId } from '../domain/routine';
  *  undo ring buffer can be layered on later (iteration 2) without rewrites. */
 
 type TableName =
-  | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings'
-  | 'calendarEvents' | 'routineItems' | 'routineLogs';
+  | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
+  | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
+  | 'routineItems' | 'routineLogs';
 
 export interface Op {
   table: TableName;
@@ -37,6 +38,8 @@ export async function applyOps(ops: Op[]): Promise<void> {
 
 export type When =
   | { type: 'today' }
+  | { type: 'morning' }
+  | { type: 'afternoon' }
   | { type: 'evening' }
   | { type: 'date'; date: DateStr }
   | { type: 'someday' }
@@ -62,6 +65,7 @@ export function newTask(partial: Partial<Task> = {}): Task {
     startDate: null,
     evening: false,
     deadline: null,
+    priority: null,
     projectId: null,
     headingId: null,
     areaId: null,
@@ -119,13 +123,15 @@ export async function updateTask(id: string, patch: Partial<Task>): Promise<void
 export async function setTaskWhen(id: string, when: When): Promise<void> {
   const today = todayStr();
   const patch: Partial<Task> =
-    when.type === 'today' ? { startDate: today, evening: false }
-    : when.type === 'evening' ? { startDate: today, evening: true }
-    : when.type === 'date' ? { startDate: when.date, evening: false, bucket: 'anytime' }
-    : when.type === 'someday' ? { startDate: null, evening: false, bucket: 'someday' }
-    : when.type === 'anytime' ? { startDate: null, evening: false, bucket: 'anytime' }
-    : { startDate: null, evening: false }; // clear
-  if (when.type === 'today' || when.type === 'evening') {
+    when.type === 'today' ? { startDate: today, evening: false, reminderTime: null }
+    : when.type === 'morning' ? { startDate: today, evening: false, reminderTime: 'morning' }
+    : when.type === 'afternoon' ? { startDate: today, evening: false, reminderTime: 'afternoon' }
+    : when.type === 'evening' ? { startDate: today, evening: true, reminderTime: null }
+    : when.type === 'date' ? { startDate: when.date, evening: false, reminderTime: null, bucket: 'anytime' }
+    : when.type === 'someday' ? { startDate: null, evening: false, reminderTime: null, bucket: 'someday' }
+    : when.type === 'anytime' ? { startDate: null, evening: false, reminderTime: null, bucket: 'anytime' }
+    : { startDate: null, evening: false, reminderTime: null }; // clear
+  if (when.type === 'today' || when.type === 'morning' || when.type === 'afternoon' || when.type === 'evening') {
     const t = await db.tasks.get(id);
     if (t && t.bucket !== 'anytime') patch.bucket = 'anytime';
   }
@@ -155,8 +161,17 @@ export async function reopenTask(id: string): Promise<void> {
   await updateTask(id, { status: 'open', completedAt: null });
 }
 
+/** Trash timestamps double as cascade identity (restoreProject matches
+ *  tasks by the project's stamp), so they must never collide — strictly
+ *  monotonic even when calls land in the same millisecond. */
+let lastTrashStamp = 0;
+function trashStamp(): number {
+  lastTrashStamp = Math.max(Date.now(), lastTrashStamp + 1);
+  return lastTrashStamp;
+}
+
 export async function trashTask(id: string): Promise<void> {
-  await updateTask(id, { trashedAt: Date.now() });
+  await updateTask(id, { trashedAt: trashStamp() });
 }
 
 export async function restoreTask(id: string): Promise<void> {
@@ -301,15 +316,12 @@ export async function reopenProject(id: string): Promise<void> {
 export async function trashProject(id: string): Promise<void> {
   const p = await db.projects.get(id);
   if (!p) return;
-  const tasks = await db.tasks.where('projectId').equals(id).toArray();
-  // The stamp IS the correlation key for restore, so it must not equal the
-  // stamp of a task trashed on its own — otherwise restoring the project would
-  // drag that task back too. Same-millisecond collisions are rare but real.
-  const now = Math.max(Date.now(), ...tasks.map((t) => (t.trashedAt ?? 0) + 1));
+  const now = trashStamp();
   const ops: Op[] = [{
     table: 'projects', key: id, before: p,
     after: { ...p, trashedAt: now, modifiedAt: now } satisfies Project,
   }];
+  const tasks = await db.tasks.where('projectId').equals(id).toArray();
   for (const t of tasks) {
     if (t.trashedAt === null) {
       ops.push({

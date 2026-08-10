@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { CalendarEvent, Task } from '../../src/db/models';
 import { newTask } from '../../src/db/mutations';
 import {
-  entriesOn, firstDayOf, googleCalendarUrl, lastDayOf, markedDays, monthAgenda,
-  monthLabel, monthOf, monthWeeks, nextEvent, shiftMonth, taskEntries,
-  weekdayLabels,
+  entriesOn, firstDayOf, lastDayOf, markedDays, monthAgenda, monthLabel,
+  monthOf, monthWeeks, nextEvent, shiftMonth, taskEntries, weekdayLabels,
 } from '../../src/domain/calendarMonth';
 
 const TODAY = '2026-08-10';
@@ -161,13 +160,5 @@ describe('nextEvent', () => {
 
   it('returns null when nothing is ahead', () => {
     expect(nextEvent([], Date.now(), TODAY)).toBeNull();
-  });
-});
-
-describe('googleCalendarUrl', () => {
-  it('prefills the composer for the given day', () => {
-    expect(googleCalendarUrl('2026-08-17')).toBe(
-      'https://calendar.google.com/calendar/render?action=TEMPLATE&dates=20260817T090000/20260817T100000',
-    );
   });
 });

@@ -24,17 +24,20 @@ describe('Inbox', () => {
 });
 
 describe('Today', () => {
-  it('includes tasks scheduled today or earlier', () => {
+  it('includes only tasks scheduled for today (not past days)', () => {
     expect(inToday(task({ startDate: TODAY, bucket: 'anytime' }), TODAY)).toBe(true);
-    expect(inToday(task({ startDate: '2026-06-01', bucket: 'anytime' }), TODAY)).toBe(true);
+    // Past startDate no longer rolls over into Today — goes to Prior instead
+    expect(inToday(task({ startDate: '2026-06-01', bucket: 'anytime' }), TODAY)).toBe(false);
     expect(inToday(task({ startDate: '2026-06-12', bucket: 'anytime' }), TODAY)).toBe(false);
     expect(inToday(task({ bucket: 'anytime' }), TODAY)).toBe(false);
   });
 
-  it('includes tasks with due-or-overdue deadlines regardless of start', () => {
+  it('includes tasks with due-or-overdue deadlines when no startDate', () => {
     expect(inToday(task({ deadline: TODAY, bucket: 'anytime' }), TODAY)).toBe(true);
     expect(inToday(task({ deadline: '2026-06-01', bucket: 'anytime' }), TODAY)).toBe(true);
     expect(inToday(task({ deadline: '2026-07-01', bucket: 'anytime' }), TODAY)).toBe(false);
+    // A task with startDate set uses the startDate rule, not deadline
+    expect(inToday(task({ startDate: '2026-06-01', deadline: TODAY, bucket: 'anytime' }), TODAY)).toBe(false);
   });
 
   it('excludes completed/trashed', () => {
@@ -42,27 +45,36 @@ describe('Today', () => {
     expect(inToday(task({ startDate: TODAY, trashedAt: 1 }), TODAY)).toBe(false);
   });
 
-  it('day rollover pulls yesterday-scheduled tasks in (derived, no rewrite)', () => {
+  it('past startDate stays out of today (no rollover)', () => {
     const t = task({ startDate: '2026-06-11', bucket: 'anytime' });
     expect(inToday(t, '2026-06-10')).toBe(false);
     expect(inToday(t, '2026-06-11')).toBe(true);
-    expect(inToday(t, '2026-06-12')).toBe(true); // still there tomorrow
+    expect(inToday(t, '2026-06-12')).toBe(false); // no rollover
   });
 
-  it('splits day and evening sections', () => {
+  it('splits into ungrouped and tonight sections', () => {
     const a = task({ startDate: TODAY, bucket: 'anytime', todayOrderKey: 'a1' });
     const b = task({ startDate: TODAY, bucket: 'anytime', evening: true });
-    const { day, evening } = todayTasks([a, b], TODAY);
-    expect(day.map((t) => t.id)).toEqual([a.id]);
-    expect(evening.map((t) => t.id)).toEqual([b.id]);
+    const { ungrouped, tonight } = todayTasks([a, b], TODAY);
+    expect(ungrouped.map((t) => t.id)).toEqual([a.id]);
+    expect(tonight.map((t) => t.id)).toEqual([b.id]);
   });
 
-  it('sorts keyed rows first, unkeyed (rollover) rows after by orderKey', () => {
+  it('routes morning/afternoon via reminderTime', () => {
+    const m = task({ startDate: TODAY, bucket: 'anytime', reminderTime: 'morning' });
+    const a = task({ startDate: TODAY, bucket: 'anytime', reminderTime: 'afternoon' });
+    const u = task({ startDate: TODAY, bucket: 'anytime' });
+    const { morning, afternoon, ungrouped } = todayTasks([m, a, u], TODAY);
+    expect(morning.map((t) => t.id)).toEqual([m.id]);
+    expect(afternoon.map((t) => t.id)).toEqual([a.id]);
+    expect(ungrouped.map((t) => t.id)).toEqual([u.id]);
+  });
+
+  it('sorts keyed rows first, unkeyed rows after by orderKey', () => {
     const keyed = task({ startDate: TODAY, bucket: 'anytime', todayOrderKey: 'a5', orderKey: 'z' });
-    const drifted1 = task({ startDate: '2026-06-01', bucket: 'anytime', orderKey: 'a1' });
-    const drifted2 = task({ startDate: '2026-06-01', bucket: 'anytime', orderKey: 'a2' });
-    const { day } = todayTasks([drifted2, keyed, drifted1], TODAY);
-    expect(day.map((t) => t.id)).toEqual([keyed.id, drifted1.id, drifted2.id]);
+    const plain = task({ startDate: TODAY, bucket: 'anytime', orderKey: 'a1' });
+    const { ungrouped } = todayTasks([plain, keyed], TODAY);
+    expect(ungrouped.map((t) => t.id)).toEqual([keyed.id, plain.id]);
   });
 
   it('flags overdue deadlines', () => {

@@ -1,6 +1,7 @@
 import { db } from './db';
 import type {
-  Task, Project, Heading, Area, Tag, Setting, RoutineItem, RoutineLog,
+  Task, Project, Heading, Area, Tag, Setting,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
 } from './models';
 
 export interface ExportFile {
@@ -14,16 +15,23 @@ export interface ExportFile {
     areas: Area[];
     tags: Tag[];
     settings: Setting[];
-    /** Added in schema 2; absent in v1 backups. */
+    // Every table below arrived after schema 1, so all are optional: an older
+    // backup simply has nothing to restore into them.
+    boards?: Board[];
+    boardLists?: BoardList[];
+    boardLabels?: BoardLabel[];
+    cards?: Card[];
+    /** Added in schema 3. */
     routineItems?: RoutineItem[];
     routineLogs?: RoutineLog[];
   };
 }
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
+  'boards', 'boardLists', 'boardLabels', 'cards',
   'routineItems', 'routineLogs',
 ] as const;
 
@@ -39,6 +47,10 @@ export async function exportData(): Promise<ExportFile> {
       areas: await db.areas.toArray(),
       tags: await db.tags.toArray(),
       settings: await db.settings.toArray(),
+      boards: await db.boards.toArray(),
+      boardLists: await db.boardLists.toArray(),
+      boardLabels: await db.boardLabels.toArray(),
+      cards: await db.cards.toArray(),
       routineItems: await db.routineItems.toArray(),
       routineLogs: await db.routineLogs.toArray(),
     },
@@ -84,6 +96,10 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.areas.bulkPut(file.data.areas);
     await db.tags.bulkPut(file.data.tags);
     await db.settings.bulkPut(file.data.settings);
+    await db.boards.bulkPut(file.data.boards ?? []);
+    await db.boardLists.bulkPut(file.data.boardLists ?? []);
+    await db.boardLabels.bulkPut(file.data.boardLabels ?? []);
+    await db.cards.bulkPut(file.data.cards ?? []);
     await db.routineItems.bulkPut(file.data.routineItems ?? []);
     await db.routineLogs.bulkPut(file.data.routineLogs ?? []);
   });

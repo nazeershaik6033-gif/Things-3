@@ -8,7 +8,9 @@ import { trashTask, updateTask } from '../db/mutations';
 import { toggleComplete } from '../app/completion';
 import { expandedTaskId, setExpandedTaskId } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
-import { formatDeadline, formatRelative } from '../domain/dates';
+import { formatDeadline, formatRelative, todayStr } from '../domain/dates';
+import { buildReminderIcs } from '../domain/ics';
+import { googleCalendarEventUrl } from '../domain/googleCal';
 import { Checkbox } from '../ui/Checkbox';
 import { Icon } from '../ui/Icon';
 import { TagPill } from '../ui/TagPill';
@@ -22,7 +24,137 @@ function autosize(el: HTMLTextAreaElement): void {
   el.style.height = `${el.scrollHeight}px`;
 }
 
-type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | null;
+type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | null;
+
+/** Date+time picker that downloads a one-event .ics with an alarm —
+ *  opening it on iOS adds a Calendar alert (web apps can't write to the
+ *  native Reminders app directly). */
+function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
+  const today = todayStr();
+  const initialDate = props.task.startDate && props.task.startDate >= today ? props.task.startDate : today;
+  const [date, setDate] = createSignal(initialDate);
+  const [time, setTime] = createSignal(props.task.reminderTime ?? '09:00');
+
+  const addToGoogle = () => {
+    void updateTask(props.task.id, { reminderTime: time() });
+    window.open(
+      googleCalendarEventUrl({
+        title: props.task.title || 'Reminder',
+        date: date(),
+        time: time(),
+        details: props.task.notes || undefined,
+      }),
+      '_blank',
+    );
+    props.onClose();
+  };
+
+  const download = () => {
+    void updateTask(props.task.id, { reminderTime: time() });
+    const ics = buildReminderIcs({
+      title: props.task.title || 'Reminder',
+      notes: props.task.notes,
+      date: date(),
+      time: time(),
+    });
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reminder-${date()}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+    props.onClose();
+  };
+
+  const inputStyle = {
+    padding: '10px 12px',
+    'border-radius': '10px',
+    background: 'var(--bg-inset)',
+    color: 'var(--text)',
+    'font-size': '16px',
+    border: 'none',
+    'color-scheme': 'inherit',
+  } as const;
+
+  return (
+    <div
+      data-testid="remind-picker"
+      style={{
+        display: 'flex',
+        'flex-direction': 'column',
+        gap: '10px',
+        padding: '10px 4px 6px',
+        'border-top': '1px solid var(--separator)',
+        'margin-top': '6px',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <input
+          type="date"
+          value={date()}
+          min={today}
+          onInput={(e) => setDate(e.currentTarget.value)}
+          data-testid="remind-date"
+          style={{ ...inputStyle, flex: '1' }}
+        />
+        <input
+          type="time"
+          value={time()}
+          onInput={(e) => setTime(e.currentTarget.value)}
+          data-testid="remind-time"
+          style={inputStyle}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: '14px', 'align-items': 'center' }}>
+        <button
+          onClick={download}
+          data-testid="remind-download"
+          style={{
+            display: 'inline-flex',
+            'align-items': 'center',
+            gap: '6px',
+            padding: '9px 16px',
+            'border-radius': '10px',
+            background: 'var(--blue)',
+            color: '#fff',
+            'font-size': '15px',
+            'font-weight': '600',
+          }}
+        >
+          <Icon name="bell" size={16} />
+          Apple Calendar
+        </button>
+        <button
+          onClick={addToGoogle}
+          data-testid="remind-google"
+          style={{
+            display: 'inline-flex',
+            'align-items': 'center',
+            gap: '6px',
+            padding: '9px 16px',
+            'border-radius': '10px',
+            background: 'var(--bg-inset)',
+            color: 'var(--text)',
+            'font-size': '15px',
+            'font-weight': '600',
+          }}
+        >
+          Google Calendar
+        </button>
+        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>
+          Cancel
+        </button>
+      </div>
+      <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+        Apple: downloads an event file — open it and tap Add for an iPhone
+        alert. Google: opens Google Calendar pre-filled — save there and set
+        its reminder; the event also shows in this app's Calendar.
+      </div>
+    </div>
+  );
+}
 
 /** The expanded inline editor — Things' signature interaction. */
 function TaskCard(props: { task: Task }): JSX.Element {
@@ -69,7 +201,12 @@ function TaskCard(props: { task: Task }): JSX.Element {
   );
 
   const whenLabel = () => {
-    if (t().startDate && t().startDate! <= currentDate()) return t().evening ? 'This Evening' : 'Today';
+    if (t().startDate && t().startDate! <= currentDate()) {
+      if (t().evening) return 'Tonight';
+      if (t().reminderTime === 'morning') return 'Morning';
+      if (t().reminderTime === 'afternoon') return 'Afternoon';
+      return 'Today';
+    }
     if (t().startDate) return formatRelative(t().startDate!, currentDate());
     if (t().bucket === 'someday') return 'Someday';
     return null;
@@ -211,10 +348,17 @@ function TaskCard(props: { task: Task }): JSX.Element {
                 'font-weight': '500',
               }}
             >
-              <Show
-                when={whenLabel() === 'This Evening'}
-                fallback={<Icon name={whenLabel() === 'Someday' ? 'archive' : 'star'} size={13} color={whenLabel() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />}
-              >
+              <Show when={whenLabel() === 'Tonight'} fallback={
+                <Show when={whenLabel() === 'Morning'} fallback={
+                  <Show when={whenLabel() === 'Afternoon'} fallback={
+                    <Icon name={whenLabel() === 'Someday' ? 'archive' : 'star'} size={13} color={whenLabel() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />
+                  }>
+                    <Icon name="sun" size={13} color="var(--yellow)" />
+                  </Show>
+                }>
+                  <Icon name="sunrise" size={13} color="var(--yellow)" />
+                </Show>
+              }>
                 <Icon name="moon" size={13} color="var(--purple)" />
               </Show>
               {whenLabel()}
@@ -257,6 +401,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
       >
         {actionButton(<Icon name="calendar" size={20} />, 'Schedule', () => setPicker('when'))}
         {actionButton(<Icon name="flag" size={20} />, 'Deadline', () => setPicker('deadline'))}
+        {actionButton(<Icon name="bell" size={20} />, 'Remind', () => setPicker('remind'))}
         {actionButton(<Icon name="tag" size={20} />, 'Tags', () => setPicker('tags'))}
         {actionButton(<Icon name="arrow-move" size={20} />, 'Move', () => setPicker('move'))}
         {actionButton(<Icon name="trash" size={20} />, 'Delete', () => {
@@ -270,6 +415,9 @@ function TaskCard(props: { task: Task }): JSX.Element {
       </Show>
       <Show when={picker() === 'deadline'}>
         <DeadlinePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'remind'}>
+        <RemindPicker task={t()} onClose={() => setPicker(null)} />
       </Show>
       <Show when={picker() === 'tags'}>
         <TagPicker task={t()} tags={tags()} onClose={() => setPicker(null)} />
@@ -289,10 +437,14 @@ export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.
   let lastH = 0;
   const expanded = () => expandedTaskId() === props.task.id;
 
-  // If the row leaves this list while expanded (scheduled away, moved),
-  // clear the expanded state so no stale backdrop lingers.
+  // When the row unmounts (e.g., task moves to a new group), defer clearing
+  // expandedTaskId so a new ExpandableTask for the same task can mount first
+  // and inherit the expanded state (fixes Upcoming date-change editing).
   onCleanup(() => {
-    if (expandedTaskId() === props.task.id) setExpandedTaskId(null);
+    const id = props.task.id;
+    requestAnimationFrame(() => {
+      if (expandedTaskId() === id) setExpandedTaskId(null);
+    });
   });
 
   onMount(() => {

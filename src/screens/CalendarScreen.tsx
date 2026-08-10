@@ -1,269 +1,304 @@
-import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
+import { createMemo, createSignal, For, onMount, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
-import type { DateStr } from '../db/models';
 import { createLiveQuery } from '../db/liveQuery';
-import { currentDate } from '../app/currentDate';
-import { staggerDelay } from '../app/motion';
-import { push } from '../app/navigation';
-import { formatRelative, formatTime, weekdayName } from '../domain/dates';
-import {
-  entriesOn, googleCalendarUrl, markedDays, monthAgenda, monthLabel, monthOf,
-  type AgendaEntry, type MonthStr,
-} from '../domain/calendarMonth';
 import { refreshCalendar } from '../app/calendar';
-import { MonthCalendar } from '../components/MonthCalendar';
+import { push } from '../app/navigation';
+import { todayStr, toDateStr, fromDateStr, formatTime, formatRelative } from '../domain/dates';
+import type { DateStr } from '../db/models';
 import { Icon } from '../ui/Icon';
-import { ScreenChrome } from './common';
+import { googleCalendarEventUrl } from '../domain/googleCal';
+import { entriesOn, markedDays, monthAgenda, type AgendaEntry } from '../domain/calendarMonth';
+import { staggerDelay } from '../app/motion';
 import { setExpandedTaskId } from '../app/uiState';
+import { ScreenChrome } from './common';
 
-function EntryRow(props: { entry: AgendaEntry; onOpenTask: (id: string) => void }): JSX.Element {
-  const e = () => props.entry;
-  const timeLabel = () =>
-    e().kind === 'task' ? (e().reason === 'deadline' ? 'due' : 'plan')
-    : e().start !== null ? formatTime(e().start!)
-    : 'all-day';
-  return (
-    <div
-      class={e().kind === 'task' ? 'pressable' : undefined}
-      onClick={() => e().kind === 'task' && props.onOpenTask(e().id)}
-      style={{
-        display: 'flex',
-        'align-items': 'baseline',
-        gap: '10px',
-        padding: '9px 14px',
-        cursor: e().kind === 'task' ? 'pointer' : 'default',
-      }}
-    >
-      <span
-        style={{
-          'min-width': '60px',
-          'font-size': '12px',
-          'font-weight': '600',
-          'font-variant-numeric': 'tabular-nums',
-          color: e().kind === 'task' && e().reason === 'deadline' ? 'var(--red)' : 'var(--text-secondary)',
-        }}
-      >
-        {timeLabel()}
-      </span>
-      <span
-        style={{
-          flex: '1',
-          'min-width': '0',
-          overflow: 'hidden',
-          'text-overflow': 'ellipsis',
-          'white-space': 'nowrap',
-          color: 'var(--text)',
-        }}
-      >
-        {e().title || 'Untitled'}
-      </span>
-      <Show when={e().kind === 'task'}>
-        <Icon name="check" size={13} color="var(--text-tertiary)" strokeWidth={2.6} />
-      </Show>
-    </div>
-  );
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** All visible cells for a month: leading blanks (Mon-first) then days. */
+function monthCells(year: number, month: number): (DateStr | null)[] {
+  const first = new Date(year, month, 1);
+  const lead = (first.getDay() + 6) % 7; // Mon = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (DateStr | null)[] = Array(lead).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(toDateStr(new Date(year, month, d)));
+  return cells;
 }
 
-function DayCard(props: {
-  date: DateStr;
-  entries: AgendaEntry[];
-  today: DateStr;
-  pinned?: boolean;
-  onOpenTask: (id: string) => void;
-  delay?: string;
-}): JSX.Element {
-  return (
-    <div
-      class="rise"
-      data-testid={props.pinned ? 'pinned-day' : 'agenda-day'}
-      data-date={props.date}
-      style={{
-        margin: props.pinned ? '2px 10px 14px' : '0 10px 10px',
-        'border-radius': 'var(--radius-card)',
-        background: 'var(--bg-list)',
-        border: props.pinned ? '1.5px solid var(--blue)' : '1px solid var(--separator)',
-        'box-shadow': props.pinned ? 'var(--shadow-card)' : 'none',
-        overflow: 'hidden',
-        'animation-delay': props.delay ?? '0ms',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          'align-items': 'center',
-          gap: '8px',
-          padding: '10px 14px 8px',
-          background: props.pinned ? 'var(--bg-inset)' : 'transparent',
-        }}
-      >
-        <span style={{ 'font-weight': '700', 'font-size': '15px', color: props.pinned ? 'var(--blue)' : 'var(--text)' }}>
-          {weekdayName(props.date).slice(0, 3)}, {props.date.slice(8, 10).replace(/^0/, '')}{' '}
-          {monthLabel(monthOf(props.date)).split(' ')[0]}
-        </span>
-        <span style={{ color: 'var(--text-tertiary)', 'font-size': '13px' }}>
-          {formatRelative(props.date, props.today)}
-        </span>
-        <span style={{ flex: '1' }} />
-        <Show when={props.pinned}>
-          <span style={{ 'font-size': '11px', 'font-weight': '700', color: 'var(--blue)', 'letter-spacing': '0.06em' }}>
-            SELECTED
-          </span>
-        </Show>
-      </div>
-      <Show
-        when={props.entries.length > 0}
-        fallback={
-          <div style={{ padding: '4px 14px 14px', color: 'var(--text-tertiary)', 'font-size': '14px' }}>
-            Nothing scheduled.
-          </div>
-        }
-      >
-        <For each={props.entries}>{(entry) => <EntryRow entry={entry} onOpenTask={props.onOpenTask} />}</For>
-        <div style={{ height: '6px' }} />
-      </Show>
-    </div>
-  );
-}
-
-/** Month calendar: the grid, the selected day pinned above everything, then
- *  the entire month as one list. Events come from the ICS subscription and are
- *  read-only; to-dos with a date for that month are folded in so the month
- *  actually reflects the plan rather than half of it. */
 export function CalendarScreen(): JSX.Element {
-  const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
-  const tasks = createLiveQuery(() => db.tasks.toArray(), []);
-  const [month, setMonth] = createSignal<MonthStr>(monthOf(currentDate()));
-  const [selected, setSelected] = createSignal<DateStr | null>(currentDate());
+  const today = todayStr();
+  const t = fromDateStr(today);
+  const [year, setYear] = createSignal(t.getFullYear());
+  const [month, setMonth] = createSignal(t.getMonth());
+  const [selected, setSelected] = createSignal<DateStr>(today);
   const [status, setStatus] = createSignal('');
+  const [refreshing, setRefreshing] = createSignal(false);
 
-  const agenda = createMemo(() => monthAgenda(events(), tasks(), month()));
-  const marked = createMemo(() => markedDays(events(), tasks(), month()));
-  const pinnedEntries = createMemo(() =>
-    selected() ? entriesOn(events(), tasks(), selected()!) : [],
-  );
-  const totalEntries = createMemo(() => agenda().reduce((n, d) => n + d.entries.length, 0));
+  const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
+  // Dated to-dos join the calendar: a month of subscribed events alone is
+  // empty for anyone who hasn't linked a feed, and this is a to-do app.
+  const tasks = createLiveQuery(() => db.tasks.toArray(), []);
 
-  /** Land somewhere the to-do actually lives, then expand it there. */
+  // Auto-refresh on open (throttled internally to once/hour)
+  onMount(() => { void refreshCalendar(); });
+
+  const doRefresh = async () => {
+    setRefreshing(true);
+    setStatus('Updating…');
+    const r = await refreshCalendar(true);
+    setStatus(r ? r.message : 'No calendar linked yet — add one in Settings.');
+    setRefreshing(false);
+  };
+
+  const monthStr = createMemo(() => `${year()}-${String(month() + 1).padStart(2, '0')}`);
+  /** Days in the visible month carrying anything — the grid's dots. */
+  const marked = createMemo(() => markedDays(events(), tasks(), monthStr()));
+  const cells = createMemo(() => monthCells(year(), month()));
+  const dayEvents = createMemo(() => entriesOn(events(), tasks(), selected()));
+  /** Every day of the month that has something on it, oldest first. */
+  const agenda = createMemo(() => monthAgenda(events(), tasks(), monthStr()));
+  const monthCount = createMemo(() => agenda().reduce((n, d) => n + d.entries.length, 0));
+
+  /** Land on a screen where the to-do actually lives, then expand it there. */
   const openTask = (id: string) => {
     const t = tasks().find((x) => x.id === id);
     if (!t) return;
     setExpandedTaskId(id);
     if (t.projectId) push({ name: 'project', id: t.projectId });
-    else if ((t.startDate ?? t.deadline ?? currentDate()) > currentDate()) {
-      push({ name: 'list', list: 'upcoming' });
-    } else push({ name: 'list', list: 'today' });
+    else if ((t.startDate ?? t.deadline ?? today) > today) push({ name: 'list', list: 'upcoming' });
+    else push({ name: 'list', list: 'today' });
   };
 
-  const refresh = async () => {
-    setStatus('Refreshing…');
-    const result = await refreshCalendar(true);
-    setStatus(result ? result.message : 'No calendar subscription set — add one in Settings.');
+  const entryTime = (e: AgendaEntry) =>
+    e.kind === 'task' ? (e.reason === 'deadline' ? 'due' : 'plan')
+    : e.start !== null ? formatTime(e.start)
+    : 'all-day';
+
+  const EntryRow = (props: { entry: AgendaEntry }): JSX.Element => (
+    <div
+      class={props.entry.kind === 'task' ? 'pressable' : undefined}
+      onClick={() => props.entry.kind === 'task' && openTask(props.entry.id)}
+      style={{
+        display: 'flex', 'align-items': 'baseline', gap: '10px', padding: '8px 0',
+        'border-bottom': '1px solid var(--separator)',
+        cursor: props.entry.kind === 'task' ? 'pointer' : 'default',
+      }}
+    >
+      <span style={{
+        'font-size': '12px', 'font-weight': '600', 'min-width': '54px',
+        'font-variant-numeric': 'tabular-nums',
+        color: props.entry.kind === 'task' && props.entry.reason === 'deadline'
+          ? 'var(--red)' : 'var(--text-secondary)',
+      }}>
+        {entryTime(props.entry)}
+      </span>
+      <span style={{ color: 'var(--text)', 'font-size': '15px' }}>
+        {props.entry.title || 'Untitled'}
+      </span>
+    </div>
+  );
+
+  const changeMonth = (delta: number) => {
+    const m = month() + delta;
+    const d = new Date(year(), m, 1);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
+  };
+
+  const fmtSelected = () => {
+    const d = fromDateStr(selected());
+    return `${WEEKDAYS[(d.getDay() + 6) % 7]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
   };
 
   return (
     <ScreenChrome
       title="Calendar"
       icon={<Icon name="calendar" size={28} color="var(--red)" />}
-      subtitle={`${totalEntries()} ${totalEntries() === 1 ? 'entry' : 'entries'} in ${monthLabel(month())}`}
       trailing={
         <button
           aria-label="Refresh calendar"
           data-testid="calendar-refresh"
-          onClick={() => void refresh()}
-          style={{ color: 'var(--blue)', padding: '8px 10px', display: 'flex' }}
+          disabled={refreshing()}
+          onClick={() => void doRefresh()}
+          style={{ color: 'var(--blue)', padding: '8px 12px', 'font-size': '15px', opacity: refreshing() ? '0.5' : '1' }}
         >
-          <Icon name="restore" size={19} />
+          <Icon name="restore" size={18} />
         </button>
       }
     >
-      <MonthCalendar
-        month={month()}
-        onMonthChange={(m) => {
-          setMonth(m);
-          // Keep a selection inside the visible month so the pin always matches
-          setSelected(m === monthOf(currentDate()) ? currentDate() : `${m}-01`);
-        }}
-        selected={selected()}
-        onSelect={setSelected}
-        today={currentDate()}
-        marked={marked()}
-      />
-
-      <Show when={status()}>
-        <div style={{ padding: '2px 18px 10px', color: 'var(--text-secondary)', 'font-size': '13px' }}>
-          {status()}
+      {/* Month header */}
+      <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', padding: '4px 16px 8px' }}>
+        <button aria-label="Previous month" data-testid="cal-prev" onClick={() => changeMonth(-1)}
+          style={{ color: 'var(--blue)', padding: '8px 14px' }}>
+          <Icon name="chevron-left" size={18} />
+        </button>
+        <div data-testid="cal-month-label" style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text)' }}>
+          {MONTHS[month()]} {year()}
         </div>
-      </Show>
-
-      <Show when={selected()}>
-        <DayCard
-          pinned
-          date={selected()!}
-          entries={pinnedEntries()}
-          today={currentDate()}
-          onOpenTask={openTask}
-        />
-        <a
-          href={googleCalendarUrl(selected()!)}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="add-google-event"
-          class="pressable"
-          style={{
-            display: 'flex',
-            'align-items': 'center',
-            gap: '8px',
-            margin: '0 16px 4px',
-            color: 'var(--blue)',
-            'font-size': '16px',
-            'font-weight': '500',
-            'text-decoration': 'none',
-          }}
-        >
-          <Icon name="plus" size={17} />
-          Add event in Google Calendar
-        </a>
-        <p style={{ padding: '4px 18px 14px', color: 'var(--text-tertiary)', 'font-size': '13px', 'line-height': '1.45' }}>
-          Opens Google Calendar prefilled for this day — save it there and it
-          appears here after the next refresh. Set the reminder in Google
-          Calendar too.
-        </p>
-      </Show>
-
-      <div
-        style={{
-          display: 'flex',
-          'align-items': 'center',
-          padding: '4px 18px 8px',
-          'border-bottom': '1px solid var(--separator)',
-          margin: '0 0 10px',
-        }}
-      >
-        <span style={{ flex: '1', 'font-weight': '700', 'font-size': '15px' }}>
-          All of {monthLabel(month())}
-        </span>
+        <button aria-label="Next month" data-testid="cal-next" onClick={() => changeMonth(1)}
+          style={{ color: 'var(--blue)', padding: '8px 14px' }}>
+          <Icon name="chevron-right" size={18} />
+        </button>
       </div>
 
-      <Show
-        when={agenda().length > 0}
-        fallback={
-          <div style={{ padding: '10px 18px 40px', color: 'var(--text-tertiary)', 'font-size': '15px' }}>
-            Nothing scheduled this month. Calendar events come from the iCal
-            subscription in Settings; dated to-dos show up here automatically.
-          </div>
-        }
-      >
-        <For each={agenda()}>
-          {(day, i) => (
-            <DayCard
-              date={day.date}
-              entries={day.entries}
-              today={currentDate()}
-              onOpenTask={openTask}
-              delay={staggerDelay(i())}
-            />
+      {/* Weekday header */}
+      <div style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', padding: '0 12px' }}>
+        <For each={WEEKDAYS}>
+          {(w) => (
+            <div style={{ 'text-align': 'center', 'font-size': '11px', 'font-weight': '600', color: 'var(--text-tertiary)', padding: '2px 0 6px' }}>
+              {w.slice(0, 1)}
+            </div>
           )}
         </For>
+      </div>
+
+      {/* Month grid */}
+      <div data-testid="cal-grid" style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', padding: '0 12px', gap: '2px' }}>
+        <For each={cells()}>
+          {(date) => (
+            <Show when={date} fallback={<div />}>
+              <button
+                data-testid={date === today ? 'cal-today' : undefined}
+                onClick={() => setSelected(date!)}
+                style={{
+                  display: 'flex',
+                  'flex-direction': 'column',
+                  'align-items': 'center',
+                  padding: '5px 0 3px',
+                  'border-radius': '10px',
+                  background: selected() === date ? 'var(--blue)' : 'transparent',
+                }}
+              >
+                <span style={{
+                  'font-size': '15px',
+                  'font-variant-numeric': 'tabular-nums',
+                  'font-weight': date === today ? '700' : '400',
+                  color: selected() === date ? '#fff' : date === today ? 'var(--blue)' : 'var(--text)',
+                }}>
+                  {Number(date!.slice(8))}
+                </span>
+                <span style={{
+                  width: '5px', height: '5px', 'border-radius': '50%', 'margin-top': '2px',
+                  background: marked().has(date!)
+                    ? (selected() === date ? '#fff' : 'var(--red)')
+                    : 'transparent',
+                }} />
+              </button>
+            </Show>
+          )}
+        </For>
+      </div>
+
+      {/* The selected day, pinned above the month */}
+      <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '14px 16px 4px' }}>
+        <span style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+          {fmtSelected()}
+        </span>
+        <span style={{ 'font-size': '11px', 'font-weight': '700', color: 'var(--blue)', 'letter-spacing': '0.06em' }}>
+          SELECTED
+        </span>
+      </div>
+      <div
+        data-testid="cal-day-events"
+        data-date={selected()}
+        style={{
+          background: 'var(--bg-inset)',
+          'border-radius': '12px',
+          margin: '0 12px 14px',
+          padding: '6px 14px',
+          border: '1.5px solid var(--blue)',
+        }}
+      >
+        <Show
+          when={dayEvents().length > 0}
+          fallback={
+            <div style={{ 'font-size': '14px', color: 'var(--text-tertiary)', padding: '10px 0' }}>
+              No events this day.
+            </div>
+          }
+        >
+          <For each={dayEvents()}>{(e) => <EntryRow entry={e} />}</For>
+        </Show>
+      </div>
+
+      {/* The whole month, in one list */}
+      <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 16px 6px', 'border-bottom': '1px solid var(--separator)', margin: '0 0 10px' }}>
+        <span style={{ flex: '1', 'font-weight': '700', 'font-size': '15px' }}>
+          All of {MONTHS[month()]}
+        </span>
+        <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+          {monthCount()} {monthCount() === 1 ? 'entry' : 'entries'}
+        </span>
+      </div>
+      <div data-testid="cal-month-agenda">
+        <Show
+          when={agenda().length > 0}
+          fallback={
+            <div style={{ padding: '2px 16px 14px', color: 'var(--text-tertiary)', 'font-size': '14px' }}>
+              Nothing scheduled this month.
+            </div>
+          }
+        >
+          <For each={agenda()}>
+            {(day, i) => (
+              <div
+                class="rise"
+                data-testid="agenda-day"
+                data-date={day.date}
+                style={{
+                  margin: '0 12px 10px',
+                  padding: '6px 14px',
+                  'border-radius': '12px',
+                  background: 'var(--bg-list)',
+                  border: day.date === selected() ? '1px solid var(--blue)' : '1px solid var(--separator)',
+                  'animation-delay': staggerDelay(i()),
+                }}
+              >
+                <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 0 2px' }}>
+                  <span style={{ 'font-weight': '700', 'font-size': '14px' }}>
+                    {WEEKDAYS[(fromDateStr(day.date).getDay() + 6) % 7]} {Number(day.date.slice(8))}
+                  </span>
+                  <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                    {formatRelative(day.date, today)}
+                  </span>
+                </div>
+                <For each={day.entries}>{(e) => <EntryRow entry={e} />}</For>
+              </div>
+            )}
+          </For>
+        </Show>
+      </div>
+
+      <div style={{ padding: '0 16px 10px' }}>
+        <button
+          data-testid="cal-add-event"
+          onClick={() => window.open(googleCalendarEventUrl({ date: selected() }), '_blank')}
+          style={{ display: 'inline-flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}
+        >
+          <Icon name="plus" size={15} />
+          Add event in Google Calendar
+        </button>
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-top': '4px', 'line-height': '1.45' }}>
+          Opens Google Calendar pre-filled for this day — save there and it appears
+          here on the next refresh. Set the reminder in Google Calendar too.
+        </div>
+      </div>
+
+      <Show when={status()}>
+        <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 16px 8px' }}>{status()}</div>
+      </Show>
+
+      <Show when={events().length === 0}>
+        <div style={{ padding: '4px 16px 16px' }}>
+          <button
+            onClick={() => push({ name: 'settings' })}
+            data-testid="cal-link-settings"
+            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}
+          >
+            Link your Google Calendar in Settings →
+          </button>
+        </div>
       </Show>
     </ScreenChrome>
   );

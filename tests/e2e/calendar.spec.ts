@@ -47,3 +47,148 @@ test('ICS subscription shows events in Today', async ({ page }) => {
   await expect(block).toContainText('Team standup');
   await expect(block).toContainText('all-day');
 });
+
+test('Calendar screen shows month grid with events from home row', async ({ page }) => {
+  const today = new Date();
+  const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  await page.route('https://calendar.example.com/feed.ics', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/calendar',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: icsFixture(compact),
+    }),
+  );
+
+  await loadSeeded(page);
+  // Link the calendar in settings first
+  await page.getByTestId('settings-button').click();
+  await page.getByTestId('ics-url').fill('https://calendar.example.com/feed.ics');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+  await page.getByTestId('back-button').last().click();
+
+  // Open the new Calendar screen from the home row above Logbook
+  await page.getByTestId('home-calendar').click();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  await expect(page.getByTestId('cal-month-label')).toHaveText(`${monthNames[today.getMonth()]} ${today.getFullYear()}`);
+
+  // Today is selected by default and its events listed
+  const dayEvents = page.getByTestId('cal-day-events');
+  await expect(dayEvents).toContainText('Team standup');
+  await expect(dayEvents).toContainText('Company holiday');
+  await expect(dayEvents).toContainText('all-day');
+
+  // Month navigation works
+  await page.getByTestId('cal-next').click();
+  const next = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  await expect(page.getByTestId('cal-month-label')).toHaveText(`${monthNames[next.getMonth()]} ${next.getFullYear()}`);
+  await page.getByTestId('cal-prev').click();
+  await expect(page.getByTestId('cal-month-label')).toHaveText(`${monthNames[today.getMonth()]} ${today.getFullYear()}`);
+
+  // Manual refresh button reports status
+  await page.getByTestId('calendar-refresh').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+});
+
+test('Calendar lists the whole month and pins the day you select', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('home-calendar').click();
+
+  // The seeded to-dos give this month dated entries, with or without a feed
+  const agenda = page.getByTestId('cal-month-agenda');
+  await expect(agenda).toBeVisible();
+  const days = page.getByTestId('agenda-day');
+  const dayCount = await days.count();
+  expect(dayCount).toBeGreaterThan(0);
+
+  // Today starts pinned above the month list
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  await expect(page.getByTestId('cal-day-events')).toHaveAttribute('data-date', iso);
+
+  // Selecting another day repins it without collapsing the month list
+  const target = await days.last().getAttribute('data-date');
+  await page.locator(`[data-testid="cal-grid"] button`).nth(Number(target!.slice(8)) - 1).click();
+  await expect(page.getByTestId('cal-day-events')).toHaveAttribute('data-date', target!);
+  await expect(page.getByTestId('agenda-day')).toHaveCount(dayCount);
+});
+
+test('sync still works when proxy field is cleared (Google-style CORS block)', async ({ page }) => {
+  const today = new Date();
+  const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  // Direct fetch fails like Google (no CORS header → browser blocks it)
+  await page.route('https://calendar.google.com/calendar/ical/secret/basic.ics', (route) =>
+    route.abort('failed'),
+  );
+  // Default proxy serves the feed
+  await page.route('https://corsproxy.io/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/calendar',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: icsFixture(compact),
+    }),
+  );
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page.getByTestId('ics-url').fill('https://calendar.google.com/calendar/ical/secret/basic.ics');
+  // Simulate the user having cleared the proxy field
+  await page.getByPlaceholder('CORS proxy prefix (optional)').fill('');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+  // The field restored itself to the default proxy
+  await expect(page.getByPlaceholder('CORS proxy prefix (optional)')).toHaveValue(/corsproxy/);
+});
+
+test('pasting a Google "Embed" link auto-converts to the public feed', async ({ page }) => {
+  const today = new Date();
+  const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  // The app should request the converted public ical URL, not the embed page
+  await page.route('https://calendar.google.com/calendar/ical/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/calendar',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: icsFixture(compact),
+    }),
+  );
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page
+    .getByTestId('ics-url')
+    .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com&ctz=Asia%2FKolkata');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
+});
+
+test('private embed link that cannot be fetched explains which link to copy', async ({ page }) => {
+  // Both direct and proxied fetches fail (private calendar)
+  await page.route('https://calendar.google.com/calendar/ical/**', (r) => r.abort('failed'));
+  await page.route('https://corsproxy.io/**', (r) => r.abort('failed'));
+  await page.route('https://api.allorigins.win/**', (r) => r.abort('failed'));
+
+  await loadSeeded(page);
+  await page.getByTestId('settings-button').click();
+  await page
+    .getByTestId('ics-url')
+    .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com');
+  await page.getByTestId('save-calendar').click();
+  await expect(page.getByText(/Secret address in iCal format/).first()).toBeVisible({ timeout: 15_000 });
+});
+
+test('Add event opens Google Calendar pre-filled for the selected day', async ({ page, context }) => {
+  await context.route('https://calendar.google.com/calendar/render**', (r) =>
+    r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }),
+  );
+  await loadSeeded(page);
+  await page.getByTestId('home-calendar').click();
+  const popupPromise = context.waitForEvent('page');
+  await page.getByTestId('cal-add-event').click();
+  const popup = await popupPromise;
+  expect(popup.url()).toContain('calendar.google.com/calendar/render');
+  expect(popup.url()).toContain('action=TEMPLATE');
+  await popup.close();
+});

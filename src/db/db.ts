@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
-  RoutineItem, RoutineLog,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -12,6 +12,10 @@ export class ClarityDB extends Dexie {
   tags!: EntityTable<Tag, 'id'>;
   settings!: EntityTable<Setting, 'key'>;
   calendarEvents!: EntityTable<CalendarEvent, 'id'>;
+  boards!: EntityTable<Board, 'id'>;
+  boardLists!: EntityTable<BoardList, 'id'>;
+  boardLabels!: EntityTable<BoardLabel, 'id'>;
+  cards!: EntityTable<Card, 'id'>;
   routineItems!: EntityTable<RoutineItem, 'id'>;
   routineLogs!: EntityTable<RoutineLog, 'id'>;
 
@@ -28,9 +32,18 @@ export class ClarityDB extends Dexie {
       settings: 'key',
       calendarEvents: 'id, date, calendarUrl',
     });
-    // v2: daily routine. Purely additive — no .upgrade() needed, existing rows
-    // are untouched and the two new tables simply start empty.
+    // v2: Trello-style boards. Purely additive — new tables only, so no
+    // .upgrade() is needed; existing rows are untouched.
     this.version(2).stores({
+      boards: 'id, orderKey, archived',
+      boardLists: 'id, boardId, archived',
+      boardLabels: 'id, boardId',
+      cards: 'id, boardId, listId, due, archived',
+    });
+    // v3: daily routine. Also purely additive. This is a separate version from
+    // the boards tables rather than folded into v2: v2 already shipped, so
+    // installs in the wild are sitting at it and must see a version bump.
+    this.version(3).stores({
       routineItems: 'id, active, orderKey',
       routineLogs: 'id, date, itemId',
     });

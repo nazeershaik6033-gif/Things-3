@@ -23,6 +23,12 @@ async function start(): Promise<void> {
     render(() => <App />, document.getElementById('root')!);
     // Mark the app as started so the global error handler backs off
     (window as Window & { __appStarted?: boolean }).__appStarted = true;
+    // Successful boot: re-arm the one-shot auto-recovery in index.html
+    try {
+      sessionStorage.removeItem('clarity-recovered');
+    } catch {
+      /* private mode */
+    }
     hideSplash();
   } catch (err) {
     const e = err as Error;
