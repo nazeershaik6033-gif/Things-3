@@ -130,18 +130,22 @@ ol {
   animation: rise-in 360ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
 }
 
-/* Tactile press. Transform-only, and scoped to pointer devices that actually
-   report :active reliably. The tiny scale is what makes taps feel physical. */
-.pressable {
+/* Tactile press. Transform-only — the tiny scale is what makes taps feel
+   physical. Deliberately NO will-change: a board can hold a hundred cards, and
+   permanently promoting a layer per card costs far more than letting the
+   compositor promote for the 140ms the transition actually runs. */
+.pressable,
+.pressable-card {
   transition: transform 140ms cubic-bezier(0.22, 0.9, 0.28, 1),
-    background-color 140ms ease;
-  will-change: transform;
+    background-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .pressable:active {
   transform: scale(0.975);
 }
 
+/* Cards scale less than rows: the same ratio on a big surface reads as a lurch. */
 .pressable-card:active {
   transform: scale(0.985);
 }

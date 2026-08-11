@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
+  DailyTarget, TargetOutcome,
 } from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
 import { fromDateStr, todayStr } from '../domain/dates';
@@ -13,7 +14,7 @@ import { logId } from '../domain/routine';
 type TableName =
   | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
   | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
-  | 'routineItems' | 'routineLogs';
+  | 'routineItems' | 'routineLogs' | 'dailyTargets';
 
 export interface Op {
   table: TableName;
@@ -568,6 +569,61 @@ export async function setRoutineDone(
     if (!before) return;
     await applyOps([{ table: 'routineLogs', key, before, after: null }]);
   }
+}
+
+// -------------------------------------------------------- daily target ----
+
+/** Write (or rewrite) the target for a day. Keyed by date, so setting it twice
+ *  in one morning replaces rather than duplicates. Rewriting the text of an
+ *  already-judged day keeps its verdict — you're fixing a typo, not reopening
+ *  the question. */
+export async function setDailyTarget(
+  date: DateStr,
+  text: string,
+  taskId: string | null = null,
+): Promise<void> {
+  const before = (await db.dailyTargets.get(date)) ?? null;
+  const after: DailyTarget = {
+    date,
+    text,
+    taskId,
+    outcome: before?.outcome ?? 'pending',
+    reflection: before?.reflection ?? '',
+    setAt: before?.setAt ?? Date.now(),
+    reviewedAt: before?.reviewedAt ?? null,
+  };
+  await applyOps([{ table: 'dailyTargets', key: date, before, after }]);
+}
+
+/** Record the night's verdict. Passing 'pending' un-judges the day, which is
+ *  how you take back a verdict you gave too early. */
+export async function reviewDailyTarget(
+  date: DateStr,
+  outcome: TargetOutcome,
+  reflection?: string,
+): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  const after: DailyTarget = {
+    ...before,
+    outcome,
+    reflection: reflection ?? before.reflection,
+    reviewedAt: outcome === 'pending' ? null : Date.now(),
+  };
+  await applyOps([{ table: 'dailyTargets', key: date, before, after }]);
+}
+
+/** Attach or detach the to-do that carries the target. */
+export async function linkTargetTask(date: DateStr, taskId: string | null): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  await applyOps([{ table: 'dailyTargets', key: date, before, after: { ...before, taskId } }]);
+}
+
+export async function clearDailyTarget(date: DateStr): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  await applyOps([{ table: 'dailyTargets', key: date, before, after: null }]);
 }
 
 // ------------------------------------------------------------- settings ----

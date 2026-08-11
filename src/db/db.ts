@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
-  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -18,6 +18,7 @@ export class ClarityDB extends Dexie {
   cards!: EntityTable<Card, 'id'>;
   routineItems!: EntityTable<RoutineItem, 'id'>;
   routineLogs!: EntityTable<RoutineLog, 'id'>;
+  dailyTargets!: EntityTable<DailyTarget, 'date'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -46,6 +47,11 @@ export class ClarityDB extends Dexie {
     this.version(3).stores({
       routineItems: 'id, active, orderKey',
       routineLogs: 'id, date, itemId',
+    });
+    // v4: the daily target. Keyed by date, so writing today's target twice
+    // replaces it rather than accumulating — one target a day, by construction.
+    this.version(4).stores({
+      dailyTargets: 'date, outcome',
     });
   }
 }

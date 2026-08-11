@@ -21,7 +21,7 @@ export function BoardCard(props: {
       data-card-id={props.card.id}
       data-list-id={props.card.listId}
       onClick={props.onOpen}
-      class="no-select"
+      class="no-select pressable-card"
       style={{
         background: 'var(--bg-card)',
         'border-radius': '10px',
@@ -29,6 +29,7 @@ export function BoardCard(props: {
         margin: '0 0 8px',
         overflow: 'hidden',
         opacity: props.card.completed ? '0.6' : '1',
+        cursor: 'pointer',
       }}
     >
       <Show when={props.card.cover}>

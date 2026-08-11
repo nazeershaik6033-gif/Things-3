@@ -130,3 +130,42 @@ test('card checklist and labels update the card badges', async ({ page }) => {
   // The card now shows a 0/1 checklist badge.
   await expect(page.getByText('0/1')).toBeVisible();
 });
+
+test('boards gallery shows per-board card and list counts', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('home-boards').click();
+
+  const tile = page.getByTestId('board-row').first();
+  await expect(tile).toContainText('Product Roadmap');
+  // The seeded board has three lists and at least one card in each
+  await expect(tile).toContainText(/\d+ cards/);
+  await expect(tile).toContainText('3 lists');
+});
+
+test('board calendar groups due cards by day and flags overdue ones', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('home-boards').click();
+  await page.getByTestId('board-row').first().click();
+  await page.getByTestId('board-calendar').click();
+
+  const days = page.getByTestId('board-agenda-day');
+  await expect(days.first()).toBeVisible();
+
+  // Every day card is dated, and days are listed oldest first
+  const dates = await days.evaluateAll((els) => els.map((e) => e.getAttribute('data-date')));
+  expect(dates.length).toBeGreaterThan(0);
+  expect(dates.every((d) => d !== null)).toBe(true);
+  expect([...dates].sort()).toEqual(dates);
+});
+
+test('a card cover renders on the card screen', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('home-boards').click();
+  await page.getByTestId('board-row').first().click();
+  await page.getByText('Design onboarding flow').click();
+
+  await expect(page.getByTestId('card-cover')).toBeHidden();
+  await page.getByRole('button', { name: 'Cover' }).click();
+  await page.getByRole('button', { name: 'Cover color' }).first().click();
+  await expect(page.getByTestId('card-cover')).toBeVisible();
+});

@@ -116,6 +116,23 @@ export interface CalendarEvent {
   calendarUrl: string; // source subscription (or 'file' for imports)
 }
 
+/** The single thing that would make today count. Exactly one per day: the id
+ *  IS the date, so "one target" is a property of the schema rather than a rule
+ *  the UI has to police. */
+export type TargetOutcome = 'pending' | 'hit' | 'partial' | 'missed';
+
+export interface DailyTarget {
+  date: DateStr; // primary key
+  text: string;
+  /** Optional to-do that carries the target; completing it counts as a hit. */
+  taskId: string | null;
+  outcome: TargetOutcome;
+  /** One line written at review time. */
+  reflection: string;
+  setAt: number;
+  reviewedAt: number | null;
+}
+
 // ---- Boards (Trello-style Kanban) ------------------------------------------
 // A self-contained section separate from tasks/projects: boards hold lists
 // (columns), lists hold cards. Ordering uses the same fractional orderKey

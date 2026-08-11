@@ -11,6 +11,7 @@ import { Sheet, SheetTitle } from '../ui/Sheet';
 import { setSearchOpen, setQuickEntry } from '../app/uiState';
 import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { routineProgress } from '../domain/routine';
+import { OUTCOME_COLOR, OUTCOME_LABEL, resolveAll, targetFor } from '../domain/target';
 import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
 import { createBoard } from '../db/boardMutations';
@@ -172,6 +173,7 @@ export function HomeScreen(): JSX.Element {
   const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
   const routineItems = createLiveQuery(() => db.routineItems.toArray(), []);
   const routineLogs = createLiveQuery(() => db.routineLogs.toArray(), []);
+  const targets = createLiveQuery(() => db.dailyTargets.toArray(), []);
   const [newListOpen, setNewListOpen] = createSignal(false);
 
   const counts = createMemo(() => sidebarCounts(tasks(), currentDate()));
@@ -185,6 +187,7 @@ export function HomeScreen(): JSX.Element {
   const standaloneProjects = createMemo(() => liveProjects().filter((p) => !p.areaId));
   const sortedAreas = createMemo(() => sortByOrderKey(areas()));
   const routine = createMemo(() => routineProgress(routineItems(), routineLogs(), currentDate()));
+  const target = createMemo(() => targetFor(resolveAll(targets(), tasks()), currentDate()));
 
   const listRow = (list: BuiltinList, label: string, tint: string, count?: number) => (
     <HomeRow
@@ -224,7 +227,7 @@ export function HomeScreen(): JSX.Element {
             Quick Find
           </button>
 
-          <WidgetDeck events={events()} tasks={tasks()} today={currentDate()} />
+          <WidgetDeck events={events()} tasks={tasks()} targets={targets()} today={currentDate()} />
 
           <CalendarStrip events={events()} tasks={tasks()} today={currentDate()} />
 
@@ -245,6 +248,34 @@ export function HomeScreen(): JSX.Element {
           <Board title="Lists" index={1}>
             {listRow('inbox', 'Inbox', 'rgba(47, 124, 246, 0.12)', counts().inbox)}
             {listRow('today', 'Today', 'rgba(247, 206, 70, 0.16)', counts().today)}
+            <HomeRow
+              testid="home-target"
+              tint="rgba(47, 124, 246, 0.12)"
+              icon={<Icon name="flag" size={18} color="var(--blue)" />}
+              label="Today's Target"
+              badge={
+                <span
+                  data-testid="home-target-state"
+                  style={{
+                    'font-size': '13px',
+                    'font-weight': '600',
+                    color: target()
+                      ? OUTCOME_COLOR[target()!.outcome]
+                      : 'var(--text-tertiary)',
+                  }}
+                >
+                  {/* Keyed off the resolved outcome, not on whether a verdict
+                      was typed: a hit carried by the linked to-do is just as
+                      true as one recorded by hand. */}
+                  {!target()
+                    ? 'Not set'
+                    : target()!.outcome === 'pending'
+                      ? 'Set'
+                      : OUTCOME_LABEL[target()!.outcome]}
+                </span>
+              }
+              onClick={() => push({ name: 'target' })}
+            />
             <HomeRow
               testid="home-routine"
               tint="rgba(182, 120, 224, 0.14)"

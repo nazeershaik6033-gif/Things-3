@@ -12,6 +12,7 @@ A fast, beautiful to-do app for iPhone — a love letter to [Things 3](https://c
 - To-dos with **markdown notes**, **checklists**, **tags**, start dates ("When") and **deadlines** with red overdue flags
 - **Signature interactions**: tap a row to expand it into an editing card in place; swipe right to complete; swipe left to schedule; long-press to drag-reorder (across sections); the draggable **Magic Plus** button — drop it where you want the new to-do
 - **Quick Find** search across everything
+- **Daily Target**: one thing you name in the morning and judge at night — Hit / Partial / Missed with a line of reflection, a hit streak, and a 14-day history. Optionally link a to-do so finishing it counts the target as hit
 - **Daily Routine**: a separate list of checks that resets every morning, with a completion ring, a streak counter and a 7-day history strip — habits never become overdue to-dos
 - **Calendar screen**: month grid with event dots, the whole month listed as one agenda, and the day you tap pinned to the top; plus a prefilled "Add event in Google Calendar" link
 - **Calendar events** (read-only) in Today and Upcoming via an iCal (.ics) subscription URL or file import
