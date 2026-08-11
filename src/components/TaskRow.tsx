@@ -3,8 +3,9 @@ import type { Task, Tag } from '../db/models';
 import { Checkbox } from '../ui/Checkbox';
 import { TagPill, DeadlineFlag, ChecklistChip } from '../ui/TagPill';
 import { Icon } from '../ui/Icon';
-import { completeTask, reopenTask, setTaskWhen } from '../db/mutations';
-import { addGrace, graceIds, removeGrace, setExpandedTaskId } from '../app/uiState';
+import { setTaskWhen } from '../db/mutations';
+import { toggleComplete } from '../app/completion';
+import { graceIds, setExpandedTaskId } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
@@ -24,16 +25,6 @@ export interface TaskRowContext {
   onSchedule: (taskId: string) => void;
   /** Disable swipe (trash/logbook). */
   noSwipe?: boolean;
-}
-
-export function toggleComplete(task: Task): void {
-  if (task.status === 'open') {
-    void completeTask(task.id);
-    addGrace(task.id);
-  } else {
-    void reopenTask(task.id);
-    removeGrace(task.id);
-  }
 }
 
 export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element {
@@ -193,4 +184,4 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
   );
 }
 
-export { setTaskWhen };
+export { setTaskWhen, toggleComplete };

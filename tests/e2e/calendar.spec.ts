@@ -91,6 +91,29 @@ test('Calendar screen shows month grid with events from home row', async ({ page
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
 });
 
+test('Calendar lists the whole month and pins the day you select', async ({ page }) => {
+  await loadSeeded(page);
+  await page.getByTestId('home-calendar').click();
+
+  // The seeded to-dos give this month dated entries, with or without a feed
+  const agenda = page.getByTestId('cal-month-agenda');
+  await expect(agenda).toBeVisible();
+  const days = page.getByTestId('agenda-day');
+  const dayCount = await days.count();
+  expect(dayCount).toBeGreaterThan(0);
+
+  // Today starts pinned above the month list
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  await expect(page.getByTestId('cal-day-events')).toHaveAttribute('data-date', iso);
+
+  // Selecting another day repins it without collapsing the month list
+  const target = await days.last().getAttribute('data-date');
+  await page.locator(`[data-testid="cal-grid"] button`).nth(Number(target!.slice(8)) - 1).click();
+  await expect(page.getByTestId('cal-day-events')).toHaveAttribute('data-date', target!);
+  await expect(page.getByTestId('agenda-day')).toHaveCount(dayCount);
+});
+
 test('sync still works when proxy field is cleared (Google-style CORS block)', async ({ page }) => {
   const today = new Date();
   const compact = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;

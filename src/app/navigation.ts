@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import { createSpring, SPRING } from '../gestures/springs';
 import { release, tryClaim } from '../gestures/arbiter';
+import { reduceMotion } from './motion';
 
 /** Custom navigation stack: screens stay mounted during iOS-style push/pop
  *  slides, and the left-edge swipe scrubs the same spring the buttons use.
@@ -16,6 +17,7 @@ export type Route =
   | { name: 'area'; id: string }
   | { name: 'tag'; id: string }
   | { name: 'calendar' }
+  | { name: 'routine' }
   | { name: 'settings' }
   | { name: 'boards' }
   | { name: 'board'; id: string }
@@ -37,6 +39,7 @@ export function hashFor(route: Route): string {
     case 'area': return `#/area/${route.id}`;
     case 'tag': return `#/tag/${route.id}`;
     case 'calendar': return '#/calendar';
+    case 'routine': return '#/routine';
     case 'settings': return '#/settings';
     case 'boards': return '#/boards';
     case 'board': return `#/board/${route.id}`;
@@ -52,6 +55,7 @@ export function parseHash(hash: string): Route {
   if ((BUILTINS as string[]).includes(head)) return { name: 'list', list: head as BuiltinList };
   if (head === 'calendar') return { name: 'calendar' };
   if (head === 'settings') return { name: 'settings' };
+  if (head === 'routine') return { name: 'routine' };
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };
   if (head === 'tag' && parts[1]) return { name: 'tag', id: parts[1] };
@@ -84,9 +88,15 @@ export function topRoute(): Route {
 
 /** Wrapper elements register themselves so navigation can animate them. */
 const screenEls = new Map<number, HTMLElement>();
+/** Each screen's dim veil, resolved once at registration. Looking it up per
+ *  frame — or worse, driving it through an inherited CSS custom property —
+ *  invalidates style for the whole screen subtree on every tick. */
+const dimEls = new WeakMap<HTMLElement, HTMLElement>();
 
 export function registerScreen(key: number, el: HTMLElement): void {
   screenEls.set(key, el);
+  const dim = el.querySelector<HTMLElement>('.screen-dim');
+  if (dim) dimEls.set(el, dim);
 }
 
 export function unregisterScreen(key: number): void {
@@ -100,6 +110,9 @@ let pendingGesturePop = false;
 let suppressPopstate = false;
 
 const PARALLAX = 0.3;
+/** How far the covered screen recedes, and how much it darkens, at full cover. */
+const UNDER_SCALE = 0.045;
+const UNDER_DIM = 0.16;
 
 function screenWidth(): number {
   return window.innerWidth;
@@ -109,6 +122,26 @@ function setX(el: HTMLElement | undefined, x: number): void {
   if (el) el.style.transform = x === 0 ? '' : `translate3d(${x}px, 0, 0)`;
 }
 
+/** Place the screen underneath the one being pushed. `progress` is the top
+ *  screen's offset as a fraction of the viewport: 0 = fully covering, 1 = gone.
+ *  The under-screen slides, recedes and darkens together, which reads as depth
+ *  rather than the flat side-by-side slide a bare parallax gives. Both writes
+ *  are compositor-only: a transform on the screen, an opacity on its veil. */
+function setUnder(el: HTMLElement | undefined, progress: number, width: number): void {
+  if (!el) return;
+  const covered = 1 - Math.min(1, Math.max(0, progress));
+  const dim = dimEls.get(el);
+  if (covered <= 0.001) {
+    el.style.transform = '';
+    if (dim) dim.style.opacity = '0';
+    return;
+  }
+  const x = -PARALLAX * width * covered;
+  const scale = 1 - UNDER_SCALE * covered;
+  el.style.transform = `translate3d(${x}px, 0, 0) scale(${scale})`;
+  if (dim) dim.style.opacity = String(UNDER_DIM * covered);
+}
+
 function animate(
   from: number,
   to: number,
@@ -116,6 +149,11 @@ function animate(
   onRest: () => void,
   velocity = 0,
 ): void {
+  if (reduceMotion()) {
+    apply(to);
+    onRest();
+    return;
+  }
   const spring = createSpring(from, apply, SPRING.nav);
   spring.to(to, { velocity, onRest });
 }
@@ -140,10 +178,10 @@ export function push(route: Route): void {
     setX(el, w);
     animate(w, 0, (v) => {
       setX(el, v);
-      setX(prevEl, -PARALLAX * (w - v));
+      setUnder(prevEl, v / w, w);
     }, () => {
       el.style.boxShadow = '';
-      setX(prevEl, 0);
+      setUnder(prevEl, 1, w);
       transitioning = false;
     });
   });
@@ -165,19 +203,19 @@ function performPop(animated: boolean, fromX?: number, velocity?: number): void 
   const w = screenWidth();
 
   if (!animated || !el) {
-    setX(underEl, 0);
+    setUnder(underEl, 1, w);
     setStack((x) => x.slice(0, -1));
     return;
   }
   transitioning = true;
   el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
   const start = fromX ?? 0;
-  setX(underEl, -PARALLAX * (w - start));
+  setUnder(underEl, start / w, w);
   animate(start, w, (v) => {
     setX(el, v);
-    setX(underEl, -PARALLAX * (w - v));
+    setUnder(underEl, v / w, w);
   }, () => {
-    setX(underEl, 0);
+    setUnder(underEl, 1, w);
     setStack((x) => x.slice(0, -1));
     transitioning = false;
   }, velocity);
@@ -224,10 +262,11 @@ export const edgeBack = {
     const under = s[s.length - 2]!;
     const el = screenEls.get(top.key);
     const underEl = screenEls.get(under.key);
+    const w = screenWidth();
     const x = Math.max(0, dx);
     if (el) el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
     setX(el, x);
-    setX(underEl, -PARALLAX * (screenWidth() - x));
+    setUnder(underEl, x / w, w);
   },
   end(dx: number, vx: number): void {
     release('edge-back');
@@ -243,7 +282,7 @@ export const edgeBack = {
       transitioning = true;
       animate(x, 0, (v) => {
         setX(el, v);
-        setX(underEl, -PARALLAX * (w - v));
+        setUnder(underEl, v / w, w);
       }, () => {
         if (el) el.style.boxShadow = '';
         transitioning = false;
@@ -256,7 +295,7 @@ export const edgeBack = {
     const underEl = screenEls.get(under.key);
     animate(x, w, (v) => {
       setX(el, v);
-      setX(underEl, -PARALLAX * (w - v));
+      setUnder(underEl, v / w, w);
     }, () => {
       transitioning = false;
       pendingGesturePop = true;

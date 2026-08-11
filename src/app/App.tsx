@@ -6,6 +6,8 @@ import {
 import { startDateTicker } from './currentDate';
 import { startTheme } from './theme';
 import { startCalendarSync } from './calendar';
+import { startMotion } from './motion';
+import { startSettings } from './settings';
 import { startFocusClock } from './pomodoro';
 import { FocusTimerMiniBar, FocusTimerOverlay } from '../components/PomodoroTimer';
 import { startReminders } from './reminders';
@@ -19,8 +21,9 @@ import { AreaScreen } from '../screens/AreaScreen';
 import { TagScreen } from '../screens/TagScreen';
 import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
+import { RoutineScreen } from '../screens/RoutineScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { BoardsScreen } from '../screens/BoardsScreen';
 import { BoardScreen } from '../screens/BoardScreen';
 import { BoardCalendarScreen } from '../screens/BoardCalendarScreen';
@@ -28,6 +31,7 @@ import { CardScreen } from '../screens/CardScreen';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
+import { CompletionPromptHost } from '../components/CompletionDatePrompt';
 import { ScreenKeyContext } from './screenContext';
 
 function ScreenFor(props: { route: Route }): JSX.Element {
@@ -42,6 +46,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'area': return <AreaScreen id={r.id} />;
     case 'tag': return <TagScreen id={r.id} />;
     case 'calendar': return <CalendarScreen />;
+    case 'routine': return <RoutineScreen />;
     case 'settings': return <SettingsScreen />;
     case 'boards': return <BoardsScreen />;
     case 'board': return <BoardScreen id={r.id} />;
@@ -58,6 +63,7 @@ function ScreenWrapper(props: { entry: StackEntry }): JSX.Element {
     <ScreenKeyContext.Provider value={props.entry.key}>
       <div ref={el} class="screen" data-route={props.entry.route.name}>
         <ScreenFor route={props.entry.route} />
+        <div class="screen-dim" aria-hidden="true" />
       </div>
     </ScreenKeyContext.Provider>
   );
@@ -67,8 +73,10 @@ export function App(): JSX.Element {
   let root!: HTMLDivElement;
 
   onMount(() => {
+    startMotion();
     startTheme();
     startDateTicker();
+    void startSettings();
     startNavigation();
     startCalendarSync();
     startFocusClock();
@@ -107,6 +115,7 @@ export function App(): JSX.Element {
       <For each={stack()}>{(entry) => <ScreenWrapper entry={entry} />}</For>
       <SearchOverlay />
       <QuickEntry />
+      <CompletionPromptHost />
       <InstallCoachMark />
       <FocusTimerMiniBar />
       <FocusTimerOverlay />

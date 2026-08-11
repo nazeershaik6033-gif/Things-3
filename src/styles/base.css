@@ -75,6 +75,19 @@ ol {
      in Safari; contain:layout causes invisible content on iOS in some builds */
 }
 
+/* The screen being covered by a push dims behind the incoming one. This has to
+   be a real element whose opacity we set directly: driving it from a CSS custom
+   property on .screen invalidates style for the entire subtree every frame,
+   which starves the spring loop on a content-heavy screen like Home. */
+.screen-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .screen-scroll {
   flex: 1;
   overflow-y: auto;
@@ -98,6 +111,56 @@ ol {
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Entrance: content rises into place as a screen settles. Applied with an
+   inline animation-delay from staggerDelay() so groups cascade. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise-in 360ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
+}
+
+/* Tactile press. Transform-only, and scoped to pointer devices that actually
+   report :active reliably. The tiny scale is what makes taps feel physical. */
+.pressable {
+  transition: transform 140ms cubic-bezier(0.22, 0.9, 0.28, 1),
+    background-color 140ms ease;
+  will-change: transform;
+}
+
+.pressable:active {
+  transform: scale(0.975);
+}
+
+.pressable-card:active {
+  transform: scale(0.985);
+}
+
+/* A single honest switch: when the user asks for less motion they get none of
+   the decorative kind. Navigation still moves, just without the spring travel
+   (see reduceMotion() in app/motion.ts). */
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .pressable,
+  .pressable-card {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .pressable:active,
+  .pressable-card:active {
+    transform: none;
+  }
 }
 
 /* Focus Timer overtime pulse */

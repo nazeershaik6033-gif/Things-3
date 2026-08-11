@@ -19,7 +19,8 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
   // Expand inline, schedule for Today via the card's When picker
   await page.getByText('Write the report').click();
   await expect(page.locator('[data-task-card]')).toBeVisible();
-  await page.getByRole('button', { name: 'Schedule' }).click();
+  // Scope to the card: Home's Up Next widget also matches "schedule"
+  await page.locator('[data-task-card]').getByRole('button', { name: 'Schedule', exact: true }).click();
   await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
 
   // Scheduling moves it out of the Inbox (card closes with it)
@@ -53,16 +54,16 @@ test('quick entry with notes, checklist, tags, deadline and destination', async 
   await page.getByPlaceholder('New To-Do').fill('Prepare slides');
 
   // Notes
-  await page.getByRole('button', { name: 'Notes' }).click();
+  await page.getByRole('button', { name: 'Notes', exact: true }).click();
   await page.getByPlaceholder('Notes').fill('Use the **new** template');
 
   // Checklist
-  await page.getByRole('button', { name: 'Checklist' }).click();
+  await page.getByRole('button', { name: 'Checklist', exact: true }).click();
   await page.getByText('+ Add item').click();
   await page.locator('input[data-checklist-id]').first().fill('Outline');
 
   // Deadline (pick a day from the calendar: use "Today" not available → tap a date)
-  await page.getByRole('button', { name: 'Deadline' }).click();
+  await page.getByRole('button', { name: 'Deadline', exact: true }).click();
   await page.getByRole('button', { name: 'Next month' }).click();
   await page.getByRole('button', { name: '15', exact: true }).click();
 

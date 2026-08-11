@@ -9,7 +9,7 @@ export type IconName =
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
   | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil'
-  | 'board' | 'clock' | 'comment';
+  | 'board' | 'clock' | 'comment' | 'repeat' | 'flame' | 'grip';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -180,6 +180,30 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   ),
   comment: () => (
     <path d="M4 5.5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V16.5H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
+  ),
+  repeat: () => (
+    <>
+      <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M20 3.6v5h-5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M4 20.4v-5h5" stroke-linecap="round" stroke-linejoin="round" />
+    </>
+  ),
+  flame: () => (
+    <>
+      <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" fill="currentColor" opacity="0.25" stroke="none" />
+      <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" stroke-linejoin="round" />
+    </>
+  ),
+  grip: () => (
+    <>
+      <circle cx="9" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="17" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="17" r="1.5" fill="currentColor" stroke="none" />
+    </>
   ),
 };
 

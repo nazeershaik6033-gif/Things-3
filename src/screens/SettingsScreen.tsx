@@ -4,6 +4,7 @@ import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
+import { askCompletionDate, setAskCompletionDate } from '../app/settings';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
 import { push } from '../app/navigation';
@@ -158,6 +159,55 @@ export function SettingsScreen(): JSX.Element {
           >
             {themePref() === 'auto' ? '✓ ' : ''}Follow system
           </button>
+        </div>
+      </Section>
+
+      <Section title="Completing to-dos">
+        <button
+          data-testid="toggle-ask-completion"
+          onClick={() => void setAskCompletionDate(!askCompletionDate())}
+          style={{
+            display: 'flex',
+            'align-items': 'center',
+            gap: '12px',
+            width: '100%',
+            padding: '11px 0',
+            'text-align': 'left',
+          }}
+        >
+          <span style={{ flex: '1', 'font-size': '15px' }}>Ask when a late to-do was finished</span>
+          <span
+            style={{
+              width: '46px',
+              height: '28px',
+              'border-radius': '999px',
+              background: askCompletionDate() ? 'var(--green)' : 'var(--check-border)',
+              position: 'relative',
+              flex: 'none',
+              transition: 'background 160ms ease',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '24px',
+                height: '24px',
+                'border-radius': '50%',
+                background: '#fff',
+                'box-shadow': '0 1px 3px rgba(0,0,0,0.3)',
+                // transform, not `left`: the knob must not trigger layout
+                transform: askCompletionDate() ? 'translateX(18px)' : 'none',
+                transition: 'transform 160ms cubic-bezier(0.22, 0.9, 0.28, 1)',
+              }}
+            />
+          </span>
+        </button>
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
+          Ticking a to-do whose date has already passed asks which day you
+          actually finished it, and files it under that day in the Logbook. Turn
+          this off to always log the moment you tick.
         </div>
       </Section>
 

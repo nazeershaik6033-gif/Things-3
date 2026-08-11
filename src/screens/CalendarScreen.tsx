@@ -3,10 +3,13 @@ import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { refreshCalendar } from '../app/calendar';
 import { push } from '../app/navigation';
-import { todayStr, toDateStr, fromDateStr, formatTime } from '../domain/dates';
-import type { CalendarEvent, DateStr } from '../db/models';
+import { todayStr, toDateStr, fromDateStr, formatTime, formatRelative } from '../domain/dates';
+import type { DateStr } from '../db/models';
 import { Icon } from '../ui/Icon';
 import { googleCalendarEventUrl } from '../domain/googleCal';
+import { entriesOn, markedDays, monthAgenda, type AgendaEntry } from '../domain/calendarMonth';
+import { staggerDelay } from '../app/motion';
+import { setExpandedTaskId } from '../app/uiState';
 import { ScreenChrome } from './common';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -33,6 +36,9 @@ export function CalendarScreen(): JSX.Element {
   const [refreshing, setRefreshing] = createSignal(false);
 
   const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
+  // Dated to-dos join the calendar: a month of subscribed events alone is
+  // empty for anyone who hasn't linked a feed, and this is a to-do app.
+  const tasks = createLiveQuery(() => db.tasks.toArray(), []);
 
   // Auto-refresh on open (throttled internally to once/hour)
   onMount(() => { void refreshCalendar(); });
@@ -45,18 +51,53 @@ export function CalendarScreen(): JSX.Element {
     setRefreshing(false);
   };
 
-  const byDate = createMemo(() => {
-    const map = new Map<DateStr, CalendarEvent[]>();
-    for (const e of events()) {
-      const list = map.get(e.date) ?? [];
-      list.push(e);
-      map.set(e.date, list);
-    }
-    return map;
-  });
-
+  const monthStr = createMemo(() => `${year()}-${String(month() + 1).padStart(2, '0')}`);
+  /** Days in the visible month carrying anything — the grid's dots. */
+  const marked = createMemo(() => markedDays(events(), tasks(), monthStr()));
   const cells = createMemo(() => monthCells(year(), month()));
-  const dayEvents = createMemo(() => byDate().get(selected()) ?? []);
+  const dayEvents = createMemo(() => entriesOn(events(), tasks(), selected()));
+  /** Every day of the month that has something on it, oldest first. */
+  const agenda = createMemo(() => monthAgenda(events(), tasks(), monthStr()));
+  const monthCount = createMemo(() => agenda().reduce((n, d) => n + d.entries.length, 0));
+
+  /** Land on a screen where the to-do actually lives, then expand it there. */
+  const openTask = (id: string) => {
+    const t = tasks().find((x) => x.id === id);
+    if (!t) return;
+    setExpandedTaskId(id);
+    if (t.projectId) push({ name: 'project', id: t.projectId });
+    else if ((t.startDate ?? t.deadline ?? today) > today) push({ name: 'list', list: 'upcoming' });
+    else push({ name: 'list', list: 'today' });
+  };
+
+  const entryTime = (e: AgendaEntry) =>
+    e.kind === 'task' ? (e.reason === 'deadline' ? 'due' : 'plan')
+    : e.start !== null ? formatTime(e.start)
+    : 'all-day';
+
+  const EntryRow = (props: { entry: AgendaEntry }): JSX.Element => (
+    <div
+      class={props.entry.kind === 'task' ? 'pressable' : undefined}
+      onClick={() => props.entry.kind === 'task' && openTask(props.entry.id)}
+      style={{
+        display: 'flex', 'align-items': 'baseline', gap: '10px', padding: '8px 0',
+        'border-bottom': '1px solid var(--separator)',
+        cursor: props.entry.kind === 'task' ? 'pointer' : 'default',
+      }}
+    >
+      <span style={{
+        'font-size': '12px', 'font-weight': '600', 'min-width': '54px',
+        'font-variant-numeric': 'tabular-nums',
+        color: props.entry.kind === 'task' && props.entry.reason === 'deadline'
+          ? 'var(--red)' : 'var(--text-secondary)',
+      }}>
+        {entryTime(props.entry)}
+      </span>
+      <span style={{ color: 'var(--text)', 'font-size': '15px' }}>
+        {props.entry.title || 'Untitled'}
+      </span>
+    </div>
+  );
 
   const changeMonth = (delta: number) => {
     const m = month() + delta;
@@ -139,7 +180,7 @@ export function CalendarScreen(): JSX.Element {
                 </span>
                 <span style={{
                   width: '5px', height: '5px', 'border-radius': '50%', 'margin-top': '2px',
-                  background: (byDate().get(date!)?.length ?? 0) > 0
+                  background: marked().has(date!)
                     ? (selected() === date ? '#fff' : 'var(--red)')
                     : 'transparent',
                 }} />
@@ -149,11 +190,26 @@ export function CalendarScreen(): JSX.Element {
         </For>
       </div>
 
-      {/* Selected day events */}
-      <div style={{ padding: '14px 16px 4px', 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
-        {fmtSelected()}
+      {/* The selected day, pinned above the month */}
+      <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '14px 16px 4px' }}>
+        <span style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+          {fmtSelected()}
+        </span>
+        <span style={{ 'font-size': '11px', 'font-weight': '700', color: 'var(--blue)', 'letter-spacing': '0.06em' }}>
+          SELECTED
+        </span>
       </div>
-      <div data-testid="cal-day-events" style={{ background: 'var(--bg-inset)', 'border-radius': '12px', margin: '0 12px 12px', padding: '6px 14px' }}>
+      <div
+        data-testid="cal-day-events"
+        data-date={selected()}
+        style={{
+          background: 'var(--bg-inset)',
+          'border-radius': '12px',
+          margin: '0 12px 14px',
+          padding: '6px 14px',
+          border: '1.5px solid var(--blue)',
+        }}
+      >
         <Show
           when={dayEvents().length > 0}
           fallback={
@@ -162,13 +218,52 @@ export function CalendarScreen(): JSX.Element {
             </div>
           }
         >
-          <For each={dayEvents()}>
-            {(e) => (
-              <div style={{ display: 'flex', 'align-items': 'baseline', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)' }}>
-                <span style={{ color: 'var(--text-secondary)', 'font-size': '12px', 'font-weight': '600', 'min-width': '54px', 'font-variant-numeric': 'tabular-nums' }}>
-                  {e.allDay ? 'all-day' : e.start !== null ? formatTime(e.start) : ''}
-                </span>
-                <span style={{ color: 'var(--text)', 'font-size': '15px' }}>{e.title}</span>
+          <For each={dayEvents()}>{(e) => <EntryRow entry={e} />}</For>
+        </Show>
+      </div>
+
+      {/* The whole month, in one list */}
+      <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 16px 6px', 'border-bottom': '1px solid var(--separator)', margin: '0 0 10px' }}>
+        <span style={{ flex: '1', 'font-weight': '700', 'font-size': '15px' }}>
+          All of {MONTHS[month()]}
+        </span>
+        <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+          {monthCount()} {monthCount() === 1 ? 'entry' : 'entries'}
+        </span>
+      </div>
+      <div data-testid="cal-month-agenda">
+        <Show
+          when={agenda().length > 0}
+          fallback={
+            <div style={{ padding: '2px 16px 14px', color: 'var(--text-tertiary)', 'font-size': '14px' }}>
+              Nothing scheduled this month.
+            </div>
+          }
+        >
+          <For each={agenda()}>
+            {(day, i) => (
+              <div
+                class="rise"
+                data-testid="agenda-day"
+                data-date={day.date}
+                style={{
+                  margin: '0 12px 10px',
+                  padding: '6px 14px',
+                  'border-radius': '12px',
+                  background: 'var(--bg-list)',
+                  border: day.date === selected() ? '1px solid var(--blue)' : '1px solid var(--separator)',
+                  'animation-delay': staggerDelay(i()),
+                }}
+              >
+                <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 0 2px' }}>
+                  <span style={{ 'font-weight': '700', 'font-size': '14px' }}>
+                    {WEEKDAYS[(fromDateStr(day.date).getDay() + 6) % 7]} {Number(day.date.slice(8))}
+                  </span>
+                  <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                    {formatRelative(day.date, today)}
+                  </span>
+                </div>
+                <For each={day.entries}>{(e) => <EntryRow entry={e} />}</For>
               </div>
             )}
           </For>

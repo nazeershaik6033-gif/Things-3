@@ -1,7 +1,7 @@
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Setting,
-  Board, BoardList, BoardLabel, Card,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
 } from './models';
 
 export interface ExportFile {
@@ -15,15 +15,25 @@ export interface ExportFile {
     areas: Area[];
     tags: Tag[];
     settings: Setting[];
-    // Board data is optional so v1 backups still import cleanly.
+    // Every table below arrived after schema 1, so all are optional: an older
+    // backup simply has nothing to restore into them.
     boards?: Board[];
     boardLists?: BoardList[];
     boardLabels?: BoardLabel[];
     cards?: Card[];
+    /** Added in schema 3. */
+    routineItems?: RoutineItem[];
+    routineLogs?: RoutineLog[];
   };
 }
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+const TABLES = [
+  'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
+  'boards', 'boardLists', 'boardLabels', 'cards',
+  'routineItems', 'routineLogs',
+] as const;
 
 export async function exportData(): Promise<ExportFile> {
   return {
@@ -41,6 +51,8 @@ export async function exportData(): Promise<ExportFile> {
       boardLists: await db.boardLists.toArray(),
       boardLabels: await db.boardLabels.toArray(),
       cards: await db.cards.toArray(),
+      routineItems: await db.routineItems.toArray(),
+      routineLogs: await db.routineLogs.toArray(),
     },
   };
 }
@@ -58,6 +70,13 @@ export function validateExport(json: unknown): ExportFile {
       !Array.isArray(d.tags) || !Array.isArray(d.settings)) {
     throw new Error('Backup file is malformed.');
   }
+  // Routine tables arrived in schema 2 — missing is fine, wrong type is not
+  if (d.routineItems !== undefined && !Array.isArray(d.routineItems)) {
+    throw new Error('Backup file is malformed.');
+  }
+  if (d.routineLogs !== undefined && !Array.isArray(d.routineLogs)) {
+    throw new Error('Backup file is malformed.');
+  }
   for (const t of d.tasks) {
     if (typeof t.id !== 'string' || typeof t.title !== 'string') {
       throw new Error('Backup file contains invalid tasks.');
@@ -68,26 +87,20 @@ export function validateExport(json: unknown): ExportFile {
 
 /** Replace-all import (caller confirms with the user first). */
 export async function importData(file: ExportFile): Promise<void> {
-  await db.transaction(
-    'rw',
-    [db.tasks, db.projects, db.headings, db.areas, db.tags, db.settings,
-      db.boards, db.boardLists, db.boardLabels, db.cards],
-    async () => {
-      await Promise.all([
-        db.tasks.clear(), db.projects.clear(), db.headings.clear(),
-        db.areas.clear(), db.tags.clear(), db.settings.clear(),
-        db.boards.clear(), db.boardLists.clear(), db.boardLabels.clear(), db.cards.clear(),
-      ]);
-      await db.tasks.bulkPut(file.data.tasks);
-      await db.projects.bulkPut(file.data.projects);
-      await db.headings.bulkPut(file.data.headings);
-      await db.areas.bulkPut(file.data.areas);
-      await db.tags.bulkPut(file.data.tags);
-      await db.settings.bulkPut(file.data.settings);
-      await db.boards.bulkPut(file.data.boards ?? []);
-      await db.boardLists.bulkPut(file.data.boardLists ?? []);
-      await db.boardLabels.bulkPut(file.data.boardLabels ?? []);
-      await db.cards.bulkPut(file.data.cards ?? []);
-    },
-  );
+  const tables = TABLES.map((name) => db.table(name));
+  await db.transaction('rw', tables, async () => {
+    await Promise.all(tables.map((t) => t.clear()));
+    await db.tasks.bulkPut(file.data.tasks);
+    await db.projects.bulkPut(file.data.projects);
+    await db.headings.bulkPut(file.data.headings);
+    await db.areas.bulkPut(file.data.areas);
+    await db.tags.bulkPut(file.data.tags);
+    await db.settings.bulkPut(file.data.settings);
+    await db.boards.bulkPut(file.data.boards ?? []);
+    await db.boardLists.bulkPut(file.data.boardLists ?? []);
+    await db.boardLabels.bulkPut(file.data.boardLabels ?? []);
+    await db.cards.bulkPut(file.data.cards ?? []);
+    await db.routineItems.bulkPut(file.data.routineItems ?? []);
+    await db.routineLogs.bulkPut(file.data.routineLogs ?? []);
+  });
 }

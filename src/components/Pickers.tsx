@@ -43,12 +43,20 @@ function PickerRow(props: {
   );
 }
 
-/** One swipeable month grid. Past days are dimmed but selectable. */
+/** One swipeable month grid. Past days are dimmed but selectable, unless
+ *  `disableAfter` bounds the range (the completion-date prompt can't accept a
+ *  day that hasn't happened yet). */
 export function MonthGrid(props: {
   selected: DateStr | null;
   onSelect: (d: DateStr) => void;
+  disableAfter?: DateStr;
+  /** Month to open on, as YYYY-MM. Defaults to the current month. */
+  initialMonth?: string;
 }): JSX.Element {
-  const [monthStart, setMonthStart] = createSignal<DateStr>(`${currentDate().slice(0, 7)}-01`);
+  const [monthStart, setMonthStart] = createSignal<DateStr>(
+    `${props.initialMonth ?? currentDate().slice(0, 7)}-01`,
+  );
+  const disabled = (d: DateStr) => props.disableAfter !== undefined && d > props.disableAfter;
   const weeks = createMemo(() => {
     const start = fromDateStr(monthStart());
     const firstWeekday = start.getDay();
@@ -92,12 +100,15 @@ export function MonthGrid(props: {
           {(day) => (
             <Show when={day} fallback={<span />}>
               <button
-                onClick={() => props.onSelect(day!)}
+                disabled={disabled(day!)}
+                onClick={() => !disabled(day!) && props.onSelect(day!)}
                 style={{
                   padding: '7px 0',
                   'border-radius': '50%',
                   'font-size': '15px',
                   background: props.selected === day ? 'var(--blue)' : 'transparent',
+                  opacity: disabled(day!) ? '0.3' : '1',
+                  cursor: disabled(day!) ? 'default' : 'pointer',
                   color:
                     props.selected === day ? '#fff'
                     : day! < currentDate() ? 'var(--text-tertiary)'

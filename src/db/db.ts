@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
-  Board, BoardList, BoardLabel, Card,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -16,6 +16,8 @@ export class ClarityDB extends Dexie {
   boardLists!: EntityTable<BoardList, 'id'>;
   boardLabels!: EntityTable<BoardLabel, 'id'>;
   cards!: EntityTable<Card, 'id'>;
+  routineItems!: EntityTable<RoutineItem, 'id'>;
+  routineLogs!: EntityTable<RoutineLog, 'id'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -37,6 +39,13 @@ export class ClarityDB extends Dexie {
       boardLists: 'id, boardId, archived',
       boardLabels: 'id, boardId',
       cards: 'id, boardId, listId, due, archived',
+    });
+    // v3: daily routine. Also purely additive. This is a separate version from
+    // the boards tables rather than folded into v2: v2 already shipped, so
+    // installs in the wild are sitting at it and must see a version bump.
+    this.version(3).stores({
+      routineItems: 'id, active, orderKey',
+      routineLogs: 'id, date, itemId',
     });
   }
 }
