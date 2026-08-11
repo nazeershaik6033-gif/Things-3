@@ -1,5 +1,6 @@
 import { createLongPress } from '../gestures/createLongPress';
 import { createSpring, Spring, SPRING } from '../gestures/springs';
+import { haptic } from '../app/motion';
 import { release, tryClaim, closeOpenRow } from '../gestures/arbiter';
 import { setExpandedTaskId } from '../app/uiState';
 
@@ -128,7 +129,10 @@ export function createBoardDrag(group: HTMLElement, opts: BoardDragOpts): () => 
       cloneEl?.remove();
       if (d) { d.style.display = ''; d.style.visibility = ''; }
       dragged = null; clone = null; placeholder = null;
-      if (commit && d) opts.onDrop(id, listId, index);
+      if (commit && d) {
+        haptic('success'); // the card landed
+        opts.onDrop(id, listId, index);
+      }
     };
 
     if (cloneEl && ph) {
@@ -154,6 +158,7 @@ export function createBoardDrag(group: HTMLElement, opts: BoardDragOpts): () => 
       setExpandedTaskId(null);
       dragged = cardEl;
       cardId = cardEl.dataset.cardId!;
+      haptic('select'); // the card has been picked up
       const rect = cardEl.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
@@ -201,8 +206,13 @@ export function createBoardDrag(group: HTMLElement, opts: BoardDragOpts): () => 
     },
   });
 
+  /** The slight tilt is what sells "lifted off the board" — a card held at a
+   *  perfect right angle reads as still attached to the column. */
   function applyClone(): void {
-    if (clone) clone.style.transform = `translate3d(${cloneSpringX.value}px, ${cloneSpringY.value}px, 0) scale(1.03)`;
+    if (clone) {
+      clone.style.transform =
+        `translate3d(${cloneSpringX.value}px, ${cloneSpringY.value}px, 0) scale(1.03) rotate(1.6deg)`;
+    }
   }
 
   return () => {

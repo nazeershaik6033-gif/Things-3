@@ -2,6 +2,7 @@ import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
 import { createLiveQuery, createReactiveLiveQuery } from '../db/liveQuery';
 import { back } from '../app/navigation';
+import { haptic, staggerDelay } from '../app/motion';
 import { currentDate } from '../app/currentDate';
 import { formatRelative, formatTime } from '../domain/dates';
 import { sortByOrderKey } from '../db/ordering';
@@ -75,13 +76,17 @@ export function CardScreen(props: { id: string }): JSX.Element {
         }
         subtitle={`in ${listName()}`}
         trailing={
-          <button aria-label="Card menu" data-testid="card-menu" onClick={() => setMenuOpen(true)} style={{ color: 'var(--text-secondary)', padding: '8px 10px', display: 'flex' }}>
+          <button aria-label="Card menu" data-testid="card-menu" class="pressable" onClick={() => setMenuOpen(true)} style={{ color: 'var(--text-secondary)', padding: '8px 10px', display: 'flex' }}>
             <Icon name="ellipsis" size={20} />
           </button>
         }
       >
         <Show when={card()!.cover}>
-          <div style={{ height: '10px', background: card()!.cover!, margin: '0 16px 10px', 'border-radius': '6px' }} />
+          <div
+            class="rise"
+            data-testid="card-cover"
+            style={{ height: '52px', background: card()!.cover!, margin: '0 16px 12px', 'border-radius': '12px' }}
+          />
         </Show>
 
         {/* Quick actions */}
@@ -93,14 +98,18 @@ export function CardScreen(props: { id: string }): JSX.Element {
 
         {/* Labels */}
         <Show when={labels().length > 0}>
-          <Section title="Labels">
+          <Section title="Labels" index={1}>
             <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap' }}>
               <For each={labels()}>
                 {(label) => {
                   const on = () => card()!.labelIds.includes(label.id);
                   return (
                     <button
-                      onClick={() => void toggleCardLabel(props.id, label.id)}
+                      class="pressable"
+                      onClick={() => {
+                        haptic('tick');
+                        void toggleCardLabel(props.id, label.id);
+                      }}
                       style={{
                         padding: '6px 12px',
                         'border-radius': '7px',
@@ -109,6 +118,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
                         'font-size': '13px',
                         'font-weight': '600',
                         opacity: on() ? '1' : '0.4',
+                        'box-shadow': on() ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
                       }}
                     >
                       {label.title || '—'}
@@ -121,7 +131,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
         </Show>
 
         {/* Description */}
-        <Section title="Description">
+        <Section title="Description" index={2}>
           <textarea
             value={card()!.description}
             placeholder="Add a more detailed description…"
@@ -137,12 +147,12 @@ export function CardScreen(props: { id: string }): JSX.Element {
         </Section>
 
         {/* Checklist */}
-        <Section title="Checklist">
+        <Section title="Checklist" index={3}>
           <ChecklistEditor items={card()!.checklist} onChange={(items) => void setCardChecklist(props.id, items)} />
         </Section>
 
         {/* Comments */}
-        <Section title="Activity">
+        <Section title="Activity" index={4}>
           <div style={{ display: 'flex', gap: '8px', 'margin-bottom': '10px' }}>
             <input
               value={comment()}
@@ -250,9 +260,9 @@ export function CardScreen(props: { id: string }): JSX.Element {
   );
 }
 
-function Section(props: { title: string; children: JSX.Element }): JSX.Element {
+function Section(props: { title: string; children: JSX.Element; index?: number }): JSX.Element {
   return (
-    <div style={{ padding: '10px 16px' }}>
+    <div class="rise" style={{ padding: '10px 16px', 'animation-delay': staggerDelay(props.index ?? 0) }}>
       <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.03em', 'margin-bottom': '6px' }}>
         {props.title}
       </div>
@@ -265,7 +275,11 @@ function ActionChip(props: { icon: 'clock' | 'board' | 'check'; label: string; a
   return (
     <button
       data-testid={props.testid}
-      onClick={props.onClick}
+      class="pressable"
+      onClick={() => {
+        haptic('tick');
+        props.onClick();
+      }}
       style={{
         display: 'flex',
         'align-items': 'center',

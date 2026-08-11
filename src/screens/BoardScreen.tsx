@@ -3,6 +3,7 @@ import { Key } from '@solid-primitives/keyed';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { back, push } from '../app/navigation';
+import { haptic, staggerDelay } from '../app/motion';
 import { sortByOrderKey } from '../db/ordering';
 import {
   createCard, createList, deleteBoard, deleteList, moveCard, updateBoard, updateList,
@@ -98,7 +99,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
           'z-index': '5',
         }}
       >
-        <button onClick={back} aria-label="Back" data-testid="back-button" style={{ color: 'var(--blue)', padding: '8px 8px', display: 'flex' }}>
+        <button onClick={back} aria-label="Back" data-testid="back-button" class="pressable" style={{ color: 'var(--blue)', padding: '8px 8px', display: 'flex' }}>
           <Icon name="chevron-left" size={20} />
         </button>
         <input
@@ -111,6 +112,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
         <button
           aria-label="Board calendar"
           data-testid="board-calendar"
+          class="pressable"
           onClick={() => push({ name: 'boardCalendar', id: props.id })}
           style={{ color: 'var(--text-secondary)', padding: '8px 8px', display: 'flex' }}
         >
@@ -119,6 +121,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
         <button
           aria-label="Board menu"
           data-testid="board-menu"
+          class="pressable"
           onClick={() => setMenuOpen(true)}
           style={{ color: 'var(--text-secondary)', padding: '8px 8px', display: 'flex' }}
         >
@@ -145,10 +148,11 @@ export function BoardScreen(props: { id: string }): JSX.Element {
             focused title input) on every keystroke, since each write round-
             trips through the live query and re-fetches a brand-new object. */}
         <Key each={sortedLists()} by={(l) => l.id}>
-          {(list) => (
+          {(list, i) => (
             <div
               data-board-list
               data-list-id={list().id}
+              class="rise"
               style={{
                 width: `${COLUMN_WIDTH}px`,
                 'flex': 'none',
@@ -156,11 +160,22 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                 display: 'flex',
                 'flex-direction': 'column',
                 background: 'var(--bg-list)',
-                'border-radius': '12px',
+                'border-radius': '14px',
+                border: '1px solid var(--separator)',
+                'box-shadow': '0 1px 3px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
+                'animation-delay': staggerDelay(i()),
               }}
             >
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '10px 8px 6px 12px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  'align-items': 'center',
+                  gap: '6px',
+                  padding: '10px 8px 8px 12px',
+                  'border-bottom': `2px solid ${board()!.color}`,
+                }}
+              >
                 <input
                   value={list().title}
                   placeholder="List name"
@@ -168,10 +183,22 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                   onInput={(e) => void updateList(list().id, { title: e.currentTarget.value })}
                   style={{ flex: '1', 'font-weight': '600', 'font-size': '15px', 'min-width': '0' }}
                 />
-                <span style={{ color: 'var(--text-tertiary)', 'font-size': '13px', 'font-variant-numeric': 'tabular-nums' }}>
+                <span
+                  style={{
+                    'min-width': '20px',
+                    padding: '1px 6px',
+                    'border-radius': '999px',
+                    background: 'var(--bg-inset)',
+                    color: 'var(--text-secondary)',
+                    'font-size': '12px',
+                    'font-weight': '600',
+                    'text-align': 'center',
+                    'font-variant-numeric': 'tabular-nums',
+                  }}
+                >
                   {cardsByList().get(list().id)?.length ?? 0}
                 </span>
-                <button aria-label="List menu" onClick={() => setListMenu(list().id)} style={{ color: 'var(--text-tertiary)', padding: '4px', display: 'flex' }}>
+                <button aria-label="List menu" class="pressable" onClick={() => setListMenu(list().id)} style={{ color: 'var(--text-tertiary)', padding: '4px', display: 'flex' }}>
                   <Icon name="ellipsis" size={16} />
                 </button>
               </div>
@@ -193,7 +220,8 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                 fallback={
                   <button
                     data-testid="add-card"
-                    onClick={() => { setComposerFor(list().id); setDraft(''); }}
+                    class="pressable"
+                    onClick={() => { haptic('tick'); setComposerFor(list().id); setDraft(''); }}
                     style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-secondary)', 'font-size': '14px', padding: '10px 12px' }}
                   >
                     <Icon name="plus" size={15} /> Add a card
@@ -243,16 +271,22 @@ export function BoardScreen(props: { id: string }): JSX.Element {
         {/* Add-list column */}
         <button
           data-testid="add-list"
-          onClick={() => void createList(props.id, '').then((id) => { setComposerFor(id); setDraft(''); })}
+          class="pressable-card"
+          onClick={() => {
+            haptic('select');
+            void createList(props.id, '').then((id) => { setComposerFor(id); setDraft(''); });
+          }}
           style={{
             width: `${COLUMN_WIDTH}px`,
             flex: 'none',
             display: 'flex',
             'align-items': 'center',
+            'justify-content': 'center',
             gap: '8px',
-            padding: '14px',
-            'border-radius': '12px',
-            background: 'rgba(127,127,127,0.12)',
+            padding: '18px 14px',
+            'border-radius': '14px',
+            background: 'transparent',
+            border: '1.5px dashed var(--check-border)',
             color: 'var(--text-secondary)',
             'font-size': '15px',
             'font-weight': '500',
