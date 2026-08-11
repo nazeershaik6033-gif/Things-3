@@ -23,6 +23,7 @@ import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { RoutineScreen } from '../screens/RoutineScreen';
+import { TargetScreen } from '../screens/TargetScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { BoardsScreen } from '../screens/BoardsScreen';
 import { BoardScreen } from '../screens/BoardScreen';
@@ -47,6 +48,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'tag': return <TagScreen id={r.id} />;
     case 'calendar': return <CalendarScreen />;
     case 'routine': return <RoutineScreen />;
+    case 'target': return <TargetScreen />;
     case 'settings': return <SettingsScreen />;
     case 'boards': return <BoardsScreen />;
     case 'board': return <BoardScreen id={r.id} />;

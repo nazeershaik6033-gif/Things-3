@@ -1,7 +1,7 @@
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Setting,
-  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog,
+  Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
 } from './models';
 
 export interface ExportFile {
@@ -24,15 +24,17 @@ export interface ExportFile {
     /** Added in schema 3. */
     routineItems?: RoutineItem[];
     routineLogs?: RoutineLog[];
+    /** Added in schema 4. */
+    dailyTargets?: DailyTarget[];
   };
 }
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
   'boards', 'boardLists', 'boardLabels', 'cards',
-  'routineItems', 'routineLogs',
+  'routineItems', 'routineLogs', 'dailyTargets',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -53,6 +55,7 @@ export async function exportData(): Promise<ExportFile> {
       cards: await db.cards.toArray(),
       routineItems: await db.routineItems.toArray(),
       routineLogs: await db.routineLogs.toArray(),
+      dailyTargets: await db.dailyTargets.toArray(),
     },
   };
 }
@@ -75,6 +78,9 @@ export function validateExport(json: unknown): ExportFile {
     throw new Error('Backup file is malformed.');
   }
   if (d.routineLogs !== undefined && !Array.isArray(d.routineLogs)) {
+    throw new Error('Backup file is malformed.');
+  }
+  if (d.dailyTargets !== undefined && !Array.isArray(d.dailyTargets)) {
     throw new Error('Backup file is malformed.');
   }
   for (const t of d.tasks) {
@@ -102,5 +108,6 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.cards.bulkPut(file.data.cards ?? []);
     await db.routineItems.bulkPut(file.data.routineItems ?? []);
     await db.routineLogs.bulkPut(file.data.routineLogs ?? []);
+    await db.dailyTargets.bulkPut(file.data.dailyTargets ?? []);
   });
 }

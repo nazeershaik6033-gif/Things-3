@@ -1,11 +1,12 @@
 import { createMemo, createSignal, For, onCleanup, Show, type JSX } from 'solid-js';
-import type { CalendarEvent, DateStr, Task } from '../db/models';
+import type { CalendarEvent, DailyTarget, DateStr, Task } from '../db/models';
 import { Icon } from '../ui/Icon';
 import { push } from '../app/navigation';
 import { haptic, staggerDelay } from '../app/motion';
 import { addDays, formatCountdown, formatRelative, formatTime, weekdayName } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
 import { markedDays, monthLabel, monthOf, nextEvent } from '../domain/calendarMonth';
+import { hitStreak, OUTCOME_COLOR, OUTCOME_LABEL, resolveAll, targetFor } from '../domain/target';
 
 /** A clock that ticks once a minute — the Up Next countdown is the only thing
  *  in the app that needs wall-clock time to keep moving on its own. */
@@ -188,10 +189,89 @@ function OverdueWidget(props: { tasks: Task[]; today: DateStr; delay: string }):
   );
 }
 
+/** Today's one target — the day's headline, so it leads the deck. Reads as an
+ *  invitation before it's set, the target itself during the day, and the
+ *  verdict once you've judged it. */
+function TargetWidget(props: {
+  targets: DailyTarget[];
+  tasks: Task[];
+  today: DateStr;
+  delay: string;
+}): JSX.Element {
+  const resolved = createMemo(() => resolveAll(props.targets, props.tasks));
+  const todays = createMemo(() => targetFor(resolved(), props.today));
+  const streak = createMemo(() => hitStreak(resolved(), props.today));
+  /** A hit carried by the linked to-do counts as judged for display. */
+  const judged = () => todays() !== null && todays()!.outcome !== 'pending';
+
+  return (
+    <WidgetCard
+      testid="widget-target"
+      tint="rgba(47, 124, 246, 0.06)"
+      delay={props.delay}
+      onClick={() => push({ name: 'target' })}
+    >
+      <WidgetLabel
+        icon={
+          <Icon
+            name="flag"
+            size={13}
+            color={todays() ? OUTCOME_COLOR[todays()!.outcome] : 'var(--blue)'}
+          />
+        }
+        text={judged() ? OUTCOME_LABEL[todays()!.outcome] : "Today's target"}
+      />
+      <Show
+        when={todays()}
+        fallback={
+          <div style={{ 'margin-top': '8px' }}>
+            <div style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)' }}>
+              Not set yet
+            </div>
+            <div style={{ 'margin-top': '3px', 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+              Name the one thing that would make today count
+            </div>
+          </div>
+        }
+      >
+        <div style={{ 'margin-top': '8px' }}>
+          <div
+            data-testid="widget-target-text"
+            style={{
+              'font-size': '17px',
+              'font-weight': '600',
+              'line-height': '1.3',
+              display: '-webkit-box',
+              '-webkit-line-clamp': '2',
+              '-webkit-box-orient': 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {todays()!.text}
+          </div>
+          <div
+            style={{
+              'margin-top': '5px',
+              'font-size': '13px',
+              'font-weight': '600',
+              color: judged() ? OUTCOME_COLOR[todays()!.outcome] : 'var(--text-tertiary)',
+            }}
+          >
+            {judged()
+              ? streak() > 0 ? `${streak()}-day streak` : OUTCOME_LABEL[todays()!.outcome]
+              : 'Tap tonight to judge it'}
+          </div>
+        </div>
+      </Show>
+    </WidgetCard>
+  );
+}
+
 /** The scroll-snapping deck at the top of Home. */
 export function WidgetDeck(props: {
   events: CalendarEvent[];
   tasks: Task[];
+  targets: DailyTarget[];
   today: DateStr;
 }): JSX.Element {
   return (
@@ -206,8 +286,9 @@ export function WidgetDeck(props: {
         'scrollbar-width': 'none',
       }}
     >
-      <UpNextWidget events={props.events} today={props.today} delay={staggerDelay(0)} />
-      <OverdueWidget tasks={props.tasks} today={props.today} delay={staggerDelay(1)} />
+      <TargetWidget targets={props.targets} tasks={props.tasks} today={props.today} delay={staggerDelay(0)} />
+      <UpNextWidget events={props.events} today={props.today} delay={staggerDelay(1)} />
+      <OverdueWidget tasks={props.tasks} today={props.today} delay={staggerDelay(2)} />
     </div>
   );
 }
