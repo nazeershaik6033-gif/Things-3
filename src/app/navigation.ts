@@ -91,6 +91,15 @@ function setX(el: HTMLElement | undefined, x: number): void {
   if (el) el.style.transform = x === 0 ? '' : `translate3d(${x}px, 0, 0)`;
 }
 
+/** Promote only while a screen is actually moving. `.screen` used to carry a
+ *  permanent `will-change: transform`, which keeps every stacked screen on its
+ *  own composited layer forever and costs scroll smoothness on iOS. */
+function setMoving(el: HTMLElement | undefined, moving: boolean): void {
+  if (!el) return;
+  el.style.willChange = moving ? 'transform' : '';
+  el.style.boxShadow = moving ? '0 0 24px rgba(0,0,0,0.18)' : '';
+}
+
 function animate(
   from: number,
   to: number,
@@ -110,24 +119,28 @@ export function push(route: Route): void {
   setStack((s) => [...s, entry]);
   history.pushState(null, '', hashFor(route));
 
-  requestAnimationFrame(() => {
-    const el = screenEls.get(entry.key);
-    const prevEl = prev ? screenEls.get(prev.key) : undefined;
-    const w = screenWidth();
-    if (!el) {
-      transitioning = false;
-      return;
-    }
-    el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
-    setX(el, w);
-    animate(w, 0, (v) => {
-      setX(el, v);
-      setX(prevEl, -PARALLAX * (w - v));
-    }, () => {
-      el.style.boxShadow = '';
-      setX(prevEl, 0);
-      transitioning = false;
-    });
+  // Solid renders synchronously inside setStack, so the new screen element is
+  // already registered here. Offsetting it now — rather than in a rAF — means
+  // the browser never paints a frame with the screen at its final position,
+  // which is what made every push start with a flash.
+  const el = screenEls.get(entry.key);
+  const prevEl = prev ? screenEls.get(prev.key) : undefined;
+  const w = screenWidth();
+  if (!el) {
+    transitioning = false;
+    return;
+  }
+  setMoving(el, true);
+  setMoving(prevEl, true);
+  setX(el, w);
+  animate(w, 0, (v) => {
+    setX(el, v);
+    setX(prevEl, -PARALLAX * (w - v));
+  }, () => {
+    setMoving(el, false);
+    setMoving(prevEl, false);
+    setX(prevEl, 0);
+    transitioning = false;
   });
 }
 
@@ -152,13 +165,15 @@ function performPop(animated: boolean, fromX?: number, velocity?: number): void 
     return;
   }
   transitioning = true;
-  el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
+  setMoving(el, true);
+  setMoving(underEl, true);
   const start = fromX ?? 0;
   setX(underEl, -PARALLAX * (w - start));
   animate(start, w, (v) => {
     setX(el, v);
     setX(underEl, -PARALLAX * (w - v));
   }, () => {
+    setMoving(underEl, false);
     setX(underEl, 0);
     setStack((x) => x.slice(0, -1));
     transitioning = false;
@@ -207,7 +222,8 @@ export const edgeBack = {
     const el = screenEls.get(top.key);
     const underEl = screenEls.get(under.key);
     const x = Math.max(0, dx);
-    if (el) el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
+    setMoving(el, true);
+    setMoving(underEl, true);
     setX(el, x);
     setX(underEl, -PARALLAX * (screenWidth() - x));
   },
@@ -227,7 +243,8 @@ export const edgeBack = {
         setX(el, v);
         setX(underEl, -PARALLAX * (w - v));
       }, () => {
-        if (el) el.style.boxShadow = '';
+        setMoving(el, false);
+        setMoving(underEl, false);
         transitioning = false;
       }, vx);
       return;

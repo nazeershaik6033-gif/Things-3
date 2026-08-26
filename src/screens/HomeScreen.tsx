@@ -12,6 +12,7 @@ import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
 import { MagicPlus } from '../components/MagicPlus';
 import { MenuRow } from './common';
+import { haptic } from '../ui/haptics';
 
 function HomeRow(props: {
   icon: JSX.Element;
@@ -24,14 +25,18 @@ function HomeRow(props: {
   return (
     <button
       data-testid={props.testid}
-      onClick={props.onClick}
-      class="no-select"
+      onClick={() => {
+        haptic('selection');
+        props.onClick();
+      }}
+      class="no-select pressable"
       style={{
         display: 'flex',
         'align-items': 'center',
         gap: '13px',
         width: '100%',
         padding: '11px 16px',
+        'border-radius': '10px',
         'font-size': '17px',
         'font-weight': props.bold ? '600' : '400',
         color: 'var(--text)',

@@ -1,10 +1,11 @@
 import { createMemo, createSignal, Show, type JSX } from 'solid-js';
-import { nanoid } from 'nanoid';
-import { Sheet } from '../ui/Sheet';
+import { FullScreenSheet } from '../ui/FullScreenSheet';
 import { Icon } from '../ui/Icon';
 import { TagPill } from '../ui/TagPill';
-import { quickEntry, setQuickEntry } from '../app/uiState';
-import { createTask, type TaskDestination, type When } from '../db/mutations';
+import { AutoTextarea, SyncedInput } from '../ui/TextField';
+import { haptic } from '../ui/haptics';
+import { quickEntry, setQuickEntry, type QuickEntryState } from '../app/uiState';
+import { createTask, createTag, updateTask, type TaskDestination, type When } from '../db/mutations';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
@@ -14,32 +15,24 @@ import {
   WhenSheet, DeadlineSheet, DestinationSheet, destinationOptions,
 } from './Pickers';
 import { ChecklistEditor } from './ChecklistEditor';
-import { Sheet as _S } from '../ui/Sheet';
-import { createTag, updateTask } from '../db/mutations';
-
-function autosize(el: HTMLTextAreaElement): void {
-  el.style.height = 'auto';
-  el.style.height = `${el.scrollHeight}px`;
-}
 
 type SubSheet = 'when' | 'deadline' | 'dest' | null;
 
-/** The Magic-Plus / toolbar quick entry: a white rounded card sliding over a
- *  dimmed backdrop, exactly like Things' iPhone quick entry. */
+/** The Magic-Plus / toolbar quick entry: a near-full-height compose panel that
+ *  tracks the keyboard, so the title, notes and checklist are all visible and
+ *  editable at once instead of fighting over ~100px above the keyboard. */
 export function QuickEntry(): JSX.Element {
-  const state = quickEntry;
   return (
-    <Show when={state()}>
-      <QuickEntryInner key={JSON.stringify(state())} />
+    <Show when={quickEntry()} keyed>
+      {(state) => <QuickEntryInner init={state} />}
     </Show>
   );
 }
 
-function QuickEntryInner(_props: { key: string }): JSX.Element {
-  const init = quickEntry()!;
+function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
+  const init = props.init;
   const [title, setTitle] = createSignal('');
   const [notes, setNotes] = createSignal('');
-  const [showNotes, setShowNotes] = createSignal(false);
   const [checklist, setChecklist] = createSignal<ChecklistItem[]>([]);
   const [showChecklist, setShowChecklist] = createSignal(false);
   const [tagDraft, setTagDraft] = createSignal('');
@@ -53,6 +46,8 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
   const [deadline, setDeadline] = createSignal<DateStr | null>(null);
   const [dest, setDest] = createSignal<TaskDestination>(init.destination);
   const [sub, setSub] = createSignal<SubSheet>(null);
+
+  let notesEl: HTMLTextAreaElement | undefined;
 
   const tags = createLiveQuery(() => db.tags.toArray(), []);
   const projects = createLiveQuery(() => db.projects.toArray(), []);
@@ -83,6 +78,7 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
       return;
     }
     const d = dest();
+    haptic('success');
     await createTask({
       title: title().trim(),
       notes: notes(),
@@ -116,17 +112,45 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
     return null;
   });
 
-  const toolbarBtn = (icon: JSX.Element, label: string, active: boolean, onClick: () => void) => (
+  /** Toolbar buttons act on pointerdown-prevented taps: the default would move
+   *  focus off the textarea, and on iOS that collapses the keyboard mid-entry. */
+  const toolbarBtn = (icon: JSX.Element, label: string, active: boolean, onTap: () => void) => (
     <button
-      onClick={onClick}
+      class="press-scale"
+      onPointerDown={(e) => e.preventDefault()}
+      onClick={() => {
+        haptic('selection');
+        onTap();
+      }}
       aria-label={label}
       style={{
-        padding: '9px',
+        padding: '10px 11px',
         color: active ? 'var(--blue)' : 'var(--text-secondary)',
         display: 'flex',
+        transition: 'color 160ms ease-out',
       }}
     >
       {icon}
+    </button>
+  );
+
+  const chip = (onClick: () => void, children: JSX.Element, color?: string) => (
+    <button
+      class="press-scale"
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        'align-items': 'center',
+        gap: '5px',
+        padding: '4px 11px',
+        'border-radius': '999px',
+        background: 'var(--bg-inset)',
+        'font-size': '13px',
+        'font-weight': '500',
+        color: color ?? 'var(--text)',
+      }}
+    >
+      {children}
     </button>
   );
 
@@ -139,16 +163,68 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
     if (!tagIds().includes(id)) setTagIds([...tagIds(), id]);
   };
 
+  const revealChecklist = () => {
+    setShowChecklist(true);
+    queueMicrotask(() => {
+      document.querySelector<HTMLElement>('[data-quick-entry] input[data-checklist-id]')?.focus();
+    });
+  };
+
   return (
     <>
-      <Sheet onClose={close} trackKeyboard>
-        <div style={{ padding: '4px 18px 0' }} data-quick-entry>
-          <textarea
-            value={title()}
-            onInput={(e) => {
-              autosize(e.currentTarget);
-              setTitle(e.currentTarget.value);
+      <FullScreenSheet onClose={close} label="New To-Do">
+        {/* Header ---------------------------------------------------------- */}
+        <div
+          style={{
+            display: 'flex',
+            'align-items': 'center',
+            gap: '8px',
+            padding: '6px 12px 8px',
+            'border-bottom': '1px solid var(--separator)',
+            flex: 'none',
+          }}
+        >
+          <button
+            class="press-scale"
+            onClick={close}
+            style={{ color: 'var(--text-secondary)', 'font-size': '16px', padding: '8px 6px' }}
+          >
+            Cancel
+          </button>
+          <div style={{ flex: '1' }} />
+          <button
+            class="press-scale"
+            data-testid="quick-entry-save"
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => void save()}
+            style={{
+              background: 'var(--blue)',
+              color: '#fff',
+              'font-weight': '600',
+              'font-size': '15px',
+              padding: '8px 18px',
+              'border-radius': '999px',
             }}
+          >
+            Save
+          </button>
+        </div>
+
+        {/* Body ------------------------------------------------------------ */}
+        <div
+          data-quick-entry
+          style={{
+            flex: '1',
+            'min-height': '0',
+            'overflow-y': 'auto',
+            'overscroll-behavior': 'contain',
+            '-webkit-overflow-scrolling': 'touch',
+            padding: '14px 18px 18px',
+          }}
+        >
+          <AutoTextarea
+            value={title()}
+            onInput={setTitle}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -156,54 +232,38 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
               }
             }}
             placeholder="New To-Do"
-            rows={1}
             enterkeyhint="done"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autofocus
             style={{
-              width: '100%',
-              'font-size': '17px',
-              'font-weight': '500',
-              overflow: 'hidden',
-              padding: '6px 0',
+              'font-size': '20px',
+              'font-weight': '600',
+              'line-height': '1.3',
+              padding: '2px 0 10px',
             }}
           />
-          <Show when={showNotes()}>
-            <textarea
-              value={notes()}
-              onInput={(e) => {
-                autosize(e.currentTarget);
-                setNotes(e.currentTarget.value);
-              }}
-              placeholder="Notes"
-              rows={2}
-              style={{ width: '100%', 'font-size': '15px', overflow: 'hidden', padding: '2px 0' }}
-            />
-          </Show>
-          <Show when={showChecklist()}>
-            <ChecklistEditor items={checklist()} onChange={setChecklist} />
-          </Show>
+
           <Show when={tagIds().length > 0 || whenChip() || deadline()}>
-            <div style={{ display: 'flex', gap: '7px', 'flex-wrap': 'wrap', padding: '4px 0 6px' }}>
+            <div class="rise-in" style={{ display: 'flex', gap: '7px', 'flex-wrap': 'wrap', padding: '2px 0 10px' }}>
               <Show when={whenChip()}>
-                <button
-                  onClick={() => setSub('when')}
-                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': '13px', 'font-weight': '500', color: 'var(--text)' }}
-                >
-                  <Show when={whenChip() === 'This Evening'} fallback={<Icon name={whenChip() === 'Someday' ? 'archive' : 'star'} size={13} color={whenChip() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />}>
-                    <Icon name="moon" size={13} color="var(--purple)" />
-                  </Show>
-                  {whenChip()}
-                </button>
+                {chip(() => setSub('when'), (
+                  <>
+                    <Show
+                      when={whenChip() === 'This Evening'}
+                      fallback={<Icon name={whenChip() === 'Someday' ? 'archive' : 'star'} size={13} color={whenChip() === 'Someday' ? 'var(--tan)' : 'var(--yellow)'} />}
+                    >
+                      <Icon name="moon" size={13} color="var(--purple)" />
+                    </Show>
+                    {whenChip()}
+                  </>
+                ))}
               </Show>
               <Show when={deadline()}>
-                <button
-                  onClick={() => setSub('deadline')}
-                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': '13px', 'font-weight': '500', color: 'var(--text)' }}
-                >
-                  <Icon name="flag" size={13} color="var(--red)" />
-                  {formatRelative(deadline()!, currentDate())}
-                </button>
+                {chip(() => setSub('deadline'), (
+                  <>
+                    <Icon name="flag" size={13} color="var(--red)" />
+                    {formatRelative(deadline()!, currentDate())}
+                  </>
+                ))}
               </Show>
               {tagIds().map((id) => {
                 const tag = tags().find((t) => t.id === id);
@@ -213,59 +273,79 @@ function QuickEntryInner(_props: { key: string }): JSX.Element {
               })}
             </div>
           </Show>
+
           <Show when={showTagInput()}>
-            <div style={{ display: 'flex', gap: '8px', padding: '2px 0 8px' }}>
-              <input
+            <div class="rise-in" style={{ display: 'flex', gap: '8px', padding: '0 0 10px' }}>
+              <SyncedInput
                 value={tagDraft()}
-                onInput={(e) => setTagDraft(e.currentTarget.value)}
+                onInput={setTagDraft}
                 onKeyDown={(e) => e.key === 'Enter' && void addTag()}
                 placeholder="Add tag…"
-                style={{ flex: '1', padding: '6px 10px', 'border-radius': '8px', background: 'var(--bg-inset)', 'font-size': '14px' }}
+                style={{ flex: '1', padding: '8px 12px', 'border-radius': '10px', background: 'var(--bg-inset)', 'font-size': '15px' }}
               />
-              <button onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': '600' }}>Add</button>
+              <button class="press-scale" onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': '600' }}>
+                Add
+              </button>
             </div>
           </Show>
+
+          {/* Notes is always present — the whole point of the taller panel. */}
+          <AutoTextarea
+            ref={(el) => (notesEl = el)}
+            value={notes()}
+            onInput={setNotes}
+            placeholder="Notes"
+            rows={3}
+            style={{ 'font-size': '16px', 'line-height': '1.5', 'min-height': '88px', padding: '2px 0' }}
+          />
+
+          <Show when={showChecklist() || checklist().length > 0}>
+            <div class="rise-in" style={{ 'padding-top': '8px', 'border-top': '1px solid var(--separator)', 'margin-top': '10px' }}>
+              <ChecklistEditor items={checklist()} onChange={setChecklist} />
+            </div>
+          </Show>
+        </div>
+
+        {/* Destination + toolbar ------------------------------------------- */}
+        <div style={{ flex: 'none', 'border-top': '1px solid var(--separator)' }}>
+          <button
+            class="pressable"
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setSub('dest')}
+            style={{
+              display: 'flex',
+              'align-items': 'center',
+              gap: '8px',
+              width: '100%',
+              padding: '11px 18px',
+              'font-size': '15px',
+              'text-align': 'left',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <span style={{ flex: '1' }}>List</span>
+            <span style={{ color: 'var(--text)', 'font-weight': '500' }}>{destLabel()}</span>
+            <Icon name="chevron-right" size={13} />
+          </button>
 
           <div
             style={{
               display: 'flex',
               'align-items': 'center',
+              'justify-content': 'space-around',
               'border-top': '1px solid var(--separator)',
-              'margin-top': '2px',
-              padding: '2px 0 6px',
+              padding: '2px 6px',
+              'padding-bottom': 'calc(2px + var(--safe-bottom))',
             }}
           >
-            {toolbarBtn(<Icon name="calendar" size={20} />, 'When', !!whenChip(), () => setSub('when'))}
-            {toolbarBtn(<Icon name="flag" size={20} />, 'Deadline', !!deadline(), () => setSub('deadline'))}
-            {toolbarBtn(<Icon name="tag" size={20} />, 'Tags', tagIds().length > 0, () => setShowTagInput(!showTagInput()))}
-            {toolbarBtn(<Icon name="checklist" size={20} />, 'Checklist', checklist().length > 0, () => setShowChecklist(!showChecklist()))}
-            {toolbarBtn(<Icon name="notes" size={20} />, 'Notes', notes() !== '', () => setShowNotes(!showNotes()))}
-            <div style={{ flex: '1' }} />
-            <button
-              onClick={() => setSub('dest')}
-              style={{ display: 'inline-flex', 'align-items': 'center', gap: '4px', color: 'var(--text-secondary)', 'font-size': '14px', padding: '6px 8px' }}
-            >
-              {destLabel()}
-              <Icon name="chevron-right" size={12} />
-            </button>
-            <button
-              data-testid="quick-entry-save"
-              onClick={() => void save()}
-              style={{
-                background: 'var(--blue)',
-                color: '#fff',
-                'font-weight': '600',
-                'font-size': '15px',
-                padding: '8px 18px',
-                'border-radius': '999px',
-                'margin-left': '8px',
-              }}
-            >
-              Save
-            </button>
+            {toolbarBtn(<Icon name="calendar" size={21} />, 'When', !!whenChip(), () => setSub('when'))}
+            {toolbarBtn(<Icon name="flag" size={21} />, 'Deadline', !!deadline(), () => setSub('deadline'))}
+            {toolbarBtn(<Icon name="tag" size={21} />, 'Tags', tagIds().length > 0, () => setShowTagInput(!showTagInput()))}
+            {toolbarBtn(<Icon name="checklist" size={21} />, 'Checklist', checklist().length > 0, revealChecklist)}
+            {toolbarBtn(<Icon name="notes" size={21} />, 'Notes', notes() !== '', () => notesEl?.focus())}
           </div>
         </div>
-      </Sheet>
+      </FullScreenSheet>
 
       <Show when={sub() === 'when'}>
         <WhenSheet

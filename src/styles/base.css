@@ -70,7 +70,7 @@ ol {
   display: flex;
   flex-direction: column;
   background: var(--bg-list);
-  will-change: transform;
+  /* `will-change` is applied by navigation.ts only while a screen is moving. */
   /* NOTE: no CSS containment — contain:paint breaks position:fixed children
      in Safari; contain:layout causes invisible content on iOS in some builds */
 }
@@ -98,4 +98,64 @@ ol {
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   Touch feedback
+
+   Every tappable surface answers the finger immediately. iOS only evaluates
+   `:active` on non-link elements once the document has a touch listener, which
+   index.tsx installs — see attachActiveStateFix().
+   -------------------------------------------------------------------------- */
+
+.pressable {
+  transition: background-color 140ms ease-out;
+}
+
+.pressable:active {
+  background-color: var(--bg-row-active);
+  transition-duration: 0ms;
+}
+
+/* Icon buttons and chips: shrink instead of tinting a whole row. */
+.press-scale {
+  transition: transform 160ms cubic-bezier(0.32, 0.72, 0.2, 1), opacity 160ms ease-out;
+}
+
+.press-scale:active {
+  transform: scale(0.9);
+  opacity: 0.6;
+  transition-duration: 40ms;
+}
+
+/* Rows own their background in CSS so `.pressable:active` can win over it. */
+.task-row {
+  background: var(--bg-list);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise-in {
+  animation: rise-in 260ms cubic-bezier(0.32, 0.72, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press-scale,
+  .pressable {
+    transition-duration: 0ms;
+  }
+
+  .rise-in,
+  .task-row {
+    animation: none;
+  }
 }

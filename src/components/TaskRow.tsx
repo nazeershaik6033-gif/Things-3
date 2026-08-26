@@ -10,6 +10,7 @@ import { formatDeadline, formatRelative } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
 import { SwipeableRow } from './SwipeableRow';
 import { markdownPreview } from '../domain/markdown';
+import { haptic } from '../ui/haptics';
 
 export interface TaskRowContext {
   /** Show the start-date chip (hidden in Today where it's redundant). */
@@ -25,6 +26,7 @@ export interface TaskRowContext {
 
 export function toggleComplete(task: Task): void {
   if (task.status === 'open') {
+    haptic('success');
     void completeTask(task.id);
     addGrace(task.id);
   } else {
@@ -45,7 +47,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
 
   const row = (
     <div
-      class="task-row no-select"
+      class="task-row no-select pressable"
       data-task-id={t().id}
       onClick={() => setExpandedTaskId(t().id)}
       style={{
@@ -54,7 +56,6 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
         gap: '12px',
         padding: '10px 16px',
         'min-height': '44px',
-        background: 'var(--bg-list)',
         cursor: 'pointer',
       }}
     >

@@ -11,7 +11,7 @@ export function Checkbox(props: {
   const size = () => props.size ?? 19;
   return (
     <button
-      class="checkbox"
+      class="checkbox press-scale"
       classList={{ checked: props.checked }}
       onClick={(e) => {
         e.stopPropagation();
@@ -39,7 +39,7 @@ export function Checkbox(props: {
           display: 'flex',
           'align-items': 'center',
           'justify-content': 'center',
-          transition: 'background 120ms ease',
+          transition: 'background 140ms ease-out, border-color 140ms ease-out',
           animation: props.checked ? 'check-pop 240ms ease-out' : 'none',
         }}
       >
