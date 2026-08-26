@@ -1,13 +1,20 @@
 import { nanoid } from 'nanoid';
 import { db } from './db';
-import type { Task, Project, Heading, Area, Tag, Bucket, DateStr } from './models';
+import type {
+  Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
+  DailyTarget, TargetOutcome,
+} from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
-import { todayStr } from '../domain/dates';
+import { fromDateStr, todayStr } from '../domain/dates';
+import { logId } from '../domain/routine';
 
 /** Every write flows through this module. Ops carry before/after images so an
  *  undo ring buffer can be layered on later (iteration 2) without rewrites. */
 
-type TableName = 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents';
+type TableName =
+  | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
+  | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
+  | 'routineItems' | 'routineLogs' | 'dailyTargets';
 
 export interface Op {
   table: TableName;
@@ -32,6 +39,8 @@ export async function applyOps(ops: Op[]): Promise<void> {
 
 export type When =
   | { type: 'today' }
+  | { type: 'morning' }
+  | { type: 'afternoon' }
   | { type: 'evening' }
   | { type: 'date'; date: DateStr }
   | { type: 'someday' }
@@ -57,6 +66,7 @@ export function newTask(partial: Partial<Task> = {}): Task {
     startDate: null,
     evening: false,
     deadline: null,
+    priority: null,
     projectId: null,
     headingId: null,
     areaId: null,
@@ -114,32 +124,55 @@ export async function updateTask(id: string, patch: Partial<Task>): Promise<void
 export async function setTaskWhen(id: string, when: When): Promise<void> {
   const today = todayStr();
   const patch: Partial<Task> =
-    when.type === 'today' ? { startDate: today, evening: false }
-    : when.type === 'evening' ? { startDate: today, evening: true }
-    : when.type === 'date' ? { startDate: when.date, evening: false, bucket: 'anytime' }
-    : when.type === 'someday' ? { startDate: null, evening: false, bucket: 'someday' }
-    : when.type === 'anytime' ? { startDate: null, evening: false, bucket: 'anytime' }
-    : { startDate: null, evening: false }; // clear
-  if (when.type === 'today' || when.type === 'evening') {
+    when.type === 'today' ? { startDate: today, evening: false, reminderTime: null }
+    : when.type === 'morning' ? { startDate: today, evening: false, reminderTime: 'morning' }
+    : when.type === 'afternoon' ? { startDate: today, evening: false, reminderTime: 'afternoon' }
+    : when.type === 'evening' ? { startDate: today, evening: true, reminderTime: null }
+    : when.type === 'date' ? { startDate: when.date, evening: false, reminderTime: null, bucket: 'anytime' }
+    : when.type === 'someday' ? { startDate: null, evening: false, reminderTime: null, bucket: 'someday' }
+    : when.type === 'anytime' ? { startDate: null, evening: false, reminderTime: null, bucket: 'anytime' }
+    : { startDate: null, evening: false, reminderTime: null }; // clear
+  if (when.type === 'today' || when.type === 'morning' || when.type === 'afternoon' || when.type === 'evening') {
     const t = await db.tasks.get(id);
     if (t && t.bucket !== 'anytime') patch.bucket = 'anytime';
   }
   await updateTask(id, patch);
 }
 
-export async function completeTask(id: string, canceled = false): Promise<void> {
+/** `at` backdates the entry — the overdue prompt passes the day the user says
+ *  they actually finished, which is what files it under that day's Logbook. */
+export async function completeTask(id: string, canceled = false, at?: number): Promise<void> {
   await updateTask(id, {
     status: canceled ? 'canceled' : 'completed',
-    completedAt: Date.now(),
+    completedAt: at ?? Date.now(),
   });
+}
+
+/** Epoch ms to stamp for "this was finished on `date`". Today keeps the real
+ *  clock time so ordering within today stays truthful; any other day lands at
+ *  local noon — safely inside that calendar day whatever the timezone. */
+export function completionTimeFor(date: DateStr, today: DateStr = todayStr()): number {
+  if (date === today) return Date.now();
+  const d = fromDateStr(date);
+  d.setHours(12, 0, 0, 0);
+  return d.getTime();
 }
 
 export async function reopenTask(id: string): Promise<void> {
   await updateTask(id, { status: 'open', completedAt: null });
 }
 
+/** Trash timestamps double as cascade identity (restoreProject matches
+ *  tasks by the project's stamp), so they must never collide — strictly
+ *  monotonic even when calls land in the same millisecond. */
+let lastTrashStamp = 0;
+function trashStamp(): number {
+  lastTrashStamp = Math.max(Date.now(), lastTrashStamp + 1);
+  return lastTrashStamp;
+}
+
 export async function trashTask(id: string): Promise<void> {
-  await updateTask(id, { trashedAt: Date.now() });
+  await updateTask(id, { trashedAt: trashStamp() });
 }
 
 export async function restoreTask(id: string): Promise<void> {
@@ -284,7 +317,7 @@ export async function reopenProject(id: string): Promise<void> {
 export async function trashProject(id: string): Promise<void> {
   const p = await db.projects.get(id);
   if (!p) return;
-  const now = Date.now();
+  const now = trashStamp();
   const ops: Op[] = [{
     table: 'projects', key: id, before: p,
     after: { ...p, trashedAt: now, modifiedAt: now } satisfies Project,
@@ -443,6 +476,154 @@ export async function deleteTag(id: string): Promise<void> {
     });
   }
   await applyOps(ops);
+}
+
+// -------------------------------------------------------------- routine ----
+
+export function newRoutineItem(partial: Partial<RoutineItem> = {}): RoutineItem {
+  const now = Date.now();
+  return {
+    id: nanoid(),
+    title: '',
+    note: '',
+    orderKey: '',
+    active: true,
+    createdAt: now,
+    modifiedAt: now,
+    ...partial,
+  };
+}
+
+export async function createRoutineItem(title: string): Promise<string> {
+  const siblings = (await db.routineItems.toArray()).filter((i) => i.active);
+  const item = newRoutineItem({ title, orderKey: keyAtEnd(siblings) });
+  await applyOps([{ table: 'routineItems', key: item.id, before: null, after: item }]);
+  return item.id;
+}
+
+/** Seed several items in one pass, preserving the given order. */
+export async function createRoutineItems(titles: string[]): Promise<void> {
+  const siblings = (await db.routineItems.toArray()).filter((i) => i.active);
+  const ops: Op[] = [];
+  let prev: string | null = sortByOrderKey(siblings).at(-1)?.orderKey ?? null;
+  for (const title of titles) {
+    prev = keyBetween(prev, null);
+    const item = newRoutineItem({ title, orderKey: prev });
+    ops.push({ table: 'routineItems', key: item.id, before: null, after: item });
+  }
+  await applyOps(ops);
+}
+
+export async function updateRoutineItem(id: string, patch: Partial<RoutineItem>): Promise<void> {
+  const before = await db.routineItems.get(id);
+  if (!before) return;
+  const after: RoutineItem = { ...before, ...patch, modifiedAt: Date.now() };
+  await applyOps([{ table: 'routineItems', key: id, before, after }]);
+}
+
+/** Retire an item: it leaves today's checklist but its history stays intact,
+ *  so past streaks keep their meaning. */
+export async function archiveRoutineItem(id: string): Promise<void> {
+  await updateRoutineItem(id, { active: false });
+}
+
+/** Remove an item and every tick it ever recorded. */
+export async function deleteRoutineItem(id: string): Promise<void> {
+  const before = await db.routineItems.get(id);
+  if (!before) return;
+  const ops: Op[] = [{ table: 'routineItems', key: id, before, after: null }];
+  for (const log of await db.routineLogs.where('itemId').equals(id).toArray()) {
+    ops.push({ table: 'routineLogs', key: log.id, before: log, after: null });
+  }
+  await applyOps(ops);
+}
+
+export async function reorderRoutineItems(idsInNewOrder: string[]): Promise<void> {
+  const keys = rebalancedKeys(idsInNewOrder.length);
+  const ops: Op[] = [];
+  const now = Date.now();
+  for (let i = 0; i < idsInNewOrder.length; i++) {
+    const before = await db.routineItems.get(idsInNewOrder[i]!);
+    if (!before) continue;
+    ops.push({
+      table: 'routineItems', key: before.id, before,
+      after: { ...before, orderKey: keys[i]!, modifiedAt: now } satisfies RoutineItem,
+    });
+  }
+  await applyOps(ops);
+}
+
+/** Tick or untick one item for one day. Idempotent: the row id is the pair. */
+export async function setRoutineDone(
+  itemId: string,
+  date: DateStr,
+  done: boolean,
+): Promise<void> {
+  const key = logId(date, itemId);
+  const before = (await db.routineLogs.get(key)) ?? null;
+  if (done) {
+    if (before) return;
+    const after: RoutineLog = { id: key, date, itemId, completedAt: Date.now() };
+    await applyOps([{ table: 'routineLogs', key, before: null, after }]);
+  } else {
+    if (!before) return;
+    await applyOps([{ table: 'routineLogs', key, before, after: null }]);
+  }
+}
+
+// -------------------------------------------------------- daily target ----
+
+/** Write (or rewrite) the target for a day. Keyed by date, so setting it twice
+ *  in one morning replaces rather than duplicates. Rewriting the text of an
+ *  already-judged day keeps its verdict — you're fixing a typo, not reopening
+ *  the question. */
+export async function setDailyTarget(
+  date: DateStr,
+  text: string,
+  taskId: string | null = null,
+): Promise<void> {
+  const before = (await db.dailyTargets.get(date)) ?? null;
+  const after: DailyTarget = {
+    date,
+    text,
+    taskId,
+    outcome: before?.outcome ?? 'pending',
+    reflection: before?.reflection ?? '',
+    setAt: before?.setAt ?? Date.now(),
+    reviewedAt: before?.reviewedAt ?? null,
+  };
+  await applyOps([{ table: 'dailyTargets', key: date, before, after }]);
+}
+
+/** Record the night's verdict. Passing 'pending' un-judges the day, which is
+ *  how you take back a verdict you gave too early. */
+export async function reviewDailyTarget(
+  date: DateStr,
+  outcome: TargetOutcome,
+  reflection?: string,
+): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  const after: DailyTarget = {
+    ...before,
+    outcome,
+    reflection: reflection ?? before.reflection,
+    reviewedAt: outcome === 'pending' ? null : Date.now(),
+  };
+  await applyOps([{ table: 'dailyTargets', key: date, before, after }]);
+}
+
+/** Attach or detach the to-do that carries the target. */
+export async function linkTargetTask(date: DateStr, taskId: string | null): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  await applyOps([{ table: 'dailyTargets', key: date, before, after: { ...before, taskId } }]);
+}
+
+export async function clearDailyTarget(date: DateStr): Promise<void> {
+  const before = await db.dailyTargets.get(date);
+  if (!before) return;
+  await applyOps([{ table: 'dailyTargets', key: date, before, after: null }]);
 }
 
 // ------------------------------------------------------------- settings ----

@@ -2,6 +2,9 @@ import { db } from '../db/db';
 import {
   createArea, createHeading, createProject, createTag, createTask, completeTask,
 } from '../db/mutations';
+import {
+  createBoard, createList, createCard, createLabel,
+} from '../db/boardMutations';
 import { addDays, todayStr } from '../domain/dates';
 
 /** Demo dataset for previews and e2e tests. Idempotent: wipes first. */
@@ -53,4 +56,37 @@ export async function seedDemoData(): Promise<void> {
   if (t) {
     await db.tasks.put({ ...t, completedAt: Date.now() - 3 * 86_400_000 });
   }
+
+  // ---- Demo Kanban board ----------------------------------------------------
+  const board = await createBoard({ title: 'Product Roadmap', color: 'var(--purple)' });
+  const design = await createLabel(board, 'Design', 'var(--purple)');
+  const bug = await createLabel(board, 'Bug', 'var(--red)');
+  const feature = await createLabel(board, 'Feature', 'var(--green)');
+
+  const todo = await createList(board, 'To Do');
+  const doing = await createList(board, 'In Progress');
+  const done = await createList(board, 'Done');
+
+  await createCard(board, todo, {
+    title: 'Design onboarding flow',
+    labelIds: [design, feature],
+    due: addDays(today, 4),
+    checklist: [
+      { id: 'k1', title: 'Wireframes', completed: true },
+      { id: 'k2', title: 'Prototype', completed: false },
+      { id: 'k3', title: 'Usability test', completed: false },
+    ],
+  });
+  await createCard(board, todo, { title: 'Fix crash on empty search', labelIds: [bug], cover: 'var(--red)', due: addDays(today, -1) });
+  await createCard(board, todo, { title: 'Write API docs' });
+
+  await createCard(board, doing, {
+    title: 'Dark mode polish',
+    labelIds: [feature],
+    description: 'Audit every screen for contrast in dark theme.',
+    comments: [{ id: 'cm1', text: 'Started with the settings screen.', createdAt: Date.now() - 3_600_000 }],
+  });
+  await createCard(board, doing, { title: 'Reduce bundle size', labelIds: [feature], due: addDays(today, 2), dueTime: '15:00' });
+
+  await createCard(board, done, { title: 'Ship v0.1', labelIds: [feature], cover: 'var(--green)', completed: true });
 }

@@ -70,9 +70,22 @@ ol {
   display: flex;
   flex-direction: column;
   background: var(--bg-list);
-  /* `will-change` is applied by navigation.ts only while a screen is moving. */
+  will-change: transform;
   /* NOTE: no CSS containment — contain:paint breaks position:fixed children
      in Safari; contain:layout causes invisible content on iOS in some builds */
+}
+
+/* The screen being covered by a push dims behind the incoming one. This has to
+   be a real element whose opacity we set directly: driving it from a CSS custom
+   property on .screen invalidates style for the entire subtree every frame,
+   which starves the spring loop on a content-heavy screen like Home. */
+.screen-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .screen-scroll {
@@ -100,43 +113,12 @@ ol {
   to { opacity: 1; }
 }
 
-/* --------------------------------------------------------------------------
-   Touch feedback
-
-   Every tappable surface answers the finger immediately. iOS only evaluates
-   `:active` on non-link elements once the document has a touch listener, which
-   index.tsx installs — see attachActiveStateFix().
-   -------------------------------------------------------------------------- */
-
-.pressable {
-  transition: background-color 140ms ease-out;
-}
-
-.pressable:active {
-  background-color: var(--bg-row-active);
-  transition-duration: 0ms;
-}
-
-/* Icon buttons and chips: shrink instead of tinting a whole row. */
-.press-scale {
-  transition: transform 160ms cubic-bezier(0.32, 0.72, 0.2, 1), opacity 160ms ease-out;
-}
-
-.press-scale:active {
-  transform: scale(0.9);
-  opacity: 0.6;
-  transition-duration: 40ms;
-}
-
-/* Rows own their background in CSS so `.pressable:active` can win over it. */
-.task-row {
-  background: var(--bg-list);
-}
-
+/* Entrance: content rises into place as a screen settles. Applied with an
+   inline animation-delay from staggerDelay() so groups cascade. */
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 8px, 0);
+    transform: translate3d(0, 12px, 0);
   }
   to {
     opacity: 1;
@@ -144,18 +126,49 @@ ol {
   }
 }
 
-.rise-in {
-  animation: rise-in 260ms cubic-bezier(0.32, 0.72, 0.2, 1) both;
+.rise {
+  animation: rise-in 360ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
 }
 
+/* Tactile press. Transform-only — the tiny scale is what makes taps feel
+   physical. Deliberately NO will-change: a board can hold a hundred cards, and
+   permanently promoting a layer per card costs far more than letting the
+   compositor promote for the 140ms the transition actually runs. */
+.pressable,
+.pressable-card {
+  transition: transform 140ms cubic-bezier(0.22, 0.9, 0.28, 1),
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.pressable:active {
+  transform: scale(0.975);
+}
+
+/* Cards scale less than rows: the same ratio on a big surface reads as a lurch. */
+.pressable-card:active {
+  transform: scale(0.985);
+}
+
+/* A single honest switch: when the user asks for less motion they get none of
+   the decorative kind. Navigation still moves, just without the spring travel
+   (see reduceMotion() in app/motion.ts). */
 @media (prefers-reduced-motion: reduce) {
-  .press-scale,
-  .pressable {
-    transition-duration: 0ms;
+  .rise,
+  .pressable,
+  .pressable-card {
+    animation: none !important;
+    transition: none !important;
   }
 
-  .rise-in,
-  .task-row {
-    animation: none;
+  .pressable:active,
+  .pressable-card:active {
+    transform: none;
   }
+}
+
+/* Focus Timer overtime pulse */
+@keyframes pomo-flash {
+  from { opacity: 0.06; }
+  to { opacity: 0.18; }
 }

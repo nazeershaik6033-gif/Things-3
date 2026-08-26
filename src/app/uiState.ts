@@ -64,3 +64,12 @@ export { quickEntry, setQuickEntry };
 
 const [searchOpen, setSearchOpen] = createSignal(false);
 export { searchOpen, setSearchOpen };
+
+/** Set when a late to-do is ticked: the sheet asks which day it was finished
+ *  before anything is written. Cleared on confirm or dismiss. */
+export interface CompletionPrompt {
+  taskId: string;
+}
+
+const [completionPrompt, setCompletionPrompt] = createSignal<CompletionPrompt | null>(null);
+export { completionPrompt, setCompletionPrompt };

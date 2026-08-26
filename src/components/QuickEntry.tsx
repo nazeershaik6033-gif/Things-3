@@ -3,13 +3,13 @@ import { FullScreenSheet } from '../ui/FullScreenSheet';
 import { Icon } from '../ui/Icon';
 import { TagPill } from '../ui/TagPill';
 import { AutoTextarea, SyncedInput } from '../ui/TextField';
-import { haptic } from '../ui/haptics';
+import { haptic } from '../app/motion';
 import { quickEntry, setQuickEntry, type QuickEntryState } from '../app/uiState';
 import { createTask, createTag, updateTask, type TaskDestination, type When } from '../db/mutations';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
-import { formatRelative } from '../domain/dates';
+import { addDays, formatRelative } from '../domain/dates';
 import type { ChecklistItem, DateStr } from '../db/models';
 import {
   WhenSheet, DeadlineSheet, DestinationSheet, destinationOptions,
@@ -116,10 +116,10 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
    *  focus off the textarea, and on iOS that collapses the keyboard mid-entry. */
   const toolbarBtn = (icon: JSX.Element, label: string, active: boolean, onTap: () => void) => (
     <button
-      class="press-scale"
+      class="pressable"
       onPointerDown={(e) => e.preventDefault()}
       onClick={() => {
-        haptic('selection');
+        haptic('tick');
         onTap();
       }}
       aria-label={label}
@@ -136,7 +136,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
 
   const chip = (onClick: () => void, children: JSX.Element, color?: string) => (
     <button
-      class="press-scale"
+      class="pressable"
       onClick={onClick}
       style={{
         display: 'inline-flex',
@@ -185,7 +185,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           }}
         >
           <button
-            class="press-scale"
+            class="pressable"
             onClick={close}
             style={{ color: 'var(--text-secondary)', 'font-size': '16px', padding: '8px 6px' }}
           >
@@ -193,7 +193,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           </button>
           <div style={{ flex: '1' }} />
           <button
-            class="press-scale"
+            class="pressable"
             data-testid="quick-entry-save"
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => void save()}
@@ -243,7 +243,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           />
 
           <Show when={tagIds().length > 0 || whenChip() || deadline()}>
-            <div class="rise-in" style={{ display: 'flex', gap: '7px', 'flex-wrap': 'wrap', padding: '2px 0 10px' }}>
+            <div class="rise" style={{ display: 'flex', gap: '7px', 'flex-wrap': 'wrap', padding: '2px 0 10px' }}>
               <Show when={whenChip()}>
                 {chip(() => setSub('when'), (
                   <>
@@ -256,6 +256,14 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
                     {whenChip()}
                   </>
                 ))}
+              </Show>
+              <Show when={whenChip() === 'Today'}>
+                <button
+                  onClick={() => applyWhen({ type: 'date', date: addDays(currentDate(), 1) })}
+                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': '13px', 'font-weight': '500', color: 'var(--text-secondary)' }}
+                >
+                  Tomorrow
+                </button>
               </Show>
               <Show when={deadline()}>
                 {chip(() => setSub('deadline'), (
@@ -275,7 +283,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           </Show>
 
           <Show when={showTagInput()}>
-            <div class="rise-in" style={{ display: 'flex', gap: '8px', padding: '0 0 10px' }}>
+            <div class="rise" style={{ display: 'flex', gap: '8px', padding: '0 0 10px' }}>
               <SyncedInput
                 value={tagDraft()}
                 onInput={setTagDraft}
@@ -283,7 +291,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
                 placeholder="Add tag…"
                 style={{ flex: '1', padding: '8px 12px', 'border-radius': '10px', background: 'var(--bg-inset)', 'font-size': '15px' }}
               />
-              <button class="press-scale" onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': '600' }}>
+              <button class="pressable" onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': '600' }}>
                 Add
               </button>
             </div>
@@ -300,7 +308,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           />
 
           <Show when={showChecklist() || checklist().length > 0}>
-            <div class="rise-in" style={{ 'padding-top': '8px', 'border-top': '1px solid var(--separator)', 'margin-top': '10px' }}>
+            <div class="rise" style={{ 'padding-top': '8px', 'border-top': '1px solid var(--separator)', 'margin-top': '10px' }}>
               <ChecklistEditor items={checklist()} onChange={setChecklist} />
             </div>
           </Show>

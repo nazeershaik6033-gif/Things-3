@@ -5,7 +5,7 @@ import { createSpring, Spring, SPRING } from '../gestures/springs';
 import { release, tryClaim } from '../gestures/arbiter';
 import { Icon } from '../ui/Icon';
 import { setQuickEntry, type QuickEntryState } from '../app/uiState';
-import { haptic } from '../ui/haptics';
+import { haptic } from '../app/motion';
 import type { TaskDestination } from '../db/mutations';
 
 export interface MagicPlusDrop {
@@ -77,7 +77,7 @@ function MagicPlusInner(props: {
       slop: 6,
       onStart: () => {
         dragging = true;
-        haptic('impact');
+        haptic('select');
         const rect = fab.getBoundingClientRect();
         homeX = rect.left;
         homeY = rect.top;
@@ -111,7 +111,7 @@ function MagicPlusInner(props: {
         }
         if (slot !== gapSlot) {
           gapSlot = slot;
-          haptic('selection');
+          haptic('tick');
           applyGap(slot);
         }
       },
@@ -222,7 +222,7 @@ function MagicPlusInner(props: {
         data-testid="magic-plus"
         aria-label="New To-Do"
         onClick={() => {
-          haptic('impact');
+          haptic('select');
           setQuickEntry(props.defaultEntry());
         }}
         style={{

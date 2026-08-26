@@ -3,7 +3,7 @@ import { createPan } from '../gestures/createPan';
 import { createSpring, rubberband, Spring, SPRING } from '../gestures/springs';
 import { release, tryClaim, closeOpenRow } from '../gestures/arbiter';
 import { Icon } from '../ui/Icon';
-import { haptic } from '../ui/haptics';
+import { haptic } from '../app/motion';
 
 const ACTION_WIDTH = 76;
 
@@ -54,7 +54,7 @@ export function SwipeableRow(props: {
           // Icon "tick" when crossing the commit threshold
           if (zone === 'right') { iconSpringL.set(0.82); iconSpringL.to(1.18, { onRest: () => iconSpringL.to(1) }); }
           if (zone === 'left') { iconSpringR.set(0.82); iconSpringR.to(1.18, { onRest: () => iconSpringR.to(1) }); }
-          if (zone !== 'none') haptic('selection');
+          if (zone !== 'none') haptic('tick');
           pastThreshold = zone;
         }
       },
