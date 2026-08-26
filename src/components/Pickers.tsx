@@ -11,6 +11,7 @@ import {
   type TaskDestination, type When,
 } from '../db/mutations';
 import { projectProgress } from '../domain/smartLists';
+import { haptic } from '../app/motion';
 
 function PickerRow(props: {
   icon: JSX.Element;
@@ -21,7 +22,11 @@ function PickerRow(props: {
 }): JSX.Element {
   return (
     <button
-      onClick={props.onClick}
+      class="pressable"
+      onClick={() => {
+        haptic('tick');
+        props.onClick();
+      }}
       style={{
         display: 'flex',
         'align-items': 'center',

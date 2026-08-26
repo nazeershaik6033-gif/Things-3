@@ -169,24 +169,27 @@ export function push(route: Route): void {
   setStack((s) => [...s, entry]);
   history.pushState(null, '', hashFor(route));
 
-  requestAnimationFrame(() => {
-    const el = screenEls.get(entry.key);
-    const prevEl = prev ? screenEls.get(prev.key) : undefined;
-    const w = screenWidth();
-    if (!el) {
-      transitioning = false;
-      return;
-    }
-    el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
-    setX(el, w);
-    animate(w, 0, (v) => {
-      setX(el, v);
-      setUnder(prevEl, v / w, w);
-    }, () => {
-      el.style.boxShadow = '';
-      setUnder(prevEl, 1, w);
-      transitioning = false;
-    });
+  // Solid renders synchronously inside setStack, so the new screen element is
+  // already registered by the time we get here. Offsetting it now — rather
+  // than inside a requestAnimationFrame — means the browser never paints a
+  // frame with the screen sitting at its final position, which is what made
+  // every push start with a flash before the slide.
+  const el = screenEls.get(entry.key);
+  const prevEl = prev ? screenEls.get(prev.key) : undefined;
+  const w = screenWidth();
+  if (!el) {
+    transitioning = false;
+    return;
+  }
+  el.style.boxShadow = '0 0 24px rgba(0,0,0,0.18)';
+  setX(el, w);
+  animate(w, 0, (v) => {
+    setX(el, v);
+    setUnder(prevEl, v / w, w);
+  }, () => {
+    el.style.boxShadow = '';
+    setUnder(prevEl, 1, w);
+    transitioning = false;
   });
 }
 

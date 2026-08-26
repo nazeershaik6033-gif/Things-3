@@ -1,8 +1,19 @@
-import { Index, type JSX } from 'solid-js';
+import { type JSX } from 'solid-js';
+import { Key } from '@solid-primitives/keyed';
 import { nanoid } from 'nanoid';
 import type { ChecklistItem } from '../db/models';
+import { SyncedInput } from '../ui/TextField';
+import { haptic } from '../app/motion';
 
-/** Inline checklist editor inside the expanded task card. */
+/** Inline checklist editor inside the expanded task card.
+ *
+ *  Keyed by item id. Editing an item necessarily produces a new object
+ *  ({...i, ...patch}), so a reference-keyed <For> rebuilds that row's <input>
+ *  on every keystroke — which on iOS drops focus and closes the keyboard
+ *  mid-word. <Index> avoids that by keying on position, but then an insert or
+ *  delete in the middle hands a live, focused node to a different item; <Key>
+ *  moves the node with its item instead. SyncedInput covers the other half:
+ *  it ignores prop echoes from the DB while the field has focus. */
 export function ChecklistEditor(props: {
   items: ChecklistItem[];
   onChange: (items: ChecklistItem[]) => void;
@@ -30,11 +41,21 @@ export function ChecklistEditor(props: {
 
   return (
     <div style={{ padding: '2px 0' }}>
-      <Index each={props.items}>
+      <Key each={props.items} by={(item) => item.id}>
         {(item) => (
-          <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '3px 0' }}>
+          <div
+            class="rise"
+            style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '3px 0' }}
+          >
             <button
-              onClick={() => update(item().id, { completed: !item().completed })}
+              class="pressable"
+              // pointerdown + preventDefault keeps focus in whatever field the
+              // user is typing in, so ticking an item never closes the keyboard
+              onPointerDown={(e) => {
+                e.preventDefault();
+                haptic('tick');
+                update(item().id, { completed: !item().completed });
+              }}
               aria-label={item().completed ? 'Uncheck' : 'Check'}
               style={{
                 width: '17px',
@@ -46,6 +67,7 @@ export function ChecklistEditor(props: {
                 'align-items': 'center',
                 'justify-content': 'center',
                 flex: 'none',
+                transition: 'background 140ms ease-out, border-color 140ms ease-out',
               }}
             >
               {item().completed && (
@@ -54,11 +76,11 @@ export function ChecklistEditor(props: {
                 </svg>
               )}
             </button>
-            <input
-              data-checklist-id={item().id}
+            <SyncedInput
+              attrs={{ 'data-checklist-id': item().id }}
               value={item().title}
               placeholder="Checklist item"
-              onInput={(e) => update(item().id, { title: e.currentTarget.value })}
+              onInput={(v) => update(item().id, { title: v })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -81,8 +103,9 @@ export function ChecklistEditor(props: {
             />
           </div>
         )}
-      </Index>
+      </Key>
       <button
+        class="pressable"
         // pointerdown (not click): fires before a focused textarea blurs and
         // reflows the card, so the tap can't get lost mid-layout
         onPointerDown={(e) => {

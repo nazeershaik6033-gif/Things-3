@@ -1,7 +1,7 @@
 import {
   createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, type JSX,
 } from 'solid-js';
-import type { Task } from '../db/models';
+import type { ChecklistItem, Task } from '../db/models';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { trashTask, updateTask } from '../db/mutations';
@@ -18,11 +18,9 @@ import { MarkdownView } from './MarkdownView';
 import { ChecklistEditor } from './ChecklistEditor';
 import { WhenPicker, DeadlinePicker, TagPicker, MovePicker } from './Pickers';
 import { TaskRow, type TaskRowContext } from './TaskRow';
-
-function autosize(el: HTMLTextAreaElement): void {
-  el.style.height = 'auto';
-  el.style.height = `${el.scrollHeight}px`;
-}
+import { AutoTextarea, autosize } from '../ui/TextField';
+import { haptic, reduceMotion } from '../app/motion';
+import { createSpring, SPRING } from '../gestures/springs';
 
 type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | null;
 
@@ -161,6 +159,12 @@ function TaskCard(props: { task: Task }): JSX.Element {
   const t = () => props.task;
   const [picker, setPicker] = createSignal<PickerKind>(null);
   const [editingNotes, setEditingNotes] = createSignal(false);
+  // The card owns the checklist while it is open, exactly as it already
+  // buffers title and notes. Routing every keystroke through Dexie and back
+  // meant a new row only existed a round-trip later — too late for the focus
+  // call to land inside the tap that created it, so iOS never raised the
+  // keyboard and the caret went nowhere.
+  const [checklist, setChecklist] = createSignal<ChecklistItem[]>(props.task.checklist);
   let titleEl!: HTMLTextAreaElement;
   let notesEl: HTMLTextAreaElement | undefined;
 
@@ -192,7 +196,6 @@ function TaskCard(props: { task: Task }): JSX.Element {
   };
 
   onMount(() => {
-    autosize(titleEl);
     if (t().title === '') titleEl.focus();
   });
 
@@ -214,7 +217,11 @@ function TaskCard(props: { task: Task }): JSX.Element {
 
   const actionButton = (icon: JSX.Element, label: string, onClick: () => void) => (
     <button
-      onClick={onClick}
+      class="pressable"
+      onClick={() => {
+        haptic('tick');
+        onClick();
+      }}
       aria-label={label}
       style={{
         padding: '10px',
@@ -250,16 +257,12 @@ function TaskCard(props: { task: Task }): JSX.Element {
             onToggle={() => toggleComplete(t())}
           />
         </div>
-        <textarea
-          ref={titleEl}
+        <AutoTextarea
+          ref={(el) => (titleEl = el)}
           value={t().title}
           placeholder="New To-Do"
-          rows={1}
           enterkeyhint="done"
-          onInput={(e) => {
-            autosize(e.currentTarget);
-            queueWrite({ title: e.currentTarget.value });
-          }}
+          onInput={(v) => queueWrite({ title: v })}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -268,10 +271,10 @@ function TaskCard(props: { task: Task }): JSX.Element {
           }}
           style={{
             flex: '1',
+            'min-width': '0',
             'font-size': '17px',
             'font-weight': '500',
             'line-height': '1.35',
-            overflow: 'hidden',
           }}
         />
       </div>
@@ -302,39 +305,38 @@ function TaskCard(props: { task: Task }): JSX.Element {
             </div>
           }
         >
-          <textarea
-            ref={notesEl}
+          <AutoTextarea
+            ref={(el) => (notesEl = el)}
             value={t().notes}
             placeholder="Notes"
             rows={2}
-            onInput={(e) => {
-              autosize(e.currentTarget);
-              queueWrite({ notes: e.currentTarget.value });
-            }}
+            onInput={(v) => queueWrite({ notes: v })}
             onBlur={() => {
               flush();
               setEditingNotes(false);
             }}
             style={{
-              width: '100%',
               'font-size': '15px',
               'line-height': '1.45',
-              overflow: 'hidden',
               padding: '4px 0',
             }}
           />
         </Show>
 
-        <Show when={t().checklist.length > 0 || expandedTaskId() === t().id}>
+        <Show when={checklist().length > 0 || expandedTaskId() === t().id}>
           <ChecklistEditor
-            items={t().checklist}
-            onChange={(items) => void updateTask(t().id, { checklist: items })}
+            items={checklist()}
+            onChange={(items) => {
+              setChecklist(items);
+              queueWrite({ checklist: items });
+            }}
           />
         </Show>
 
         <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap', padding: '8px 0 4px' }}>
           <Show when={whenLabel()}>
             <button
+              class="pressable"
               onClick={() => setPicker('when')}
               style={{
                 display: 'inline-flex',
@@ -366,6 +368,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
           </Show>
           <Show when={t().deadline}>
             <button
+              class="pressable"
               onClick={() => setPicker('deadline')}
               style={{
                 display: 'inline-flex',
@@ -435,6 +438,8 @@ function TaskCard(props: { task: Task }): JSX.Element {
 export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.Element {
   let wrap!: HTMLDivElement;
   let lastH = 0;
+  let heightSpring: ReturnType<typeof createSpring> | undefined;
+  let animatingHeight = false;
   const expanded = () => expandedTaskId() === props.task.id;
 
   // When the row unmounts (e.g., task moves to a new group), defer clearing
@@ -450,30 +455,40 @@ export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.
   onMount(() => {
     lastH = wrap.offsetHeight;
     const ro = new ResizeObserver(() => {
-      if (wrap.getAnimations().length === 0) lastH = wrap.offsetHeight;
+      if (!animatingHeight) lastH = wrap.offsetHeight;
     });
     ro.observe(wrap);
     onCleanup(() => ro.disconnect());
   });
 
+  // Expand/collapse rides the same spring as every other surface in the app,
+  // so an expand interrupted by a collapse inherits its velocity instead of
+  // restarting a fixed-duration curve.
   createEffect(
     on(expanded, (_now, prev) => {
       if (prev === undefined) return;
       const newH = wrap.offsetHeight;
-      if (lastH !== newH) {
+      if (lastH !== newH && !reduceMotion()) {
+        if (!heightSpring) {
+          heightSpring = createSpring(lastH, (v) => (wrap.style.height = `${v}px`), SPRING.nav);
+        }
+        if (!animatingHeight) heightSpring.set(lastH);
+        animatingHeight = true;
         wrap.style.overflow = 'hidden';
-        const anim = wrap.animate(
-          [{ height: `${lastH}px` }, { height: `${newH}px` }],
-          { duration: 300, easing: 'cubic-bezier(0.32, 0.72, 0.2, 1)' },
-        );
-        anim.onfinish = () => {
-          wrap.style.overflow = '';
-          lastH = wrap.offsetHeight;
-        };
+        heightSpring.to(newH, {
+          onRest: () => {
+            animatingHeight = false;
+            wrap.style.height = '';
+            wrap.style.overflow = '';
+            lastH = wrap.offsetHeight;
+          },
+        });
       }
       lastH = newH;
     }, { defer: true }),
   );
+
+  onCleanup(() => heightSpring?.stop());
 
   return (
     <>
