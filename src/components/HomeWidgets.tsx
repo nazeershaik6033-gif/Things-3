@@ -6,7 +6,9 @@ import { haptic, staggerDelay } from '../app/motion';
 import { addDays, formatCountdown, formatRelative, formatTime, weekdayName } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
 import { markedDays, monthLabel, monthOf, nextEvent } from '../domain/calendarMonth';
+import { overviewSummary } from '../domain/homeOverview';
 import { hitStreak, OUTCOME_COLOR, OUTCOME_LABEL, resolveAll, targetFor } from '../domain/target';
+import { overviewPref, setOverviewPref } from '../app/uiState';
 
 /** A clock that ticks once a minute — the Up Next countdown is the only thing
  *  in the app that needs wall-clock time to keep moving on its own. */
@@ -267,28 +269,105 @@ function TargetWidget(props: {
   );
 }
 
-/** The scroll-snapping deck at the top of Home. */
+/** The scroll-snapping deck at the top of Home, under a header that folds it
+ *  away. With nothing set, nothing booked and nothing late, three cards saying
+ *  so are just a wall between you and your lists — so the deck starts
+ *  minimised and its header carries the same news in one line. The chevron
+ *  overrides that either way, and the override sticks. */
 export function WidgetDeck(props: {
   events: CalendarEvent[];
   tasks: Task[];
   targets: DailyTarget[];
   today: DateStr;
 }): JSX.Element {
+  const now = createMinuteClock();
+  const summary = createMemo(() =>
+    overviewSummary(props.events, props.tasks, props.targets, props.today, now()),
+  );
+  const open = createMemo(() => {
+    const pref = overviewPref();
+    return pref === 'auto' ? summary().hasContent : pref === 'open';
+  });
+
   return (
-    <div
-      data-testid="widget-deck"
-      style={{
-        display: 'flex',
-        gap: '10px',
-        padding: '2px 16px 4px',
-        'overflow-x': 'auto',
-        'scroll-snap-type': 'x mandatory',
-        'scrollbar-width': 'none',
-      }}
-    >
-      <TargetWidget targets={props.targets} tasks={props.tasks} today={props.today} delay={staggerDelay(0)} />
-      <UpNextWidget events={props.events} today={props.today} delay={staggerDelay(1)} />
-      <OverdueWidget tasks={props.tasks} today={props.today} delay={staggerDelay(2)} />
+    <div data-testid="widget-section">
+      <button
+        class="pressable no-select"
+        data-testid="widget-deck-toggle"
+        aria-expanded={open()}
+        aria-label={open() ? 'Minimise overview' : 'Expand overview'}
+        onClick={() => {
+          haptic('select');
+          setOverviewPref(open() ? 'closed' : 'open');
+        }}
+        style={{
+          display: 'flex',
+          'align-items': 'center',
+          gap: '7px',
+          width: 'calc(100% - 32px)',
+          margin: '0 16px',
+          padding: '4px 2px 6px',
+          'text-align': 'left',
+        }}
+      >
+        <span
+          style={{
+            display: 'flex',
+            flex: 'none',
+            color: 'var(--text-tertiary)',
+            transform: open() ? 'rotate(90deg)' : 'none',
+            transition: 'transform 160ms',
+          }}
+        >
+          <Icon name="chevron-right" size={12} />
+        </span>
+        <span
+          style={{
+            'font-size': '12px',
+            'font-weight': '700',
+            'letter-spacing': '0.05em',
+            'text-transform': 'uppercase',
+            color: 'var(--text-tertiary)',
+            flex: 'none',
+          }}
+        >
+          Overview
+        </span>
+        <Show when={!open()}>
+          <span
+            data-testid="widget-deck-summary"
+            style={{
+              flex: '1',
+              'min-width': '0',
+              'font-size': '13px',
+              color: 'var(--text-secondary)',
+              overflow: 'hidden',
+              'text-overflow': 'ellipsis',
+              'white-space': 'nowrap',
+            }}
+          >
+            {summary().line}
+          </span>
+        </Show>
+      </button>
+
+      <Show when={open()}>
+        <div
+          data-testid="widget-deck"
+          style={{
+            display: 'flex',
+            gap: '10px',
+            padding: '2px 16px 4px',
+            'overflow-x': 'auto',
+            'scroll-snap-type': 'x mandatory',
+            'scrollbar-width': 'none',
+          }}
+        >
+          <TargetWidget targets={props.targets} tasks={props.tasks} today={props.today} delay={staggerDelay(0)} />
+          <UpNextWidget events={props.events} today={props.today} delay={staggerDelay(1)} />
+          <OverdueWidget tasks={props.tasks} today={props.today} delay={staggerDelay(2)} />
+        </div>
+      </Show>
     </div>
   );
 }

@@ -65,6 +65,36 @@ export { quickEntry, setQuickEntry };
 const [searchOpen, setSearchOpen] = createSignal(false);
 export { searchOpen, setSearchOpen };
 
+/** Home's widget deck folds away on a quiet day. 'auto' follows that rule;
+ *  once the chevron is tapped the choice is explicit and sticks, because a
+ *  section that re-opens itself after you closed it isn't a control. Lives
+ *  here rather than in HomeScreen so it survives navigating away and back. */
+export type SectionPref = 'auto' | 'open' | 'closed';
+
+const OVERVIEW_KEY = 'clarity-home-overview';
+
+function loadOverviewPref(): SectionPref {
+  try {
+    const v = localStorage.getItem(OVERVIEW_KEY);
+    return v === 'open' || v === 'closed' ? v : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
+const [overviewPref, setOverviewPrefSignal] = createSignal<SectionPref>(loadOverviewPref());
+export { overviewPref };
+
+export function setOverviewPref(pref: SectionPref): void {
+  setOverviewPrefSignal(pref);
+  try {
+    if (pref === 'auto') localStorage.removeItem(OVERVIEW_KEY);
+    else localStorage.setItem(OVERVIEW_KEY, pref);
+  } catch {
+    // Private mode: the preference simply doesn't outlive the session.
+  }
+}
+
 /** Set when a late to-do is ticked: the sheet asks which day it was finished
  *  before anything is written. Cleared on confirm or dismiss. */
 export interface CompletionPrompt {
