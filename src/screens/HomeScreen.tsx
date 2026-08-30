@@ -11,6 +11,10 @@ import { Sheet, SheetTitle } from '../ui/Sheet';
 import { setSearchOpen, setQuickEntry } from '../app/uiState';
 import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { routineProgress } from '../domain/routine';
+import {
+  checkedIdsIn, feedsBySource, hasFeed, newEntriesFor, seenUrlSet, visibleSources,
+} from '../domain/myRoutine';
+import { routineWindowAt, sortedWindows } from '../domain/routineWindows';
 import { OUTCOME_COLOR, OUTCOME_LABEL, resolveAll, targetFor } from '../domain/target';
 import { sortByOrderKey } from '../db/ordering';
 import { createArea, createProject } from '../db/mutations';
@@ -187,6 +191,25 @@ export function HomeScreen(): JSX.Element {
   const standaloneProjects = createMemo(() => liveProjects().filter((p) => !p.areaId));
   const sortedAreas = createMemo(() => sortByOrderKey(areas()));
   const routine = createMemo(() => routineProgress(routineItems(), routineLogs(), currentDate()));
+  const routineSources = createLiveQuery(() => db.routineSources.toArray(), []);
+  const routineWindowRows = createLiveQuery(() => db.routineWindows.toArray(), []);
+  const routineChecks = createLiveQuery(() => db.routineChecks.toArray(), []);
+  const routineFeeds = createLiveQuery(() => db.routineFeeds.toArray(), []);
+  const routineSeen = createLiveQuery(() => db.routineSeen.toArray(), []);
+  /** Updates waiting in the live My Routine window, on sources not yet ticked. */
+  const routineFeedNew = createMemo(() => {
+    const span = routineWindowAt(sortedWindows(routineWindowRows()), null, new Date());
+    if (!span || span.upcomingAt !== null) return 0;
+    const done = checkedIdsIn(routineChecks(), span.key);
+    const feeds = feedsBySource(routineFeeds());
+    const seen = seenUrlSet(routineSeen());
+    let count = 0;
+    for (const source of visibleSources(routineSources(), Date.now())) {
+      if (done.has(source.id) || !hasFeed(source)) continue;
+      count += newEntriesFor(feeds.get(source.id), span.start, span.end, seen).length;
+    }
+    return count;
+  });
   const target = createMemo(() => targetFor(resolveAll(targets(), tasks()), currentDate()));
 
   const listRow = (list: BuiltinList, label: string, tint: string, count?: number) => (
@@ -280,7 +303,7 @@ export function HomeScreen(): JSX.Element {
               testid="home-routine"
               tint="rgba(182, 120, 224, 0.14)"
               icon={<Icon name="repeat" size={18} color="var(--purple)" />}
-              label="Daily Routine"
+              label="Habits"
               badge={
                 <Show when={routine().total > 0}>
                   <span
@@ -298,6 +321,30 @@ export function HomeScreen(): JSX.Element {
                 </Show>
               }
               onClick={() => push({ name: 'routine' })}
+            />
+            <HomeRow
+              testid="home-myroutine"
+              tint="rgba(247, 206, 70, 0.18)"
+              icon={<Icon name="sunrise" size={18} color="var(--yellow-deep)" />}
+              label="My Routine"
+              badge={
+                <Show when={routineFeedNew() > 0}>
+                  <span
+                    data-testid="home-myroutine-new"
+                    style={{
+                      'font-size': '11px',
+                      'font-weight': '700',
+                      color: '#fff',
+                      background: 'var(--red)',
+                      'border-radius': '999px',
+                      padding: '2px 7px',
+                    }}
+                  >
+                    {routineFeedNew()} new
+                  </span>
+                </Show>
+              }
+              onClick={() => push({ name: 'myroutine' })}
             />
             {listRow('upcoming', 'Upcoming', 'rgba(255, 59, 48, 0.11)')}
             {listRow('prior', 'Prior', 'rgba(182, 120, 224, 0.12)')}

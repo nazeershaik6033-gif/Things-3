@@ -4,7 +4,8 @@ import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
-import { askCompletionDate, setAskCompletionDate } from '../app/settings';
+import { aiConfig, askCompletionDate, setAskCompletionDate, updateAiConfig } from '../app/settings';
+import { GEMINI_MODELS, OPENROUTER_MODELS, type AiProvider } from '../net/ai';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
 import { push } from '../app/navigation';
@@ -226,6 +227,127 @@ export function SettingsScreen(): JSX.Element {
             are logged automatically. Presets, tags and theme all live inside the timer (open it
             with the 🎯 button in Today). Focused today: {formatHrMin(doneTodaySec())}.
           </div>
+        </div>
+      </Section>
+
+      <Section title="My Routine">
+        <div style={{ padding: '10px 0' }}>
+          <button
+            data-testid="open-myroutine"
+            onClick={() => push({ name: 'myroutine' })}
+            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}
+          >
+            Open My Routine
+          </button>
+          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': '1.6' }}>
+            The apps, sites and channels you go through each day, grouped and checked off
+            inside a <b>window</b> — Morning, Night, or any window you add. A window stays open
+            until the next one starts, so anything a YouTube channel, Telegram channel or RSS
+            feed published in that stretch shows up as <b>new</b>.
+            <br /><br />
+            <b>Get started:</b> from Home tap <b>My Routine</b>, then <b>+</b> in the toolbar to
+            make a group, and <b>+</b> on the group to add a source.
+            <br /><br />
+            <b>History</b> keeps two records: how much you cleared on each of the last 14 days,
+            and every update that slipped past an unfinished window, saved for 14 days.
+            <br /><br />
+            Feeds are read through public CORS proxies, since this app has no server of its
+            own — a feed that can't be read still works as something to tick off. Window
+            reminders (the bell) are local notifications shown while the app is open.
+          </div>
+        </div>
+      </Section>
+
+      <Section title="AI">
+        <div style={{ padding: '10px 0' }}>
+          <div style={{ display: 'flex', gap: '6px', 'margin-bottom': '10px' }}>
+            {(
+              [
+                ['claude', 'Claude app'],
+                ['openrouter', 'OpenRouter'],
+                ['gemini', 'Gemini'],
+              ] as Array<[AiProvider, string]>
+            ).map(([id, label]) => (
+              <button
+                onClick={() => void updateAiConfig({ provider: id })}
+                aria-pressed={aiConfig().provider === id}
+                data-testid={`ai-provider-${id}`}
+                style={{
+                  flex: '1',
+                  padding: '9px 4px',
+                  'border-radius': '10px',
+                  'font-size': '13px',
+                  'font-weight': '600',
+                  border: `1px solid ${aiConfig().provider === id ? 'var(--blue)' : 'var(--separator)'}`,
+                  background: aiConfig().provider === id ? 'rgba(47, 124, 246, 0.1)' : 'transparent',
+                  color: aiConfig().provider === id ? 'var(--blue)' : 'var(--text-secondary)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <Show when={aiConfig().provider === 'claude'}>
+            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '2px 0 8px' }}>
+              No key needed. The <b>send</b> button in My Routine builds a prompt from what's
+              new, copies it, and opens claude.ai with it prefilled. Pick OpenRouter or Gemini
+              instead if you'd rather the summary appear inside the app.
+            </div>
+          </Show>
+
+          <Show when={aiConfig().provider === 'openrouter'}>
+            <input
+              value={aiConfig().openRouterKey}
+              onInput={(e) => void updateAiConfig({ openRouterKey: e.currentTarget.value })}
+              placeholder="OpenRouter API key (sk-or-…)"
+              type="password"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck={false}
+              data-testid="ai-openrouter-key"
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '16px', outline: 'none' }}
+            />
+            <select
+              value={aiConfig().openRouterModel}
+              onChange={(e) => void updateAiConfig({ openRouterModel: e.currentTarget.value })}
+              aria-label="OpenRouter model"
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '15px' }}
+            >
+              {OPENROUTER_MODELS.map(([id, label]) => <option value={id}>{label}</option>)}
+            </select>
+            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '4px 0 8px' }}>
+              Free keys from openrouter.ai/keys. The key is stored on this device only and sent
+              straight to OpenRouter — there is no server in between. Free models are rate
+              limited to roughly 20 requests a minute.
+            </div>
+          </Show>
+
+          <Show when={aiConfig().provider === 'gemini'}>
+            <input
+              value={aiConfig().geminiKey}
+              onInput={(e) => void updateAiConfig({ geminiKey: e.currentTarget.value })}
+              placeholder="Gemini API key"
+              type="password"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck={false}
+              data-testid="ai-gemini-key"
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '16px', outline: 'none' }}
+            />
+            <select
+              value={aiConfig().geminiModel}
+              onChange={(e) => void updateAiConfig({ geminiModel: e.currentTarget.value })}
+              aria-label="Gemini model"
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '15px' }}
+            >
+              {GEMINI_MODELS.map(([id, label]) => <option value={id}>{label}</option>)}
+            </select>
+            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '4px 0 8px' }}>
+              Free keys from aistudio.google.com/apikey. Stored on this device only and sent
+              straight to Google.
+            </div>
+          </Show>
         </div>
       </Section>
 

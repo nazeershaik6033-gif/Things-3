@@ -17,9 +17,11 @@ import { Icon } from '../ui/Icon';
 import { ProgressRing } from '../ui/ProgressRing';
 import { ScreenChrome, EmptyState } from './common';
 
-/** The daily routine: a fixed set of checks that starts empty every morning.
- *  Deliberately separate from to-dos — nothing here reaches Inbox, Today or
- *  the Logbook, so a habit you skip never becomes an overdue task. */
+/** Habits: a fixed set of checks that starts empty every morning. Deliberately
+ *  separate from to-dos — nothing here reaches Inbox, Today or the Logbook, so
+ *  a habit you skip never becomes an overdue task. Distinct again from My
+ *  Routine, which is about catching up with outside sources rather than doing
+ *  something yourself. */
 export function RoutineScreen(): JSX.Element {
   const items = createLiveQuery(() => db.routineItems.toArray(), []);
   const logs = createLiveQuery(() => db.routineLogs.toArray(), []);
@@ -49,7 +51,7 @@ export function RoutineScreen(): JSX.Element {
 
   return (
     <ScreenChrome
-      title="Daily Routine"
+      title="Habits"
       icon={<Icon name="repeat" size={28} color="var(--purple)" />}
       subtitle={`${weekdayName(today())} · ${formatRelative(today(), today())}`}
       trailing={
