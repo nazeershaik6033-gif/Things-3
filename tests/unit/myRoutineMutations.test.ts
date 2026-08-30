@@ -10,6 +10,7 @@ import {
 import { exportData, importData, validateExport } from '../../src/db/exportImport';
 import { sortByOrderKey } from '../../src/db/ordering';
 import { checkId, MISS_MAX_AGE_MS } from '../../src/domain/myRoutine';
+import { isNavigableUrl } from '../../src/domain/feedParse';
 import type { RoutineMiss } from '../../src/db/models';
 
 beforeEach(async () => {
@@ -114,6 +115,22 @@ describe('shapeSource', () => {
   it('never leaves a source without somewhere to open', () => {
     const shaped = shapeSource({ kind: 'link', raw: 'Diary of a CEO', name: 'Diary of a CEO', groupId: null });
     expect(shaped.url).toContain('duckduckgo.com');
+  });
+
+  it('never stores a URL a browser cannot navigate to', () => {
+    // The regression: a YouTube channel entered by display name was shaped to
+    // "https://Diary of a CEO" — non-empty, so the fallback was skipped, and
+    // the browser opened a blank in-app tab instead of reporting an error.
+    for (const raw of ['Diary of a CEO', 'Lex Fridman', 'The Daily', '   spaced   name  ']) {
+      const shaped = shapeSource({ kind: 'youtube', raw, name: raw.trim(), groupId: null });
+      expect(isNavigableUrl(shaped.url), `${raw} -> ${shaped.url}`).toBe(true);
+      expect(shaped.url).toContain('youtube.com');
+    }
+  });
+
+  it('still prefers a real channel URL over a search when it has one', () => {
+    expect(shapeSource({ kind: 'youtube', raw: '@mkbhd', name: '', groupId: null }).url)
+      .toBe('https://www.youtube.com/@mkbhd');
   });
 });
 

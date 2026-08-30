@@ -147,3 +147,65 @@ test('habits keeps its own screen alongside My Routine', async ({ page }) => {
   await expect(page).toHaveURL(/#\/routine$/);
   await expect(currentScreen(page).getByRole('heading', { name: 'Habits' })).toBeVisible();
 });
+
+test('my routine: opening a source ticks it off and returns you to the list', async ({ page }) => {
+  await page.getByTestId('home-myroutine').click();
+  await addSource(page, 'Daily Watch', 'Veritasium');
+
+  const screen = currentScreen(page);
+  // The link opens in a new tab; keep the routine page as the one under test.
+  const popup = page.waitForEvent('popup').catch(() => null);
+  await screen.getByText('Veritasium', { exact: true }).click();
+  const opened = await popup;
+
+  // It went somewhere real — never a blank tab, which is what an unnavigable
+  // URL produces.
+  if (opened) {
+    expect(opened.url()).not.toBe('about:blank');
+    await opened.close();
+  }
+
+  // Back on the routine page, the row is checked without a second tap.
+  await expect(screen.getByRole('button', { name: 'Mark incomplete' })).toBeVisible();
+  await expect(page.getByTestId('routine-focus-completed')).toContainText('1');
+
+  // Still undoable.
+  await screen.getByRole('button', { name: 'Mark incomplete' }).click();
+  await expect(page.getByTestId('routine-focus-completed')).toContainText('0');
+});
+
+test('my routine: a channel entered by name still opens somewhere real', async ({ page }) => {
+  await page.getByTestId('home-myroutine').click();
+  await page.getByTestId('routine-new-group').click();
+  await page.getByTestId('routine-group-name').fill('Daily Watch');
+  await page.getByTestId('routine-group-save').click();
+
+  // A display name, not a handle or URL — this is what used to be stored as
+  // "https://Diary of a CEO" and opened a blank in-app browser.
+  await page.getByTestId('routine-add-source').first().click();
+  await page.getByTestId('routine-kind-youtube').click();
+  await page.getByTestId('routine-source-url').fill('Diary of a CEO');
+  await page.getByTestId('routine-source-name').fill('Diary of a CEO');
+  await page.getByTestId('routine-source-save').click();
+
+  const screen = currentScreen(page);
+  await expect(screen.getByText('Diary of a CEO', { exact: true })).toBeVisible();
+
+  const stored = await page.evaluate(async () => {
+    const req = indexedDB.open('clarity');
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return await new Promise<string>((resolve, reject) => {
+      const tx = db.transaction('routineSources', 'readonly').objectStore('routineSources').getAll();
+      tx.onsuccess = () => resolve((tx.result as Array<{ url: string }>).map((s) => s.url).join('|'));
+      tx.onerror = () => reject(tx.error);
+    });
+  });
+
+  // Whatever we stored, a browser must be able to navigate to it.
+  expect(() => new URL(stored)).not.toThrow();
+  expect(stored).not.toContain(' ');
+  expect(stored).toContain('youtube.com');
+});

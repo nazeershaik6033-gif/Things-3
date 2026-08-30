@@ -25,6 +25,7 @@ import {
   setGroupColor, shapeSource, snoozeSource, updateSource, updateWindow,
 } from '../db/myRoutineMutations';
 import { discoverFeed, fetchSourceFeed, openExternal, resolveYtChannelId } from '../net/feeds';
+import { resolveOpenUrl } from '../domain/feedParse';
 import { aiChat, digestReady, openInClaude, providerLabel } from '../net/ai';
 import { Checkbox } from '../ui/Checkbox';
 import { Icon } from '../ui/Icon';
@@ -263,9 +264,27 @@ export function MyRoutineScreen(): JSX.Element {
     void setChecked(s.key, source.id, next);
   };
 
-  const openSource = (source: RoutineSource): void => openExternal(source.url);
+  /** Opening a source is doing it. You tapped through to the channel, so the
+   *  row ticks itself and the list you come back to reflects that — no second
+   *  trip to the checkbox. Still undoable: tap the checkbox to clear it. */
+  const markDone = (source: RoutineSource): void => {
+    const s = span();
+    if (!s?.key || done().has(source.id)) return;
+    void setChecked(s.key, source.id, true);
+  };
 
-  const openEntry = (entry: FeedEntry): void => {
+  const openSource = (source: RoutineSource): void => {
+    markDone(source);
+    // Resolve at tap time: a row stored before the URL shaping was fixed can
+    // hold something a browser cannot navigate to.
+    openExternal(resolveOpenUrl(source.kind, source.url, source.name));
+  };
+
+  /** `source` is passed for an update in the live window, and omitted from
+   *  History: reading something you missed on Tuesday must not tick off
+   *  today's window. */
+  const openEntry = (entry: FeedEntry, source?: RoutineSource): void => {
+    if (source) markDone(source);
     void markSeen([entry.url]);
     openExternal(entry.url);
   };
@@ -527,7 +546,7 @@ export function MyRoutineScreen(): JSX.Element {
                   entry={entry}
                   kind={source.kind}
                   now={now()}
-                  onOpen={() => openEntry(entry)}
+                  onOpen={() => openEntry(entry, source)}
                 />
               )}
             </For>

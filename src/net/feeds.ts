@@ -1,6 +1,7 @@
 import type { FeedEntry, RoutineSource } from '../db/models';
 import {
-  parseRssText, parseTelegramHtml, parseYtFeed, parseYtChannelId, scanYtChannelId, ytTargetUrl,
+  isNavigableUrl, parseRssText, parseTelegramHtml, parseYtFeed, parseYtChannelId,
+  scanYtChannelId, ytTargetUrl,
 } from '../domain/feedParse';
 
 /** Feed fetching for My Routine.
@@ -184,7 +185,22 @@ export async function discoverFeed(input: string): Promise<string> {
   return '';
 }
 
+/** Open a link outside the app.
+ *
+ *  Two things bite here, and both look identical to the user — a blank in-app
+ *  browser with an empty address bar. First, a URL the browser cannot parse
+ *  opens an empty tab rather than reporting an error, so anything unnavigable
+ *  is refused outright. Second, `window.open` with a features string is
+ *  treated as a popup request and is unreliable from an installed iOS PWA; a
+ *  real anchor click is what the platform expects. */
 export function openExternal(url: string): void {
-  if (!url) return;
-  window.open(url, '_blank', 'noopener,noreferrer');
+  if (!isNavigableUrl(url)) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
