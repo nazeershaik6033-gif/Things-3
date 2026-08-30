@@ -9,7 +9,7 @@ import { todayStr } from '../domain/dates';
 import { checkId, GROUP_PALETTE, MISS_MAX_AGE_MS } from '../domain/myRoutine';
 import { DEFAULT_WINDOWS, dateOfWindowKey } from '../domain/routineWindows';
 import {
-  normalizeUrl, sourceOpenUrl, telegramHandle, ytTargetUrl,
+  isNavigableUrl, normalizeUrl, sourceOpenUrl, telegramHandle, ytTargetUrl,
 } from '../domain/feedParse';
 
 /** Every My Routine write lives here. Reads happen through liveQuery, so a
@@ -147,7 +147,11 @@ export function shapeSource(draft: SourceDraft): Pick<
   } else {
     url = sourceOpenUrl('link', raw, draft.name);
   }
-  if (!url) url = sourceOpenUrl(kind, raw, draft.name);
+  // Not just "empty" — *unnavigable*. Typing a channel's display name gives
+  // ytTargetUrl nothing to work with and it hands back "https://Diary of a
+  // CEO", which is non-empty and useless: the browser opens a blank tab rather
+  // than reporting an error. Anything that isn't a real URL becomes a search.
+  if (!isNavigableUrl(url)) url = sourceOpenUrl(kind, raw, draft.name);
 
   // A handle makes a better default name than a bare domain.
   let fallback = '';

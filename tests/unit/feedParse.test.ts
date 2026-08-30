@@ -7,7 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   domainOf, isNavigableUrl, normalizeUrl, parseRssText, parseTelegramHtml, parseYtChannelId,
-  parseYtFeed, scanYtChannelId, sourceOpenUrl, telegramHandle, ytTargetUrl,
+  parseYtFeed, resolveOpenUrl, scanYtChannelId, searchUrlFor, sourceOpenUrl, telegramHandle,
+  ytTargetUrl,
 } from '../../src/domain/feedParse';
 
 describe('url shaping', () => {
@@ -171,5 +172,45 @@ describe('sourceOpenUrl', () => {
 
   it('returns empty when there is nothing at all to go on', () => {
     expect(sourceOpenUrl('link', '', '')).toBe('');
+  });
+});
+
+describe('resolveOpenUrl', () => {
+  it('passes a real URL straight through', () => {
+    expect(resolveOpenUrl('youtube', 'https://www.youtube.com/@mkbhd', 'MKBHD'))
+      .toBe('https://www.youtube.com/@mkbhd');
+  });
+
+  it('repairs a stored URL a browser cannot navigate to', () => {
+    // The shape a display-name YouTube source used to be saved with. Handing
+    // this to the browser opens an empty in-app tab rather than erroring, so
+    // it has to be caught before it is opened.
+    const url = resolveOpenUrl('youtube', 'https://Diary of a CEO', 'Diary of a CEO');
+    expect(isNavigableUrl(url)).toBe(true);
+    expect(url).toContain('youtube.com/results');
+    expect(url).toContain(encodeURIComponent('Diary of a CEO'));
+  });
+
+  it('does not carry the bogus scheme into the search query', () => {
+    expect(resolveOpenUrl('youtube', 'https://Lex Fridman', 'Lex Fridman'))
+      .toBe(`https://www.youtube.com/results?search_query=${encodeURIComponent('Lex Fridman')}`);
+  });
+
+  it('repairs a link source with a web search', () => {
+    const url = resolveOpenUrl('link', 'https://Some Site', 'Some Site');
+    expect(isNavigableUrl(url)).toBe(true);
+    expect(url).toContain('duckduckgo.com');
+  });
+
+  it('returns empty when there is nothing to search for either', () => {
+    expect(resolveOpenUrl('link', '', '')).toBe('');
+  });
+});
+
+describe('searchUrlFor', () => {
+  it('sends a channel to YouTube search and everything else to the web', () => {
+    expect(searchUrlFor('youtube', 'mkbhd')).toContain('youtube.com/results');
+    expect(searchUrlFor('link', 'mkbhd')).toContain('duckduckgo.com');
+    expect(searchUrlFor('youtube', '   ')).toBe('');
   });
 });

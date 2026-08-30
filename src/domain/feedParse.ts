@@ -82,6 +82,17 @@ export function telegramHandle(input: string): string {
   return '';
 }
 
+/** Where to send someone when all we have is a name. A YouTube channel is far
+ *  better served by YouTube's own search than by a web search. */
+export function searchUrlFor(kind: SourceKind, query: string): string {
+  // Strip a scheme we may have bolted onto a plain name earlier, so the search
+  // is for "Diary of a CEO" rather than "https://Diary of a CEO".
+  const q = String(query ?? '').trim().replace(/^https?:\/\//i, '').trim();
+  if (!q) return '';
+  if (kind === 'youtube') return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+  return `https://duckduckgo.com/?q=${encodeURIComponent(q)}`;
+}
+
 /** Always hand back a link the source row can open. When we cannot build a
  *  real URL from what was typed, fall back to a search for the name so the
  *  row still goes *somewhere* rather than nowhere. */
@@ -96,8 +107,18 @@ export function sourceOpenUrl(kind: SourceKind, raw: string, name: string): stri
     const u = normalizeUrl(raw);
     if (isNavigableUrl(u)) return u;
   }
-  const q = (name || raw || '').trim();
-  return q ? `https://duckduckgo.com/?q=${encodeURIComponent(q)}` : '';
+  return searchUrlFor(kind, name || raw);
+}
+
+/** The URL to actually open for a source, guaranteed navigable or empty.
+ *
+ *  Read at tap time rather than trusting the stored `url`: rows written before
+ *  the shaping bug was fixed hold things like "https://Diary of a CEO", which
+ *  a browser cannot navigate to — it opens an empty tab instead of failing
+ *  visibly. Recomputing here repairs those rows without a migration. */
+export function resolveOpenUrl(kind: SourceKind, url: string, name: string): string {
+  if (isNavigableUrl(url)) return url;
+  return sourceOpenUrl(kind, url, name);
 }
 
 // ------------------------------------------------------------------ parsers --
