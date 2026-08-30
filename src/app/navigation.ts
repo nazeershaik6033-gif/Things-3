@@ -18,6 +18,7 @@ export type Route =
   | { name: 'tag'; id: string }
   | { name: 'calendar' }
   | { name: 'routine' }
+  | { name: 'myroutine' }
   | { name: 'target' }
   | { name: 'settings' }
   | { name: 'boards' }
@@ -41,6 +42,7 @@ export function hashFor(route: Route): string {
     case 'tag': return `#/tag/${route.id}`;
     case 'calendar': return '#/calendar';
     case 'routine': return '#/routine';
+    case 'myroutine': return '#/myroutine';
     case 'target': return '#/target';
     case 'settings': return '#/settings';
     case 'boards': return '#/boards';
@@ -58,6 +60,7 @@ export function parseHash(hash: string): Route {
   if (head === 'calendar') return { name: 'calendar' };
   if (head === 'settings') return { name: 'settings' };
   if (head === 'routine') return { name: 'routine' };
+  if (head === 'myroutine') return { name: 'myroutine' };
   if (head === 'target') return { name: 'target' };
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };

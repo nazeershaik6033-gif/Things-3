@@ -11,6 +11,7 @@ import { startSettings } from './settings';
 import { startFocusClock } from './pomodoro';
 import { FocusTimerMiniBar, FocusTimerOverlay } from '../components/PomodoroTimer';
 import { startReminders } from './reminders';
+import { startRoutineReminders } from './routineReminders';
 import { createPan } from '../gestures/createPan';
 import { closeOpenRow } from '../gestures/arbiter';
 import { setExpandedTaskId, expandedTaskId } from './uiState';
@@ -23,6 +24,7 @@ import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { RoutineScreen } from '../screens/RoutineScreen';
+import { MyRoutineScreen } from '../screens/MyRoutineScreen';
 import { TargetScreen } from '../screens/TargetScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { BoardsScreen } from '../screens/BoardsScreen';
@@ -48,6 +50,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'tag': return <TagScreen id={r.id} />;
     case 'calendar': return <CalendarScreen />;
     case 'routine': return <RoutineScreen />;
+    case 'myroutine': return <MyRoutineScreen />;
     case 'target': return <TargetScreen />;
     case 'settings': return <SettingsScreen />;
     case 'boards': return <BoardsScreen />;
@@ -83,6 +86,7 @@ export function App(): JSX.Element {
     startCalendarSync();
     startFocusClock();
     startReminders();
+    startRoutineReminders();
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses

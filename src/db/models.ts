@@ -188,3 +188,113 @@ export interface Card {
   createdAt: number;
   modifiedAt: number;
 }
+
+// ---- My Routine (catch-up feed) --------------------------------------------
+// A separate section from the habit checklist above. Sources are the channels,
+// accounts and sites you go through each day; they live in colored groups and
+// are checked off inside a time *window* (Morning, Night, …). Sources that
+// expose a feed also carry cached entries, which is what "new since the window
+// opened" is computed from.
+
+/** What kind of thing a source is — decides how (and whether) it can be fetched. */
+export type SourceKind = 'youtube' | 'telegram' | 'rss' | 'link';
+
+export interface RoutineGroup {
+  id: string;
+  name: string;
+  /** Accent color token. Empty string means "derive one from the id". */
+  color: string;
+  orderKey: string;
+  createdAt: number;
+}
+
+export interface RoutineSource {
+  id: string;
+  /** null = the implicit "Other" group at the bottom of the screen. */
+  groupId: string | null;
+  name: string;
+  kind: SourceKind;
+  /** Where tapping the source takes you. Always navigable. */
+  url: string;
+  /** kind-specific fetch handles; empty when not applicable or unresolved. */
+  channelId: string; // youtube UC…
+  handle: string; // telegram
+  feedUrl: string; // rss
+  orderKey: string; // within the group
+  /** Hidden from the list until this instant (epoch ms). 0 = not snoozed. */
+  snoozedUntil: number;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+/** One time-of-day window, e.g. Morning at 08:00. A window runs until the next
+ *  window starts, so the set of windows partitions the day with no gaps. */
+export interface RoutineWindow {
+  id: string;
+  name: string;
+  time: string; // "HH:MM" local
+  orderKey: string;
+}
+
+/** A source ticked off inside one window occurrence. `windowKey` is
+ *  `${date}#${windowId}`, so ticking in the morning is never wiped by the
+ *  evening pass, and a new day simply has no rows yet. */
+export interface RoutineCheck {
+  id: string; // `${windowKey}:${sourceId}`
+  windowKey: string;
+  sourceId: string;
+  date: DateStr;
+  checkedAt: number;
+}
+
+/** One item published by a source. */
+export interface FeedEntry {
+  id: string;
+  title: string;
+  url: string;
+  publishedMs: number;
+  thumb: string;
+}
+
+/** Cached feed contents, one row per source. Refetched on a timer; never the
+ *  source of truth for anything the user typed. */
+export interface RoutineFeed {
+  sourceId: string; // primary key
+  fetchedAt: number;
+  entries: FeedEntry[];
+  /** Last fetch failure, surfaced in the row so a dead feed is visible. */
+  error: string;
+}
+
+/** A source's slice of one archived catch-up day. */
+export interface RoutineMissItem {
+  sourceId: string;
+  name: string;
+  kind: SourceKind;
+  groupName: string | null;
+  entries: FeedEntry[];
+}
+
+/** Everything a past window went by without you seeing it. Captured when the
+ *  window rolls over and kept for a fortnight — the History section. */
+export interface RoutineMiss {
+  id: string;
+  windowKey: string;
+  windowName: string;
+  snapshotAt: number;
+  start: number;
+  end: number;
+  items: RoutineMissItem[];
+}
+
+/** An entry URL you already opened, so it stops counting as new. */
+export interface RoutineSeen {
+  url: string; // primary key
+  seenAt: number;
+}
+
+/** A day banked toward the streak: you cleared a whole window that day. */
+export interface RoutineDay {
+  date: DateStr; // primary key
+  bankedAt: number;
+}

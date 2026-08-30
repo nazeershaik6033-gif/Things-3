@@ -2,6 +2,8 @@ import Dexie, { type EntityTable } from 'dexie';
 import type {
   Task, Project, Heading, Area, Tag, Setting, CalendarEvent,
   Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
+  RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
+  RoutineMiss, RoutineSeen, RoutineDay,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -19,6 +21,14 @@ export class ClarityDB extends Dexie {
   routineItems!: EntityTable<RoutineItem, 'id'>;
   routineLogs!: EntityTable<RoutineLog, 'id'>;
   dailyTargets!: EntityTable<DailyTarget, 'date'>;
+  routineGroups!: EntityTable<RoutineGroup, 'id'>;
+  routineSources!: EntityTable<RoutineSource, 'id'>;
+  routineWindows!: EntityTable<RoutineWindow, 'id'>;
+  routineChecks!: EntityTable<RoutineCheck, 'id'>;
+  routineFeeds!: EntityTable<RoutineFeed, 'sourceId'>;
+  routineMisses!: EntityTable<RoutineMiss, 'id'>;
+  routineSeen!: EntityTable<RoutineSeen, 'url'>;
+  routineDays!: EntityTable<RoutineDay, 'date'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -52,6 +62,19 @@ export class ClarityDB extends Dexie {
     // replaces it rather than accumulating — one target a day, by construction.
     this.version(4).stores({
       dailyTargets: 'date, outcome',
+    });
+    // v5: My Routine — the catch-up feed section. Additive again: eight new
+    // tables, nothing existing touched. routineFeeds/routineSeen are caches
+    // keyed by their natural key so a refetch replaces rather than appends.
+    this.version(5).stores({
+      routineGroups: 'id, orderKey',
+      routineSources: 'id, groupId, orderKey',
+      routineWindows: 'id, orderKey',
+      routineChecks: 'id, windowKey, sourceId, date',
+      routineFeeds: 'sourceId, fetchedAt',
+      routineMisses: 'id, windowKey, snapshotAt',
+      routineSeen: 'url, seenAt',
+      routineDays: 'date',
     });
   }
 }

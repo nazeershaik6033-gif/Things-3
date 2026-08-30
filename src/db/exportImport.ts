@@ -2,6 +2,8 @@ import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Setting,
   Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
+  RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
+  RoutineMiss, RoutineSeen, RoutineDay,
 } from './models';
 
 export interface ExportFile {
@@ -26,15 +28,26 @@ export interface ExportFile {
     routineLogs?: RoutineLog[];
     /** Added in schema 4. */
     dailyTargets?: DailyTarget[];
+    /** Added in schema 5 — the My Routine section. */
+    routineGroups?: RoutineGroup[];
+    routineSources?: RoutineSource[];
+    routineWindows?: RoutineWindow[];
+    routineChecks?: RoutineCheck[];
+    routineFeeds?: RoutineFeed[];
+    routineMisses?: RoutineMiss[];
+    routineSeen?: RoutineSeen[];
+    routineDays?: RoutineDay[];
   };
 }
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
   'boards', 'boardLists', 'boardLabels', 'cards',
   'routineItems', 'routineLogs', 'dailyTargets',
+  'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
+  'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -56,9 +69,22 @@ export async function exportData(): Promise<ExportFile> {
       routineItems: await db.routineItems.toArray(),
       routineLogs: await db.routineLogs.toArray(),
       dailyTargets: await db.dailyTargets.toArray(),
+      routineGroups: await db.routineGroups.toArray(),
+      routineSources: await db.routineSources.toArray(),
+      routineWindows: await db.routineWindows.toArray(),
+      routineChecks: await db.routineChecks.toArray(),
+      routineFeeds: await db.routineFeeds.toArray(),
+      routineMisses: await db.routineMisses.toArray(),
+      routineSeen: await db.routineSeen.toArray(),
+      routineDays: await db.routineDays.toArray(),
     },
   };
 }
+
+const MY_ROUTINE_TABLES = [
+  'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
+  'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
+] as const;
 
 export function validateExport(json: unknown): ExportFile {
   const f = json as Partial<ExportFile>;
@@ -82,6 +108,12 @@ export function validateExport(json: unknown): ExportFile {
   }
   if (d.dailyTargets !== undefined && !Array.isArray(d.dailyTargets)) {
     throw new Error('Backup file is malformed.');
+  }
+  // My Routine tables arrived in schema 5 — missing is fine, wrong type is not
+  for (const key of MY_ROUTINE_TABLES) {
+    if (d[key] !== undefined && !Array.isArray(d[key])) {
+      throw new Error('Backup file is malformed.');
+    }
   }
   for (const t of d.tasks) {
     if (typeof t.id !== 'string' || typeof t.title !== 'string') {
@@ -109,5 +141,13 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.routineItems.bulkPut(file.data.routineItems ?? []);
     await db.routineLogs.bulkPut(file.data.routineLogs ?? []);
     await db.dailyTargets.bulkPut(file.data.dailyTargets ?? []);
+    await db.routineGroups.bulkPut(file.data.routineGroups ?? []);
+    await db.routineSources.bulkPut(file.data.routineSources ?? []);
+    await db.routineWindows.bulkPut(file.data.routineWindows ?? []);
+    await db.routineChecks.bulkPut(file.data.routineChecks ?? []);
+    await db.routineFeeds.bulkPut(file.data.routineFeeds ?? []);
+    await db.routineMisses.bulkPut(file.data.routineMisses ?? []);
+    await db.routineSeen.bulkPut(file.data.routineSeen ?? []);
+    await db.routineDays.bulkPut(file.data.routineDays ?? []);
   });
 }

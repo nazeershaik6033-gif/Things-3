@@ -9,7 +9,8 @@ export type IconName =
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
   | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil'
-  | 'board' | 'clock' | 'comment' | 'repeat' | 'flame' | 'grip';
+  | 'board' | 'clock' | 'comment' | 'repeat' | 'flame' | 'grip'
+  | 'chart' | 'sparkle' | 'send' | 'rss' | 'play' | 'snooze';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -193,6 +194,51 @@ const PATHS: Record<IconName, () => JSX.Element> = {
     <>
       <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" fill="currentColor" opacity="0.25" stroke="none" />
       <path d="M12 2.6c3.4 3.2 6.4 6 6.4 10.2A6.4 6.4 0 0 1 12 21.4a6.4 6.4 0 0 1-6.4-8.6c.3-2 1.3-3.3 2.4-4.6.4 1.2 1 2 1.9 2.5.5-3 1.5-5.6 4.1-8.1Z" stroke-linejoin="round" />
+    </>
+  ),
+  chart: () => (
+    <>
+      <rect x="4" y="13" width="3.6" height="7" rx="1" fill="currentColor" opacity="0.3" stroke="none" />
+      <rect x="10.2" y="8.5" width="3.6" height="11.5" rx="1" fill="currentColor" opacity="0.3" stroke="none" />
+      <rect x="16.4" y="4" width="3.6" height="16" rx="1" fill="currentColor" opacity="0.3" stroke="none" />
+      <rect x="4" y="13" width="3.6" height="7" rx="1" />
+      <rect x="10.2" y="8.5" width="3.6" height="11.5" rx="1" />
+      <rect x="16.4" y="4" width="3.6" height="16" rx="1" />
+    </>
+  ),
+  sparkle: () => (
+    <>
+      <path d="M12 2.6 13.7 8.3 19.4 10 13.7 11.7 12 17.4 10.3 11.7 4.6 10 10.3 8.3 12 2.6Z" fill="currentColor" opacity="0.3" stroke="none" />
+      <path d="M12 2.6 13.7 8.3 19.4 10 13.7 11.7 12 17.4 10.3 11.7 4.6 10 10.3 8.3 12 2.6Z" stroke-linejoin="round" />
+      <path d="M18 15.2 18.8 17.7 21.3 18.5 18.8 19.3 18 21.8 17.2 19.3 14.7 18.5 17.2 17.7 18 15.2Z" stroke-linejoin="round" />
+    </>
+  ),
+  send: () => (
+    <>
+      <path d="M21 3 10.5 13.5 21 3ZM21 3 14.4 21.2 10.5 13.5 2.8 9.6 21 3Z" fill="currentColor" opacity="0.22" stroke="none" />
+      <path d="M21 3 2.8 9.6l7.7 3.9 3.9 7.7L21 3Z" stroke-linejoin="round" />
+      <path d="M21 3l-10.5 10.5" />
+    </>
+  ),
+  rss: () => (
+    <>
+      <circle cx="6.2" cy="17.8" r="1.9" fill="currentColor" stroke="none" />
+      <path d="M4.3 11.2a8.5 8.5 0 0 1 8.5 8.5" />
+      <path d="M4.3 5.1A14.6 14.6 0 0 1 18.9 19.7" />
+    </>
+  ),
+  play: () => (
+    <>
+      <rect x="2.6" y="4.8" width="18.8" height="14.4" rx="3.6" fill="currentColor" opacity="0.25" stroke="none" />
+      <rect x="2.6" y="4.8" width="18.8" height="14.4" rx="3.6" />
+      <path d="M10.4 9.2 15.2 12l-4.8 2.8V9.2Z" fill="currentColor" stroke-linejoin="round" />
+    </>
+  ),
+  snooze: () => (
+    <>
+      <circle cx="12" cy="12.6" r="8.2" fill="currentColor" opacity="0.18" stroke="none" />
+      <circle cx="12" cy="12.6" r="8.2" />
+      <path d="M9.4 9.8h5.2l-5.2 5.6h5.2" stroke-linejoin="round" />
     </>
   ),
   grip: () => (
