@@ -3,15 +3,19 @@ import type { Task, Tag } from '../db/models';
 import { Checkbox } from '../ui/Checkbox';
 import { TagPill, DeadlineFlag, ChecklistChip } from '../ui/TagPill';
 import { Icon } from '../ui/Icon';
-import { completeTask, reopenTask, setTaskWhen } from '../db/mutations';
-import { addGrace, graceIds, removeGrace, setExpandedTaskId } from '../app/uiState';
+import { setTaskWhen } from '../db/mutations';
+import { toggleComplete } from '../app/completion';
+import { graceIds, setExpandedTaskId } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
 import { SwipeableRow } from './SwipeableRow';
 import { markdownPreview } from '../domain/markdown';
+import { quadrantMeta } from '../domain/eisenhower';
 
 export interface TaskRowContext {
+  /** Show the Eisenhower chip and open its picker (Today only). */
+  onPriority?: (taskId: string) => void;
   /** Show the start-date chip (hidden in Today where it's redundant). */
   showWhen?: boolean;
   /** Show the evening moon chip (Today's main section shows it). */
@@ -21,16 +25,6 @@ export interface TaskRowContext {
   onSchedule: (taskId: string) => void;
   /** Disable swipe (trash/logbook). */
   noSwipe?: boolean;
-}
-
-export function toggleComplete(task: Task): void {
-  if (task.status === 'open') {
-    void completeTask(task.id);
-    addGrace(task.id);
-  } else {
-    void reopenTask(task.id);
-    removeGrace(task.id);
-  }
 }
 
 export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element {
@@ -87,6 +81,39 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
           >
             {t().title || <span style={{ color: 'var(--text-tertiary)' }}>New To-Do</span>}
           </span>
+          <Show when={props.ctx.onPriority}>
+            <button
+              data-testid="em-chip"
+              aria-label="Set priority"
+              onClick={(e) => {
+                e.stopPropagation();
+                props.ctx.onPriority!(t().id);
+              }}
+              style={{
+                display: 'inline-flex',
+                'align-items': 'center',
+                gap: '4px',
+                padding: '1px 8px',
+                'border-radius': '999px',
+                'font-size': '11px',
+                'font-weight': '700',
+                'letter-spacing': '0.3px',
+                'flex-shrink': '0',
+                ...(t().priority
+                  ? {
+                      color: '#fff',
+                      background: quadrantMeta(t().priority!).color,
+                    }
+                  : {
+                      color: 'var(--text-tertiary)',
+                      background: 'transparent',
+                      border: '1.5px solid var(--separator)',
+                    }),
+              }}
+            >
+              {t().priority ? quadrantMeta(t().priority!).label : 'EM'}
+            </button>
+          </Show>
           <Show when={t().deadline}>
             <DeadlineFlag
               text={formatDeadline(t().deadline!, currentDate())}
@@ -157,4 +184,4 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
   );
 }
 
-export { setTaskWhen };
+export { setTaskWhen, toggleComplete };

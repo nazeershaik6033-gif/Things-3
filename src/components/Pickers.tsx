@@ -11,6 +11,7 @@ import {
   type TaskDestination, type When,
 } from '../db/mutations';
 import { projectProgress } from '../domain/smartLists';
+import { haptic } from '../app/motion';
 
 function PickerRow(props: {
   icon: JSX.Element;
@@ -21,7 +22,11 @@ function PickerRow(props: {
 }): JSX.Element {
   return (
     <button
-      onClick={props.onClick}
+      class="pressable"
+      onClick={() => {
+        haptic('tick');
+        props.onClick();
+      }}
       style={{
         display: 'flex',
         'align-items': 'center',
@@ -43,12 +48,20 @@ function PickerRow(props: {
   );
 }
 
-/** One swipeable month grid. Past days are dimmed but selectable. */
+/** One swipeable month grid. Past days are dimmed but selectable, unless
+ *  `disableAfter` bounds the range (the completion-date prompt can't accept a
+ *  day that hasn't happened yet). */
 export function MonthGrid(props: {
   selected: DateStr | null;
   onSelect: (d: DateStr) => void;
+  disableAfter?: DateStr;
+  /** Month to open on, as YYYY-MM. Defaults to the current month. */
+  initialMonth?: string;
 }): JSX.Element {
-  const [monthStart, setMonthStart] = createSignal<DateStr>(`${currentDate().slice(0, 7)}-01`);
+  const [monthStart, setMonthStart] = createSignal<DateStr>(
+    `${props.initialMonth ?? currentDate().slice(0, 7)}-01`,
+  );
+  const disabled = (d: DateStr) => props.disableAfter !== undefined && d > props.disableAfter;
   const weeks = createMemo(() => {
     const start = fromDateStr(monthStart());
     const firstWeekday = start.getDay();
@@ -92,12 +105,15 @@ export function MonthGrid(props: {
           {(day) => (
             <Show when={day} fallback={<span />}>
               <button
-                onClick={() => props.onSelect(day!)}
+                disabled={disabled(day!)}
+                onClick={() => !disabled(day!) && props.onSelect(day!)}
                 style={{
                   padding: '7px 0',
                   'border-radius': '50%',
                   'font-size': '15px',
                   background: props.selected === day ? 'var(--blue)' : 'transparent',
+                  opacity: disabled(day!) ? '0.3' : '1',
+                  cursor: disabled(day!) ? 'default' : 'pointer',
                   color:
                     props.selected === day ? '#fff'
                     : day! < currentDate() ? 'var(--text-tertiary)'
@@ -118,7 +134,7 @@ export function MonthGrid(props: {
 
 /** Value-based When sheet, shared by the task card and Quick Entry. */
 export function WhenSheet(props: {
-  current: { startDate: DateStr | null; evening: boolean; bucket: string };
+  current: { startDate: DateStr | null; evening: boolean; bucket: string; reminderTime?: string | null };
   onPick: (when: When) => void;
   onClose: () => void;
 }): JSX.Element {
@@ -126,16 +142,22 @@ export function WhenSheet(props: {
     props.onPick(when);
     props.onClose();
   };
-  const isToday = () => props.current.startDate === currentDate() && !props.current.evening;
-  const isEvening = () => props.current.startDate === currentDate() && props.current.evening;
+  const today = () => currentDate();
+  const isScheduledToday = () => props.current.startDate === today();
+  const isMorning = () => isScheduledToday() && !props.current.evening && props.current.reminderTime === 'morning';
+  const isAfternoon = () => isScheduledToday() && !props.current.evening && props.current.reminderTime === 'afternoon';
+  const isToday = () => isScheduledToday() && !props.current.evening && !props.current.reminderTime;
+  const isEvening = () => isScheduledToday() && props.current.evening;
   return (
     <Sheet onClose={props.onClose} dragAnywhere>
       <SheetTitle>When</SheetTitle>
-      <PickerRow icon={<ListIcon list="today" size={20} />} label="Today" selected={isToday()} onClick={() => pick({ type: 'today' })} />
-      <PickerRow icon={<Icon name="moon" size={20} color="var(--purple)" />} label="This Evening" selected={isEvening()} onClick={() => pick({ type: 'evening' })} />
+      <PickerRow icon={<Icon name="sunrise" size={20} color="var(--yellow)" />} label="Morning" selected={isMorning()} onClick={() => pick({ type: 'morning' })} />
+      <PickerRow icon={<Icon name="sun" size={20} color="var(--yellow)" />} label="Afternoon" selected={isAfternoon()} onClick={() => pick({ type: 'afternoon' })} />
+      <PickerRow icon={<Icon name="moon" size={20} color="var(--purple)" />} label="Tonight" selected={isEvening()} onClick={() => pick({ type: 'evening' })} />
+      <PickerRow icon={<ListIcon list="today" size={20} />} label="Today (Anytime)" selected={isToday()} onClick={() => pick({ type: 'today' })} />
       <MonthGrid
-        selected={props.current.startDate && props.current.startDate > currentDate() ? props.current.startDate : null}
-        onSelect={(d) => pick(d <= currentDate() ? { type: 'today' } : { type: 'date', date: d })}
+        selected={props.current.startDate && props.current.startDate > today() ? props.current.startDate : null}
+        onSelect={(d) => pick(d <= today() ? { type: 'today' } : { type: 'date', date: d })}
       />
       <PickerRow icon={<ListIcon list="someday" size={20} />} label="Someday" selected={props.current.bucket === 'someday'} onClick={() => pick({ type: 'someday' })} />
       <Show when={props.current.startDate || props.current.bucket === 'someday'}>
@@ -149,7 +171,7 @@ export function WhenSheet(props: {
 export function WhenPicker(props: { task: Task; onClose: () => void }): JSX.Element {
   return (
     <WhenSheet
-      current={props.task}
+      current={{ ...props.task, reminderTime: props.task.reminderTime }}
       onPick={(when) => void setTaskWhen(props.task.id, when)}
       onClose={props.onClose}
     />

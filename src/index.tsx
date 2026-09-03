@@ -7,6 +7,13 @@ import { hasExistingData, seedDemoData } from './app/seed';
 
 registerSW({ immediate: true });
 
+/** iOS only applies `:active` styles to non-anchor elements once the document
+ *  carries a touch listener. Without this, every button and row in a standalone
+ *  PWA feels dead on press. */
+function attachActiveStateFix(): void {
+  document.addEventListener('touchstart', () => {}, { passive: true });
+}
+
 function hideSplash(): void {
   const splash = document.getElementById('splash');
   if (!splash) return;
@@ -38,9 +45,16 @@ async function maybeSeed(): Promise<void> {
 async function start(): Promise<void> {
   try {
     await maybeSeed();
+    attachActiveStateFix();
     render(() => <App />, document.getElementById('root')!);
     // Mark the app as started so the global error handler backs off
     (window as Window & { __appStarted?: boolean }).__appStarted = true;
+    // Successful boot: re-arm the one-shot auto-recovery in index.html
+    try {
+      sessionStorage.removeItem('clarity-recovered');
+    } catch {
+      /* private mode */
+    }
     hideSplash();
   } catch (err) {
     const e = err as Error;
