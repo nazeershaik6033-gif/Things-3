@@ -269,15 +269,23 @@ export interface LogbookGroup {
   entries: LogEntry[];
 }
 
+/** When an item was logged. `completedAt` is always stamped by the write path,
+ *  but a row that arrived some other way (an imported backup, a partial write)
+ *  can miss it — fall back rather than drop the item, so nothing that is done
+ *  ever vanishes from every list at once. */
+export function loggedAt(x: Task | Project): number {
+  return x.completedAt ?? x.modifiedAt ?? x.createdAt;
+}
+
 export function inLogbook(x: Task | Project): boolean {
-  return isLive(x) && (x.status === 'completed' || x.status === 'canceled') && x.completedAt !== null;
+  return isLive(x) && (x.status === 'completed' || x.status === 'canceled');
 }
 
 /** Newest first, grouped by local completion date. Pass a `limit` to window. */
 export function logbookGroups(tasks: Task[], projects: Project[], limit?: number): LogbookGroup[] {
   let entries: LogEntry[] = [
-    ...tasks.filter(inLogbook).map((t) => ({ kind: 'task' as const, item: t, completedAt: t.completedAt! })),
-    ...projects.filter(inLogbook).map((p) => ({ kind: 'project' as const, item: p, completedAt: p.completedAt! })),
+    ...tasks.filter(inLogbook).map((t) => ({ kind: 'task' as const, item: t, completedAt: loggedAt(t) })),
+    ...projects.filter(inLogbook).map((p) => ({ kind: 'project' as const, item: p, completedAt: loggedAt(p) })),
   ];
   entries.sort((a, b) => b.completedAt - a.completedAt);
   if (limit !== undefined) entries = entries.slice(0, limit);
@@ -320,10 +328,10 @@ export function projectSections(
   const mine = tasks.filter((t) => t.projectId === projectId && isLive(t));
   const open = mine.filter(isOpen);
   const logged = mine
-    .filter((t) => !isOpen(t) && t.completedAt !== null)
-    .sort((a, b) => b.completedAt! - a.completedAt!);
-  const loggedToday = logged.filter((t) => dateStrOf(t.completedAt!) === today);
-  const loggedOlder = logged.filter((t) => dateStrOf(t.completedAt!) !== today);
+    .filter((t) => !isOpen(t))
+    .sort((a, b) => loggedAt(b) - loggedAt(a));
+  const loggedToday = logged.filter((t) => dateStrOf(loggedAt(t)) === today);
+  const loggedOlder = logged.filter((t) => dateStrOf(loggedAt(t)) !== today);
 
   const sections: ProjectSection[] = [
     { heading: null, tasks: sortByOrderKey(open.filter((t) => !t.headingId)) },

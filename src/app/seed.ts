@@ -90,3 +90,21 @@ export async function seedDemoData(): Promise<void> {
 
   await createCard(board, done, { title: 'Ship v0.1', labelIds: [feature], cover: 'var(--green)', completed: true });
 }
+
+/** Neither holds anything the user authored: `settings` is written on boot by
+ *  the theme and onboarding, and `calendarEvents` is a cache rebuilt from the
+ *  subscribed ICS feed. Counting either would make the guard always true. */
+const NON_AUTHORED_TABLES = new Set(['settings', 'calendarEvents']);
+
+/** True when the database holds anything a user could have created. Used to
+ *  guard the destructive demo seed — see `maybeSeed` in index.tsx. Derived
+ *  from `db.tables` rather than a hand-written list, so a table added later is
+ *  covered without anyone remembering to come back here. */
+export async function hasExistingData(): Promise<boolean> {
+  const counts = await Promise.all(
+    db.tables
+      .filter((t) => !NON_AUTHORED_TABLES.has(t.name))
+      .map((t) => t.count()),
+  );
+  return counts.some((n) => n > 0);
+}
