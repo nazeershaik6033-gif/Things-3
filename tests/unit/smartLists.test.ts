@@ -151,6 +151,16 @@ describe('Logbook', () => {
     const groups = logbookGroups(many, [], 3);
     expect(groups.flatMap((g) => g.entries)).toHaveLength(3);
   });
+
+  it('keeps a completed item whose completedAt is missing, dated by modifiedAt', () => {
+    const stamp = new Date(2026, 5, 10, 9).getTime();
+    const orphan = task({ status: 'completed', completedAt: null, modifiedAt: stamp });
+    expect(inLogbook(orphan)).toBe(true);
+    const groups = logbookGroups([orphan], []);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.date).toBe('2026-06-10');
+    expect(groups[0]!.entries[0]!.item.id).toBe(orphan.id);
+  });
 });
 
 describe('Trash', () => {

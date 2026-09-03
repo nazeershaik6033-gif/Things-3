@@ -54,6 +54,16 @@ export function validateExport(json: unknown): ExportFile {
   return f as ExportFile;
 }
 
+/** A row that is done but carries no `completedAt` would sort and group
+ *  nowhere; stamp it so it still lands in the Logbook on the day it was last
+ *  touched. Older backups and hand-edited files are the realistic sources. */
+function withCompletionStamp<T extends { status: string; completedAt: number | null; modifiedAt?: number; createdAt?: number }>(
+  row: T,
+): T {
+  if (row.status === 'open' || typeof row.completedAt === 'number') return row;
+  return { ...row, completedAt: row.modifiedAt ?? row.createdAt ?? Date.now() };
+}
+
 /** Replace-all import (caller confirms with the user first). */
 export async function importData(file: ExportFile): Promise<void> {
   await db.transaction('rw', [db.tasks, db.projects, db.headings, db.areas, db.tags, db.settings], async () => {
@@ -61,8 +71,8 @@ export async function importData(file: ExportFile): Promise<void> {
       db.tasks.clear(), db.projects.clear(), db.headings.clear(),
       db.areas.clear(), db.tags.clear(), db.settings.clear(),
     ]);
-    await db.tasks.bulkPut(file.data.tasks);
-    await db.projects.bulkPut(file.data.projects);
+    await db.tasks.bulkPut(file.data.tasks.map(withCompletionStamp));
+    await db.projects.bulkPut(file.data.projects.map(withCompletionStamp));
     await db.headings.bulkPut(file.data.headings);
     await db.areas.bulkPut(file.data.areas);
     await db.tags.bulkPut(file.data.tags);

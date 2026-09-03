@@ -255,6 +255,27 @@ describe('export / import', () => {
     expect((await db.settings.get('theme'))!.value).toBe('dark');
   });
 
+  it('stamps a completedAt on done rows that arrive without one', async () => {
+    const id = await createTask({ title: 'done long ago' });
+    await completeTask(id);
+    const file = await exportData();
+    file.data.tasks[0]!.completedAt = null;
+    file.data.tasks[0]!.modifiedAt = new Date(2026, 5, 10, 9).getTime();
+    await Promise.all(db.tables.map((t) => t.clear()));
+
+    await importData(validateExport(JSON.parse(JSON.stringify(file))));
+    const t = (await db.tasks.get(id))!;
+    expect(t.completedAt).toBe(new Date(2026, 5, 10, 9).getTime());
+  });
+
+  it('leaves open rows without a completedAt', async () => {
+    await createTask({ title: 'still open' });
+    const file = await exportData();
+    await Promise.all(db.tables.map((t) => t.clear()));
+    await importData(validateExport(JSON.parse(JSON.stringify(file))));
+    expect((await db.tasks.toArray())[0]!.completedAt).toBeNull();
+  });
+
   it('rejects malformed files', () => {
     expect(() => validateExport(null)).toThrow();
     expect(() => validateExport({ app: 'other' })).toThrow();

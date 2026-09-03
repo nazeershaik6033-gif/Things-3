@@ -54,3 +54,12 @@ export async function seedDemoData(): Promise<void> {
     await db.tasks.put({ ...t, completedAt: Date.now() - 3 * 86_400_000 });
   }
 }
+
+/** True when the database holds anything a user could have created. Used to
+ *  guard the destructive demo seed — see `maybeSeed` in index.tsx. */
+export async function hasExistingData(): Promise<boolean> {
+  const counts = await Promise.all([
+    db.tasks.count(), db.projects.count(), db.areas.count(), db.tags.count(),
+  ]);
+  return counts.some((n) => n > 0);
+}
