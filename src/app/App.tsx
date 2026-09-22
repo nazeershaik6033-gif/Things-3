@@ -25,6 +25,7 @@ import { TrashScreen } from '../screens/TrashScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { RoutineScreen } from '../screens/RoutineScreen';
 import { MyRoutineScreen } from '../screens/MyRoutineScreen';
+import { BeliefsScreen } from '../screens/BeliefsScreen';
 import { TargetScreen } from '../screens/TargetScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { BoardsScreen } from '../screens/BoardsScreen';
@@ -52,6 +53,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'routine': return <RoutineScreen />;
     case 'myroutine': return <MyRoutineScreen />;
     case 'target': return <TargetScreen />;
+    case 'beliefs': return <BeliefsScreen />;
     case 'settings': return <SettingsScreen />;
     case 'boards': return <BoardsScreen />;
     case 'board': return <BoardScreen id={r.id} />;

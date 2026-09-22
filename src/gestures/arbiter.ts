@@ -7,7 +7,8 @@ export type GestureKind =
   | 'reorder'
   | 'sheet'
   | 'magic-plus'
-  | 'edge-back';
+  | 'edge-back'
+  | 'belief-card';
 
 let active: GestureKind | null = null;
 

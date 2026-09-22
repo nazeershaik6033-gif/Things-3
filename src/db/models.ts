@@ -298,3 +298,59 @@ export interface RoutineDay {
   date: DateStr; // primary key
   bankedAt: number;
 }
+
+// ---- Beliefs (the belief system board) --------------------------------------
+// A belief is neither a task nor a habit: it is never "done", and what moves is
+// how much of you believes it. Conviction is recorded per (day, belief), the
+// same shape as RoutineLog, so re-rating replaces rather than accumulates.
+
+/** One statement you are deliberately installing. */
+export interface Belief {
+  id: string;
+  /** The statement itself — first person, present tense. */
+  text: string;
+  /** Why it matters, or the story it replaces. Shown while you speak it. */
+  why: string;
+  color: string; // accent color token
+  orderKey: string;
+  /** Retiring a belief keeps its ratings and evidence instead of deleting them. */
+  active: boolean;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+/** Today's conviction in one belief, 0–10. The id is `${date}:${beliefId}`, so
+ *  rating twice in a day corrects the score rather than logging it twice. */
+export interface BeliefRating {
+  id: string;
+  beliefId: string;
+  date: DateStr;
+  score: number;
+  ratedAt: number;
+}
+
+/** Something that actually happened and argues the belief is true. Evidence is
+ *  what moves conviction: repetition alone only rehearses a sentence. */
+export interface BeliefEvidence {
+  id: string;
+  beliefId: string;
+  date: DateStr;
+  text: string;
+  createdAt: number;
+}
+
+/** A quote kept from the daily rotation. Keyed by the quote's own stable id. */
+export interface QuoteFavorite {
+  id: string;
+  savedAt: number;
+}
+
+/** A cached "go deeper" answer for one quote, so it is written once, read
+ *  offline afterwards, and never billed twice. */
+export interface QuoteNote {
+  quoteId: string;
+  text: string;
+  /** Which provider wrote it — shown under the note. */
+  provider: string;
+  createdAt: number;
+}
