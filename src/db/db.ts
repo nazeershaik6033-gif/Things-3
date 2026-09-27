@@ -4,6 +4,7 @@ import type {
   Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
+  Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -29,6 +30,11 @@ export class ClarityDB extends Dexie {
   routineMisses!: EntityTable<RoutineMiss, 'id'>;
   routineSeen!: EntityTable<RoutineSeen, 'url'>;
   routineDays!: EntityTable<RoutineDay, 'date'>;
+  beliefs!: EntityTable<Belief, 'id'>;
+  beliefRatings!: EntityTable<BeliefRating, 'id'>;
+  beliefEvidence!: EntityTable<BeliefEvidence, 'id'>;
+  quoteFavorites!: EntityTable<QuoteFavorite, 'id'>;
+  quoteNotes!: EntityTable<QuoteNote, 'quoteId'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -75,6 +81,16 @@ export class ClarityDB extends Dexie {
       routineMisses: 'id, windowKey, snapshotAt',
       routineSeen: 'url, seenAt',
       routineDays: 'date',
+    });
+    // v6: the belief board and the daily quote. Additive: five new tables,
+    // nothing existing touched. quoteNotes is a cache keyed by the quote's own
+    // id, so re-asking overwrites instead of appending.
+    this.version(6).stores({
+      beliefs: 'id, active, orderKey',
+      beliefRatings: 'id, beliefId, date',
+      beliefEvidence: 'id, beliefId, date',
+      quoteFavorites: 'id, savedAt',
+      quoteNotes: 'quoteId',
     });
   }
 }

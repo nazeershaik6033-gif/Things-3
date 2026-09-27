@@ -11,6 +11,7 @@ import { Sheet, SheetTitle } from '../ui/Sheet';
 import { setSearchOpen, setQuickEntry } from '../app/uiState';
 import { sidebarCounts, isLive, isOpen, projectProgress, todayTasks } from '../domain/smartLists';
 import { routineProgress } from '../domain/routine';
+import { sessionProgress } from '../domain/beliefs';
 import {
   checkedIdsIn, feedsBySource, hasFeed, newEntriesFor, seenUrlSet, visibleSources,
 } from '../domain/myRoutine';
@@ -21,6 +22,7 @@ import { createArea, createProject } from '../db/mutations';
 import { createBoard } from '../db/boardMutations';
 import { MagicPlus } from '../components/MagicPlus';
 import { WidgetDeck, CalendarStrip } from '../components/HomeWidgets';
+import { QuoteCard } from '../components/QuoteCard';
 import { MenuRow } from './common';
 
 /** Icon in a tinted rounded tile. The tile is what turns a flat list of links
@@ -178,6 +180,8 @@ export function HomeScreen(): JSX.Element {
   const routineItems = createLiveQuery(() => db.routineItems.toArray(), []);
   const routineLogs = createLiveQuery(() => db.routineLogs.toArray(), []);
   const targets = createLiveQuery(() => db.dailyTargets.toArray(), []);
+  const beliefs = createLiveQuery(() => db.beliefs.toArray(), []);
+  const beliefRatings = createLiveQuery(() => db.beliefRatings.toArray(), []);
   const [newListOpen, setNewListOpen] = createSignal(false);
 
   const counts = createMemo(() => sidebarCounts(tasks(), currentDate()));
@@ -211,6 +215,7 @@ export function HomeScreen(): JSX.Element {
     return count;
   });
   const target = createMemo(() => targetFor(resolveAll(targets(), tasks()), currentDate()));
+  const beliefSession = createMemo(() => sessionProgress(beliefs(), beliefRatings(), currentDate()));
 
   const listRow = (list: BuiltinList, label: string, tint: string, count?: number) => (
     <HomeRow
@@ -253,6 +258,8 @@ export function HomeScreen(): JSX.Element {
           <WidgetDeck events={events()} tasks={tasks()} targets={targets()} today={currentDate()} />
 
           <CalendarStrip events={events()} tasks={tasks()} today={currentDate()} />
+
+          <QuoteCard today={currentDate()} />
 
           <div style={{ height: '10px' }} />
 
@@ -321,6 +328,29 @@ export function HomeScreen(): JSX.Element {
                 </Show>
               }
               onClick={() => push({ name: 'routine' })}
+            />
+            <HomeRow
+              testid="home-beliefs"
+              tint="rgba(182, 120, 224, 0.14)"
+              icon={<Icon name="sparkle" size={18} color="var(--purple)" />}
+              label="Beliefs"
+              badge={
+                <Show when={beliefSession().total > 0}>
+                  <span
+                    data-testid="home-beliefs-state"
+                    style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-tertiary)', 'font-size': '13px' }}
+                  >
+                    {beliefSession().rated}/{beliefSession().total}
+                    <ProgressRing
+                      progress={beliefSession().ratio}
+                      size={20}
+                      thickness={12}
+                      color={beliefSession().complete ? 'var(--green)' : 'var(--purple)'}
+                    />
+                  </span>
+                </Show>
+              }
+              onClick={() => push({ name: 'beliefs' })}
             />
             <HomeRow
               testid="home-myroutine"

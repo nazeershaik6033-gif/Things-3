@@ -4,6 +4,7 @@ import type {
   Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
+  Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
 } from './models';
 
 export interface ExportFile {
@@ -37,10 +38,16 @@ export interface ExportFile {
     routineMisses?: RoutineMiss[];
     routineSeen?: RoutineSeen[];
     routineDays?: RoutineDay[];
+    /** Added in schema 6 — the belief board and the daily quote. */
+    beliefs?: Belief[];
+    beliefRatings?: BeliefRating[];
+    beliefEvidence?: BeliefEvidence[];
+    quoteFavorites?: QuoteFavorite[];
+    quoteNotes?: QuoteNote[];
   };
 }
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -48,6 +55,7 @@ const TABLES = [
   'routineItems', 'routineLogs', 'dailyTargets',
   'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
   'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
+  'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -77,6 +85,11 @@ export async function exportData(): Promise<ExportFile> {
       routineMisses: await db.routineMisses.toArray(),
       routineSeen: await db.routineSeen.toArray(),
       routineDays: await db.routineDays.toArray(),
+      beliefs: await db.beliefs.toArray(),
+      beliefRatings: await db.beliefRatings.toArray(),
+      beliefEvidence: await db.beliefEvidence.toArray(),
+      quoteFavorites: await db.quoteFavorites.toArray(),
+      quoteNotes: await db.quoteNotes.toArray(),
     },
   };
 }
@@ -84,6 +97,10 @@ export async function exportData(): Promise<ExportFile> {
 const MY_ROUTINE_TABLES = [
   'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
   'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
+] as const;
+
+const BELIEF_TABLES = [
+  'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
 ] as const;
 
 export function validateExport(json: unknown): ExportFile {
@@ -111,6 +128,12 @@ export function validateExport(json: unknown): ExportFile {
   }
   // My Routine tables arrived in schema 5 — missing is fine, wrong type is not
   for (const key of MY_ROUTINE_TABLES) {
+    if (d[key] !== undefined && !Array.isArray(d[key])) {
+      throw new Error('Backup file is malformed.');
+    }
+  }
+  // Belief tables arrived in schema 6 — missing is fine, wrong type is not
+  for (const key of BELIEF_TABLES) {
     if (d[key] !== undefined && !Array.isArray(d[key])) {
       throw new Error('Backup file is malformed.');
     }
@@ -159,5 +182,10 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.routineMisses.bulkPut(file.data.routineMisses ?? []);
     await db.routineSeen.bulkPut(file.data.routineSeen ?? []);
     await db.routineDays.bulkPut(file.data.routineDays ?? []);
+    await db.beliefs.bulkPut(file.data.beliefs ?? []);
+    await db.beliefRatings.bulkPut(file.data.beliefRatings ?? []);
+    await db.beliefEvidence.bulkPut(file.data.beliefEvidence ?? []);
+    await db.quoteFavorites.bulkPut(file.data.quoteFavorites ?? []);
+    await db.quoteNotes.bulkPut(file.data.quoteNotes ?? []);
   });
 }

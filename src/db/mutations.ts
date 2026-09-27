@@ -14,7 +14,8 @@ import { logId } from '../domain/routine';
 type TableName =
   | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
   | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
-  | 'routineItems' | 'routineLogs' | 'dailyTargets';
+  | 'routineItems' | 'routineLogs' | 'dailyTargets'
+  | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes';
 
 export interface Op {
   table: TableName;
