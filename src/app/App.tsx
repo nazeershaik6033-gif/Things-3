@@ -17,6 +17,9 @@ import { TagScreen } from '../screens/TagScreen';
 import { LogbookScreen } from '../screens/LogbookScreen';
 import { TrashScreen } from '../screens/TrashScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { FocusScreen } from '../screens/FocusScreen';
+import { FocusSprint } from '../components/FocusSprint';
+import { Toast } from '../ui/Toast';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -34,6 +37,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'area': return <AreaScreen id={r.id} />;
     case 'tag': return <TagScreen id={r.id} />;
     case 'settings': return <SettingsScreen />;
+    case 'focus': return <FocusScreen />;
   }
 }
 
@@ -92,6 +96,8 @@ export function App(): JSX.Element {
       <For each={stack()}>{(entry) => <ScreenWrapper entry={entry} />}</For>
       <SearchOverlay />
       <QuickEntry />
+      <FocusSprint />
+      <Toast />
       <InstallCoachMark />
     </div>
   );

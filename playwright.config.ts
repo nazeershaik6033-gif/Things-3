@@ -20,6 +20,8 @@ export default defineConfig({
         // Only Chromium is installed in this environment; keep the iPhone
         // viewport, touch and UA but swap the engine.
         browserName: 'chromium',
+        // Optional: point at a preinstalled Chromium (e.g. PW_CHROMIUM=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome)
+        launchOptions: process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
       },
     },
   ],

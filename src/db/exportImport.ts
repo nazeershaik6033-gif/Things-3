@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { Task, Project, Heading, Area, Tag, Setting } from './models';
+import type { Task, Project, Heading, Area, Tag, Setting, Sprint, EnergyLog } from './models';
 
 export interface ExportFile {
   app: 'clarity';
@@ -12,10 +12,13 @@ export interface ExportFile {
     areas: Area[];
     tags: Tag[];
     settings: Setting[];
+    /** v2+ (absent in v1 backups) */
+    sprints?: Sprint[];
+    energyLogs?: EnergyLog[];
   };
 }
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export async function exportData(): Promise<ExportFile> {
   return {
@@ -29,6 +32,8 @@ export async function exportData(): Promise<ExportFile> {
       areas: await db.areas.toArray(),
       tags: await db.tags.toArray(),
       settings: await db.settings.toArray(),
+      sprints: await db.sprints.toArray(),
+      energyLogs: await db.energyLogs.toArray(),
     },
   };
 }
@@ -46,6 +51,10 @@ export function validateExport(json: unknown): ExportFile {
       !Array.isArray(d.tags) || !Array.isArray(d.settings)) {
     throw new Error('Backup file is malformed.');
   }
+  if ((d.sprints !== undefined && !Array.isArray(d.sprints)) ||
+      (d.energyLogs !== undefined && !Array.isArray(d.energyLogs))) {
+    throw new Error('Backup file is malformed.');
+  }
   for (const t of d.tasks) {
     if (typeof t.id !== 'string' || typeof t.title !== 'string') {
       throw new Error('Backup file contains invalid tasks.');
@@ -54,18 +63,24 @@ export function validateExport(json: unknown): ExportFile {
   return f as ExportFile;
 }
 
-/** Replace-all import (caller confirms with the user first). */
+/** Replace-all import (caller confirms with the user first). v1 backups are
+ *  upgraded on the way in (focus fields default to null). */
 export async function importData(file: ExportFile): Promise<void> {
-  await db.transaction('rw', [db.tasks, db.projects, db.headings, db.areas, db.tags, db.settings], async () => {
-    await Promise.all([
-      db.tasks.clear(), db.projects.clear(), db.headings.clear(),
-      db.areas.clear(), db.tags.clear(), db.settings.clear(),
-    ]);
-    await db.tasks.bulkPut(file.data.tasks);
+  const tasks = file.data.tasks.map((t) => ({
+    ...t,
+    mitDate: t.mitDate ?? null,
+    energy: t.energy ?? null,
+  }));
+  const tables = [db.tasks, db.projects, db.headings, db.areas, db.tags, db.settings, db.sprints, db.energyLogs];
+  await db.transaction('rw', tables, async () => {
+    await Promise.all(tables.map((t) => t.clear()));
+    await db.tasks.bulkPut(tasks);
     await db.projects.bulkPut(file.data.projects);
     await db.headings.bulkPut(file.data.headings);
     await db.areas.bulkPut(file.data.areas);
     await db.tags.bulkPut(file.data.tags);
     await db.settings.bulkPut(file.data.settings);
+    await db.sprints.bulkPut(file.data.sprints ?? []);
+    await db.energyLogs.bulkPut(file.data.energyLogs ?? []);
   });
 }

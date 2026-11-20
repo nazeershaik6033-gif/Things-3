@@ -10,6 +10,7 @@ import { formatDeadline, formatRelative } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
 import { SwipeableRow } from './SwipeableRow';
 import { markdownPreview } from '../domain/markdown';
+import { isMit } from '../domain/focus';
 
 export interface TaskRowContext {
   /** Show the start-date chip (hidden in Today where it's redundant). */
@@ -21,6 +22,8 @@ export interface TaskRowContext {
   onSchedule: (taskId: string) => void;
   /** Disable swipe (trash/logbook). */
   noSwipe?: boolean;
+  /** Show the ★ MIT chip (Today shows MITs under their own heading instead). */
+  showMit?: boolean;
 }
 
 export function toggleComplete(task: Task): void {
@@ -94,7 +97,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             />
           </Show>
         </div>
-        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening)}>
+        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening) || t().energy || (props.ctx.showMit && isMit(t(), currentDate()))}>
           <div
             style={{
               display: 'flex',
@@ -104,6 +107,20 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
               'flex-wrap': 'wrap',
             }}
           >
+            <Show when={props.ctx.showMit && isMit(t(), currentDate())}>
+              <span data-testid="mit-chip" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--yellow-deep)', 'font-size': 'var(--fs-chip)', 'font-weight': '700' }}>
+                <Icon name="star" size={11} /> MIT
+              </span>
+            </Show>
+            <Show when={t().energy}>
+              <span
+                data-testid={`energy-chip-${t().energy}`}
+                aria-label={t().energy === 'high' ? 'High energy' : 'Low energy'}
+                style={{ display: 'inline-flex', color: t().energy === 'high' ? 'var(--yellow-deep)' : 'var(--teal)' }}
+              >
+                <Icon name={t().energy === 'high' ? 'bolt' : 'battery'} size={12} />
+              </span>
+            </Show>
             <Show when={props.ctx.showWhen && t().startDate}>
               <span style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--text-secondary)', 'font-size': 'var(--fs-chip)' }}>
                 <Icon name="calendar" size={11} strokeWidth={2.2} />

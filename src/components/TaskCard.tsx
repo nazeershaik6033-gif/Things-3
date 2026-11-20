@@ -1,10 +1,13 @@
 import {
-  createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, type JSX,
+  createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, useContext, type JSX,
 } from 'solid-js';
+import { ScreenKeyContext } from '../app/screenContext';
 import type { Task } from '../db/models';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
-import { trashTask, updateTask, completeTask, reopenTask } from '../db/mutations';
+import { trashTask, updateTask, completeTask, reopenTask, toggleMit, setTaskEnergy } from '../db/mutations';
+import { isMit } from '../domain/focus';
+import { openSprint, showToast } from '../app/focusState';
 import { expandedTaskId, setExpandedTaskId, addGrace, removeGrace } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative } from '../domain/dates';
@@ -73,6 +76,28 @@ function TaskCard(props: { task: Task }): JSX.Element {
     if (t().bucket === 'someday') return 'Someday';
     return null;
   };
+
+  const focusChip = (active: boolean, icon: JSX.Element, label: string, testid: string, onClick: () => void) => (
+    <button
+      data-testid={testid}
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        'align-items': 'center',
+        gap: '4px',
+        padding: '4px 10px',
+        'border-radius': '999px',
+        'font-size': '13px',
+        'font-weight': '600',
+        background: active ? 'var(--blue)' : 'var(--bg-inset)',
+        color: active ? 'var(--text-invert)' : 'var(--text)',
+      }}
+    >
+      {icon}
+      {label}
+    </button>
+  );
 
   const actionButton = (icon: JSX.Element, label: string, onClick: () => void) => (
     <button
@@ -254,6 +279,44 @@ function TaskCard(props: { task: Task }): JSX.Element {
         </div>
       </div>
 
+      {/* Focus Framework: MIT (≤3/day), energy needed, start a sprint */}
+      <div data-testid="focus-chips" style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap', padding: '6px 0 8px 31px' }}>
+        {focusChip(
+          isMit(t(), currentDate()),
+          <Icon name="star" size={12} color={isMit(t(), currentDate()) ? 'currentColor' : 'var(--yellow-deep)'} />,
+          'MIT',
+          'chip-mit',
+          () => void toggleMit(t().id, currentDate()).then((r) => {
+            if (r === 'limit') showToast('3 MITs max — finish or drop one first');
+          }),
+        )}
+        {focusChip(
+          t().energy === 'high',
+          <Icon name="bolt" size={12} />,
+          'High energy',
+          'chip-energy-high',
+          () => void setTaskEnergy(t().id, t().energy === 'high' ? null : 'high'),
+        )}
+        {focusChip(
+          t().energy === 'low',
+          <Icon name="battery" size={12} />,
+          'Low energy',
+          'chip-energy-low',
+          () => void setTaskEnergy(t().id, t().energy === 'low' ? null : 'low'),
+        )}
+        {focusChip(
+          false,
+          <Icon name="play" size={11} color="var(--blue)" />,
+          'Focus',
+          'chip-focus',
+          () => {
+            const id = t().id;
+            collapse();
+            openSprint({ taskId: id });
+          },
+        )}
+      </div>
+
       <div
         style={{
           display: 'flex',
@@ -291,15 +354,28 @@ function TaskCard(props: { task: Task }): JSX.Element {
 /** Renders the row, morphing into the editing card when expanded. The
  *  height change is animated with WAAPI (one isolated, contained layout
  *  animation — everything else in the app is transform-only). */
+const mountedRows = new Map<string, number>();
+
 export function ExpandableTask(props: { task: Task; ctx: TaskRowContext }): JSX.Element {
   let wrap!: HTMLDivElement;
   let lastH = 0;
   const expanded = () => expandedTaskId() === props.task.id;
 
   // If the row leaves this list while expanded (scheduled away, moved),
-  // clear the expanded state so no stale backdrop lingers.
+  // clear the expanded state so no stale backdrop lingers — unless the same
+  // task re-mounted in another section of this list (e.g. ★ MIT moves it to
+  // "Most Important"), where the card should stay open.
+  const id = props.task.id;
+  const slot = `${useContext(ScreenKeyContext)}:${id}`; // per screen
+  mountedRows.set(slot, (mountedRows.get(slot) ?? 0) + 1);
   onCleanup(() => {
-    if (expandedTaskId() === props.task.id) setExpandedTaskId(null);
+    mountedRows.set(slot, (mountedRows.get(slot) ?? 1) - 1);
+    setTimeout(() => {
+      if ((mountedRows.get(slot) ?? 0) <= 0) {
+        mountedRows.delete(slot);
+        if (expandedTaskId() === id) setExpandedTaskId(null);
+      }
+    }, 0);
   });
 
   onMount(() => {

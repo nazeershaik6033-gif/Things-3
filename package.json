@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "gen-icons": "node scripts/gen-icons.mjs",
-    "seed": "echo 'open the app with #seed in the URL to load demo data'"
+    "seed": "echo 'open the app with #seed in the URL to load demo data'",
+    "gen-wallpaper": "node scripts/gen-wallpaper.mjs"
   },
   "dependencies": {
     "@solid-primitives/keyed": "^1.5.3",

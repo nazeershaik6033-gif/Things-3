@@ -4,6 +4,8 @@ export type DateStr = string;
 
 export type TaskStatus = 'open' | 'completed' | 'canceled';
 export type Bucket = 'inbox' | 'anytime' | 'someday';
+/** How much concentration a to-do needs (Focus Framework, level 3). */
+export type Energy = 'high' | 'low';
 
 export interface ChecklistItem {
   id: string;
@@ -35,6 +37,11 @@ export interface Task {
   repeatRule: string | null;
   repeatTemplateId: string | null;
   reminderTime: string | null; // "HH:mm" local
+  // ---- focus framework (schema v2) ----
+  /** The day this to-do was picked as a Most Important Task. MIT-ness is
+   *  per day: tomorrow you choose again. */
+  mitDate: DateStr | null;
+  energy: Energy | null;
 }
 
 export interface Project {
@@ -87,4 +94,34 @@ export interface CalendarEvent {
   title: string;
   allDay: boolean;
   calendarUrl: string; // source subscription (or 'file' for imports)
+}
+
+// ---------------------------------------------------------- focus (v2) ----
+
+export type SprintStatus = 'planned' | 'running' | 'done' | 'abandoned';
+
+/** One focus sprint: a protected block for one clearly defined task. */
+export interface Sprint {
+  id: string;
+  taskId: string | null;
+  title: string;
+  nextAction: string;
+  durationMin: number;
+  date: DateStr; // local day it belongs to
+  plannedAt: number | null; // epoch ms for a scheduled (later) sprint
+  startedAt: number | null;
+  endsAt: number | null;
+  endedAt: number | null;
+  status: SprintStatus;
+  completedNote: string;
+  createdAt: number;
+}
+
+/** A 1–5 self-rating used to discover your energy pattern. */
+export interface EnergyLog {
+  id: string;
+  at: number; // epoch ms
+  date: DateStr;
+  minuteOfDay: number; // local 0..1439
+  level: number; // 1..5
 }

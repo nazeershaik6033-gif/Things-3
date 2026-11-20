@@ -8,7 +8,8 @@ export type IconName =
   | 'hexagon' | 'pie' | 'search' | 'settings' | 'plus' | 'moon' | 'flag'
   | 'chevron-left' | 'chevron-right' | 'ellipsis' | 'tag' | 'checklist'
   | 'notes' | 'arrow-move' | 'close' | 'check' | 'restore' | 'heading'
-  | 'export' | 'import' | 'link';
+  | 'export' | 'import' | 'link'
+  | 'bolt' | 'battery' | 'mountain' | 'timer' | 'play' | 'target' | 'chevron-down' | 'sparkle';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -137,6 +138,41 @@ const PATHS: Record<IconName, () => JSX.Element> = {
       <path d="M12 14.5v-11M7.5 10l4.5 4.5L16.5 10" stroke-linecap="round" stroke-linejoin="round" />
       <path d="M4.5 13.5v5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" stroke-linecap="round" />
     </>
+  ),
+  bolt: () => (
+    <path d="M13.2 2.5 4.8 13.4h6.1l-1.2 8.1 8.5-11h-6.2l1.2-8Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+  ),
+  battery: () => (
+    <>
+      <rect x="2.8" y="7" width="16.4" height="10" rx="2.2" />
+      <path d="M21.2 10.5v3" stroke-linecap="round" stroke-width="2" />
+      <rect x="5" y="9.2" width="4.2" height="5.6" rx="0.8" fill="currentColor" stroke="none" />
+    </>
+  ),
+  mountain: () => (
+    <>
+      <path d="m2.5 20 7-12.5 3.6 6.2 2.2-3.2L21.5 20h-19Z" fill="currentColor" opacity="0.22" stroke="none" />
+      <path d="m2.5 20 7-12.5 3.6 6.2 2.2-3.2L21.5 20h-19Z" stroke-linejoin="round" />
+      <path d="M9.5 7.5V3.2l3.3 1.3-3.3 1.4" stroke-linejoin="round" />
+    </>
+  ),
+  timer: () => (
+    <>
+      <circle cx="12" cy="13.5" r="7.8" />
+      <path d="M12 13.5V9.2M9.5 2.8h5" stroke-linecap="round" />
+    </>
+  ),
+  play: () => <path d="M7.5 4.8v14.4a.8.8 0 0 0 1.2.7l11.5-7.2a.8.8 0 0 0 0-1.4L8.7 4.1a.8.8 0 0 0-1.2.7Z" fill="currentColor" stroke="none" />,
+  target: () => (
+    <>
+      <circle cx="12" cy="12" r="8.6" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ),
+  'chevron-down': () => <path d="m4.5 9 7.5 7.5L19.5 9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />,
+  sparkle: () => (
+    <path d="M12 3.2c.6 4.4 2.4 6.2 6.8 6.8-4.4.6-6.2 2.4-6.8 6.8-.6-4.4-2.4-6.2-6.8-6.8 4.4-.6 6.2-2.4 6.8-6.8Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
   ),
   link: () => (
     <path d="M10 14.5 14 10.5M8.5 12 6 14.5a3.5 3.5 0 0 0 5 5l2.5-2.5M15.5 12 18 9.5a3.5 3.5 0 0 0-5-5l-2.5 2.5" stroke-linecap="round" />

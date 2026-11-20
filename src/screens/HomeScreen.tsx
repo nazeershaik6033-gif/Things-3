@@ -100,6 +100,15 @@ export function HomeScreen(): JSX.Element {
             {listRow('inbox', 'Inbox', counts().inbox)}
           </div>
 
+          <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px 0', padding: '2px 0' }}>
+            <HomeRow
+              testid="home-focus"
+              icon={<Icon name="target" size={23} color="var(--blue)" />}
+              label="Daily Focus"
+              onClick={() => push({ name: 'focus' })}
+            />
+          </div>
+
           <div style={{ background: 'var(--bg-list)', 'border-radius': '12px', margin: '10px 10px', padding: '2px 0' }}>
             {listRow('today', 'Today', counts().today)}
             {listRow('upcoming', 'Upcoming')}

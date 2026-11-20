@@ -23,6 +23,9 @@ import { CalendarBlock } from '../components/CalendarBlock';
 import { ScreenChrome, SectionHeading, EmptyState, createScheduler } from './common';
 import type { TaskRowContext } from '../components/TaskRow';
 import type { QuickEntryState } from '../app/uiState';
+import { isMit, MIT_LIMIT } from '../domain/focus';
+import { showToast } from '../app/focusState';
+import { TodayFocusBar } from '../components/TodayFocusBar';
 
 const TITLES: Record<string, string> = {
   inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', anytime: 'Anytime', someday: 'Someday',
@@ -43,6 +46,8 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
     onSchedule: schedule,
     showWhen: props.list !== 'today',
     showEveningBadge: false,
+    // Today groups MITs under their own heading; elsewhere a chip marks them
+    showMit: props.list !== 'today',
   }));
 
   // ---- membership with completion grace ----
@@ -82,21 +87,43 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   );
 
   // ---------------------------------------------------------------- today --
-  const todaySections = createMemo(() => todayTasks(visible(), currentDate()));
+  // Most Important Tasks first (Focus Framework); the rest are LITs
+  const todaySections = createMemo(() => {
+    const { day, evening } = todayTasks(visible(), currentDate());
+    const today = currentDate();
+    const mit = [...day, ...evening].filter((t) => isMit(t, today));
+    return {
+      mit,
+      day: day.filter((t) => !isMit(t, today)),
+      evening: evening.filter((t) => !isMit(t, today)),
+    };
+  });
   const todayEvents = createMemo(() => events().filter((e) => e.date === currentDate()));
 
   const handleTodayDrop = (info: DropInfo) => {
-    const { day, evening } = todaySections();
+    const { mit, day, evening } = todaySections();
     const dragged = visible().find((t) => t.id === info.key);
     if (!dragged) return;
-    const target = (info.section === 'evening' ? evening : day).filter((t) => t.id !== info.key);
+    const today = currentDate();
+    const toMit = info.section === 'mit';
+    const wasMit = isMit(dragged, today);
+    if (toMit && !wasMit && mit.filter((t) => t.status === 'open').length >= MIT_LIMIT) {
+      showToast(`${MIT_LIMIT} MITs max — finish or drop one first`);
+      return;
+    }
+    const source = toMit ? mit : info.section === 'evening' ? evening : day;
+    const target = source.filter((t) => t.id !== info.key);
     const ids = target.map((t) => t.id);
     ids.splice(Math.min(info.index, ids.length), 0, info.key);
-    const wantsEvening = info.section === 'evening';
+    const wantsEvening = toMit ? dragged.evening : info.section === 'evening';
     void (async () => {
+      const patch: Partial<Task> = {};
       if (dragged.evening !== wantsEvening) {
-        await updateTask(dragged.id, { evening: wantsEvening, startDate: dragged.startDate ?? currentDate() });
+        patch.evening = wantsEvening;
+        patch.startDate = dragged.startDate ?? today;
       }
+      if (toMit !== wasMit) patch.mitDate = toMit ? today : null;
+      if (Object.keys(patch).length) await updateTask(dragged.id, patch);
       await reorderToday(ids);
     })();
   };
@@ -187,12 +214,31 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         </Show>
 
         <Show when={props.list === 'today'}>
+          <TodayFocusBar mitCount={todaySections().mit.length} />
           <CalendarBlock events={todayEvents()} />
           <Show
-            when={todaySections().day.length + todaySections().evening.length > 0}
+            when={todaySections().mit.length + todaySections().day.length + todaySections().evening.length > 0}
             fallback={<EmptyState icon={<ListIcon list="today" size={44} />} text="Take a moment to plan your day, or enjoy the calm." />}
           >
             <ReorderGroup onDrop={handleTodayDrop} scrollParent={() => scrollEl ?? null}>
+              <Show when={todaySections().mit.length > 0}>
+                <div data-testid="mit-section">
+                  <SectionHeading
+                    label="Most Important"
+                    color="var(--text)"
+                    trailing={<span style={{ display: 'inline-flex', gap: '2px' }}>{todaySections().mit.map(() => <Icon name="star" size={13} color="var(--yellow-deep)" />)}</span>}
+                  />
+                </div>
+                <Rows items={todaySections().mit} section="mit" />
+                <Show when={todaySections().day.length > 0}>
+                  <SectionHeading
+                    label="Everything Else"
+                    color="var(--text-secondary)"
+                    small
+                    trailing={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>batch in low-energy gaps</span>}
+                  />
+                </Show>
+              </Show>
               <Rows items={todaySections().day} section="day" />
               <Show when={todaySections().evening.length > 0}>
                 <SectionHeading
