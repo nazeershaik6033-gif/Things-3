@@ -8,7 +8,7 @@ import {
 import { exportData, importData, validateExport } from '../../src/db/exportImport';
 import {
   addMinutes, analyzeEnergy, allProfiles, canAddMit, dailyFlow, DEFAULT_PROFILE, formatClock,
-  isMit, morningSprintTime, normalizeProfile, routineFileName, routineItems, windowOf,
+  isMit, isPresetProfile, morningSprintTime, normalizeProfile, routineFileName, routineItems, windowOf,
 } from '../../src/domain/focus';
 import {
   buildCalendar, escapeText, foldLine, routineCalendar, sprintCalendar, triggerFor,
@@ -155,7 +155,19 @@ describe('routine profile', () => {
   });
 
   it('normalizes unknown values back to supported choices', () => {
-    expect(normalizeProfile({ wake: '05:13' as never, sprintMinutes: 90 as never })).toEqual(DEFAULT_PROFILE);
+    expect(normalizeProfile({ wake: '05:13' as never, sprintMinutes: 500, morningSprintAt: '9am' })).toEqual(DEFAULT_PROFILE);
+  });
+
+  it('accepts custom sprint times and lengths, which have no pre-built calendar', () => {
+    const p = normalizeProfile({ sprintMinutes: 50, morningSprintAt: '10:30', eveningSprintAt: '20:15' });
+    expect(p.sprintMinutes).toBe(50);
+    const at = Object.fromEntries(routineItems(p).map((i) => [i.id, i.time]));
+    expect(at['sprint-morning']).toBe('10:30');
+    expect(at['sprint-evening']).toBe('20:15');
+    expect(routineItems(p).find((i) => i.id === 'sprint-morning')!.alarms).toEqual([-5, 50]);
+    expect(isPresetProfile(p)).toBe(false);
+    expect(isPresetProfile(DEFAULT_PROFILE)).toBe(true);
+    expect(dailyFlow(p).find((s) => s.id === 'sprint')!.time).toBe('10:30');
   });
 
   it('has one pre-built file per combination', () => {
@@ -249,7 +261,7 @@ describe('schema v7 migration + backup', () => {
     await createSprint({ title: 's' });
     await logEnergy(4);
     const file = await exportData();
-    expect(file.schemaVersion).toBe(7);
+    expect(file.schemaVersion).toBe(8);
     await importData(validateExport(JSON.parse(JSON.stringify(file))));
     expect(await db.sprints.count()).toBe(1);
     expect(await db.energyLogs.count()).toBe(1);

@@ -153,7 +153,7 @@ describe('backup', () => {
     await saveQuoteNote('james-ally', 'note text', 'Claude app');
 
     const file = validateExport(JSON.parse(JSON.stringify(await exportData())));
-    expect(file.schemaVersion).toBe(7);
+    expect(file.schemaVersion).toBe(8);
     await Promise.all(db.tables.map((t) => t.clear()));
     await importData(file);
 

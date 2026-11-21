@@ -5,7 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
-  Sprint, EnergyLog,
+  Sprint, EnergyLog, HealthDay,
 } from './models';
 
 export interface ExportFile {
@@ -48,10 +48,12 @@ export interface ExportFile {
     /** Added in schema 7 — the Focus Framework. */
     sprints?: Sprint[];
     energyLogs?: EnergyLog[];
+    /** Added in schema 8 — Apple Watch sleep + activity. */
+    healthDays?: HealthDay[];
   };
 }
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -60,7 +62,7 @@ const TABLES = [
   'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
   'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
   'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
-  'sprints', 'energyLogs',
+  'sprints', 'energyLogs', 'healthDays',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -97,6 +99,7 @@ export async function exportData(): Promise<ExportFile> {
       quoteNotes: await db.quoteNotes.toArray(),
       sprints: await db.sprints.toArray(),
       energyLogs: await db.energyLogs.toArray(),
+      healthDays: await db.healthDays.toArray(),
     },
   };
 }
@@ -146,7 +149,8 @@ export function validateExport(json: unknown): ExportFile {
     }
   }
   if ((d.sprints !== undefined && !Array.isArray(d.sprints)) ||
-      (d.energyLogs !== undefined && !Array.isArray(d.energyLogs))) {
+      (d.energyLogs !== undefined && !Array.isArray(d.energyLogs)) ||
+      (d.healthDays !== undefined && !Array.isArray(d.healthDays))) {
     throw new Error('Backup file is malformed.');
   }
   for (const t of d.tasks) {
@@ -205,5 +209,6 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.quoteNotes.bulkPut(file.data.quoteNotes ?? []);
     await db.sprints.bulkPut(file.data.sprints ?? []);
     await db.energyLogs.bulkPut(file.data.energyLogs ?? []);
+    await db.healthDays.bulkPut(file.data.healthDays ?? []);
   });
 }
