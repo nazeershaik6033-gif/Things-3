@@ -1,0 +1,97 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Clarity//Focus Framework//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Focus Routine
+BEGIN:VEVENT
+UID:clarity-routine-plan@clarity.focus
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T093000
+DTEND:20260101T094500
+RRULE:FREQ=DAILY
+SUMMARY:☀️ Plan: Everest → 1–3 MITs
+DESCRIPTION:Open Clarity → Daily Focus. Did you sleep 7h+? Look at your E
+ verest. Pick 1–3 Most Important Tasks\; everything else is a LIT for the
+  afternoon. Log your energy.
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:☀️ Plan: Everest → 1–3 MITs
+TRIGGER:PT0S
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:clarity-routine-sprint-morning@clarity.focus
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T110000
+DTEND:20260101T114500
+RRULE:FREQ=DAILY
+SUMMARY:🎯 Focus Sprint — MIT #1
+DESCRIPTION:In 5 min: open Clarity → Focus Sprint.\n1 Schedule (done) · 
+ 2 Define the next action · 3 Phone out of reach\, close tabs\, clear desk
+  · 4 Visible timer 45 min · 5 Record\, next action\, step away.\nStuck? 
+ Reset: work deliberately → step away → return fresh.
+TRANSP:OPAQUE
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🎯 Focus Sprint — MIT #1 in 5 min — phone away\, close ta
+ bs.
+TRIGGER:-PT5M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Sprint over: record what you did\, note the next action\, step 
+ away.
+TRIGGER:PT45M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:clarity-routine-lits@clarity.focus
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T150000
+DTEND:20260101T153000
+RRULE:FREQ=DAILY
+SUMMARY:📥 Batch LITs (low-energy window)
+DESCRIPTION:Emails\, errands\, admin\, organizing files. Save sharp hours f
+ or MITs. Log your energy.
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:📥 Batch LITs (low-energy window)
+TRIGGER:PT0S
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:clarity-routine-shutdown@clarity.focus
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T230000
+DTEND:20260101T231500
+RRULE:FREQ=DAILY
+SUMMARY:🌙 Shutdown: phone away
+DESCRIPTION:Phone out of the bedroom\, no endless scrolling — read or lis
+ ten instead. Note tomorrow's MIT candidates. Log your energy.
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🌙 Shutdown: phone away
+TRIGGER:PT0S
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:clarity-routine-sleep@clarity.focus
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T000000
+DTEND:20260101T000500
+RRULE:FREQ=DAILY
+SUMMARY:😴 Lights out — protect 7h+
+DESCRIPTION:Sleep is the foundation: attention\, memory\, decisions and moo
+ d depend on it.
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:😴 Lights out — protect 7h+
+TRIGGER:PT0S
+END:VALARM
+END:VEVENT
+END:VCALENDAR
