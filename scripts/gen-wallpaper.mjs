@@ -47,6 +47,7 @@ const SHORT = {
   sprint: `Focus Sprint · ${profile.sprintMinutes} min`,
   lits: 'Batch LITs: email, errands, admin',
   energy: 'Log energy 1–5',
+  exercise: 'Move · close the Exercise ring',
   'sprint-evening': `Evening Sprint · ${profile.sprintMinutes} min`,
   shutdown: 'Shutdown · phone out of reach',
   'lights-out': 'Lights out · protect 7h+',
@@ -89,20 +90,20 @@ function html(t) {
   .head span{font-size:11px;color:${t.faint};font-weight:500}
   .panel{background:${t.card};border:1px solid ${t.cardBorder};border-radius:22px;padding:12px 14px 10px;backdrop-filter:blur(20px)}
   .row{display:flex;align-items:stretch}
-  .time{width:40px;flex:none;font-size:11.5px;font-weight:600;color:${t.sub};font-variant-numeric:tabular-nums;padding-top:7px}
+  .time{width:40px;flex:none;font-size:11.5px;font-weight:600;color:${t.sub};font-variant-numeric:tabular-nums;padding-top:6px}
   .railcol{width:20px;flex:none;display:flex;flex-direction:column;align-items:center}
   .seg{width:2px;height:7px;background:${t.rail}}
   .seg.grow{flex:1;min-height:4px}
   .node{width:12px;height:12px;border-radius:50%;border:2.5px solid;flex:none}
   .node.sq{border-radius:4px}
-  .body{flex:1;min-width:0;padding:4px 0 7px 8px}
+  .body{flex:1;min-width:0;padding:3px 0 5px 8px}
   .title{font-size:14.5px;font-weight:600;letter-spacing:-0.1px;line-height:1.25}
   .sprint .title{font-weight:700}
-  .mini{display:flex;flex-wrap:wrap;align-items:center;gap:3px;margin-top:5px}
+  .mini{display:flex;flex-wrap:wrap;align-items:center;gap:3px;margin-top:4px}
   .mini span{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;background:${t.chip}}
   .mini i{font-style:normal;font-size:10px;color:${t.faint}}
   .reset{font-size:10.5px;color:${t.sub};margin-top:4px;padding-left:7px;border-left:2px dashed ${t.rail}}
-  .foot{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11.5px;font-weight:600;color:${t.sub}}
+  .foot{display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:11.5px;font-weight:600;color:${t.sub}}
   .foot em{font-style:normal;color:${t.faint};font-weight:500}
 </style>
 <div class="wrap">

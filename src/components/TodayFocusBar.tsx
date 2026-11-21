@@ -1,7 +1,12 @@
-import { Show, type JSX } from 'solid-js';
+import { createMemo, Show, type JSX } from 'solid-js';
 import { push } from '../app/navigation';
 import { openSprint } from '../app/focusState';
-import { useEverest } from '../app/focusProfile';
+import { useEverest, useFocusProfile } from '../app/focusProfile';
+import { db } from '../db/db';
+import { createLiveQuery } from '../db/liveQuery';
+import type { HealthDay } from '../db/models';
+import { currentDate } from '../app/currentDate';
+import { adviseDay, formatDuration } from '../domain/health';
 import { MIT_LIMIT } from '../domain/focus';
 import { Icon } from '../ui/Icon';
 
@@ -9,6 +14,10 @@ import { Icon } from '../ui/Icon';
  *  MITs are picked, and a one-tap Focus Sprint. */
 export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
   const everest = useEverest();
+  const profile = useFocusProfile();
+  const health = createLiveQuery(() => db.healthDays.get(currentDate()), undefined as HealthDay | undefined);
+  const advice = createMemo(() => adviseDay(health()?.sleep ?? null, profile().bed, profile().sprintMinutes));
+  const morning = () => new Date().getHours() < 12;
   return (
     <div
       data-testid="today-focus-bar"
@@ -24,6 +33,24 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
         </span>
         <Icon name="chevron-right" size={14} color="var(--text-tertiary)" />
       </button>
+      <Show when={advice()?.shortNight}>
+        <button
+          data-testid="today-short-night"
+          onClick={() => push({ name: 'focus' })}
+          style={{ display: 'block', width: '100%', 'text-align': 'left', 'margin-top': '8px', 'font-size': '13px', 'line-height': '1.4', color: 'var(--text)', padding: '7px 9px', 'border-radius': '9px', background: 'color-mix(in srgb, var(--yellow) 22%, transparent)' }}
+        >
+          ⌚ {formatDuration(health()!.sleep!.asleepMin)} sleep — aim for {advice()!.mitSuggest} MITs and {advice()!.sprintMinutes}-min sprints today.
+        </button>
+      </Show>
+      <Show when={!health()?.sleep && morning()}>
+        <button
+          data-testid="today-sync-nudge"
+          onClick={() => push({ name: 'focus' })}
+          style={{ display: 'block', 'margin-top': '6px', 'font-size': '13px', color: 'var(--blue)' }}
+        >
+          ⌚ Sync last night’s sleep ›
+        </button>
+      </Show>
       <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'margin-top': '8px' }}>
         <span
           data-testid="mit-count"
@@ -31,7 +58,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
         >
           <Icon name="star" size={13} color="var(--yellow-deep)" />
           <Show when={props.mitCount > 0} fallback={'Tap a to-do → ★ MIT (1–3)'}>
-            {props.mitCount}/{MIT_LIMIT} MITs
+            {props.mitCount}/{advice()?.shortNight ? `${advice()!.mitSuggest} suggested` : MIT_LIMIT} MITs
           </Show>
         </span>
         <button

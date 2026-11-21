@@ -10,6 +10,7 @@ import { flowKey, saveFocusProfile, useEverest, useFocusProfile } from '../app/f
 import { appAssetUrl, deliverFile } from '../app/deliverFile';
 import {
   BED_CHOICES, CHRONOTYPE_TEXT, EVEREST_QUESTIONS, SPRINT_CHOICES, SPRINT_STEPS, WAKE_CHOICES,
+  MAX_SPRINT, MIN_SPRINT, eveningSprintTime, isPresetProfile, morningSprintTime,
   analyzeEnergy, dailyFlow, energyByHour, focusedMinutesToday, isMit, routineFileName, routineItems,
   trackingDay, TRACK_DAYS, type FocusProfile,
 } from '../domain/focus';
@@ -18,6 +19,9 @@ import { addDays } from '../domain/dates';
 import { Icon } from '../ui/Icon';
 import { Checkbox } from '../ui/Checkbox';
 import { ScreenChrome } from './common';
+import { HealthCard, useGoals, useHealthDays } from '../components/HealthCard';
+import { SprintEditSheet } from '../components/SprintEditSheet';
+import { focusInsights, formatDuration, GOOD_NIGHT_MIN, sleepScore } from '../domain/health';
 
 function Card(props: { title?: string; trailing?: JSX.Element; children: JSX.Element; testid?: string }): JSX.Element {
   return (
@@ -72,10 +76,34 @@ export function FocusScreen(): JSX.Element {
       .sort((a, b) => a.plannedAt! - b.plannedAt!),
   );
 
+  const healthDays = useHealthDays();
+  const goals = useGoals();
+  const todayHealth = createMemo(() => healthDays().find((d) => d.date === today()) ?? null);
+  const [editSprint, setEditSprint] = createSignal<Sprint | null>(null);
+  const [logExpanded, setLogExpanded] = createSignal(false);
+  const LOG_PREVIEW = 5;
+  const sprintLog = createMemo(() =>
+    sprints()
+      .filter((s) => (s.status === 'done' || s.status === 'abandoned') && s.startedAt !== null && s.date >= addDays(today(), -13))
+      .sort((a, b) => b.startedAt! - a.startedAt!),
+  );
+  const insights = createMemo(() =>
+    focusInsights(healthDays().filter((d) => d.date >= addDays(today(), -59)), sprints(), logs(), goals()),
+  );
+
   const flow = createMemo(() => dailyFlow(profile()));
-  /** Auto-derived steps tick themselves off from real activity. */
+  /** Auto-derived steps tick themselves off from real activity (Watch data
+   *  included); the rest are one-tap checks that reset each day. */
   const isDone = (id: string): boolean => {
     switch (id) {
+      case 'sleep-check': {
+        const n = todayHealth()?.sleep;
+        return n ? n.asleepMin >= GOOD_NIGHT_MIN : !!checks()[id];
+      }
+      case 'exercise': {
+        const m = todayHealth()?.activity?.exerciseMin;
+        return m != null ? m >= goals().exerciseMin : !!checks()[id];
+      }
       case 'mits': return mitCount() > 0;
       case 'sprint': return doneSprints() >= 1;
       case 'sprint-evening': return doneSprints() >= 2;
@@ -84,8 +112,24 @@ export function FocusScreen(): JSX.Element {
     }
   };
   const autoIds = new Set(['mits', 'sprint', 'sprint-evening', 'energy']);
+  const isAuto = (id: string) =>
+    autoIds.has(id) ||
+    (id === 'sleep-check' && !!todayHealth()?.sleep) ||
+    (id === 'exercise' && todayHealth()?.activity?.exerciseMin != null);
+  /** What the Watch said, shown under the step. */
+  const measured = (id: string): string | null => {
+    const h = todayHealth();
+    if (id === 'sleep-check' && h?.sleep) {
+      const sc = sleepScore(h.sleep, profile().bed);
+      return `Last night: ${formatDuration(h.sleep.asleepMin)} · asleep ${h.sleep.onset} · score ${sc.total} ${sc.label}`;
+    }
+    if (id === 'exercise' && h?.activity?.exerciseMin != null) {
+      return `Today: ${h.activity.exerciseMin}/${goals().exerciseMin} min exercise`;
+    }
+    return null;
+  };
   const toggle = (id: string) => {
-    if (autoIds.has(id)) return;
+    if (isAuto(id)) return;
     void setSetting(flowKey(today()), { ...checks(), [id]: !checks()[id] });
   };
   const doneCount = () => flow().filter((s) => isDone(s.id)).length;
@@ -149,6 +193,9 @@ export function FocusScreen(): JSX.Element {
         </div>
       </Card>
 
+      {/* ------------------------------------------- sleep + activity */}
+      <HealthCard />
+
       {/* ---------------------------------------------------- flowchart */}
       <Card title="Today’s flow" testid="daily-flow">
         <div style={{ position: 'relative' }}>
@@ -182,7 +229,7 @@ export function FocusScreen(): JSX.Element {
                           border: `2px solid ${done() ? 'var(--green)' : PHASE_COLOR[step.phase]}`,
                           background: done() ? 'var(--green)' : 'var(--bg-list)',
                           display: 'flex', 'align-items': 'center', 'justify-content': 'center',
-                          cursor: autoIds.has(step.id) ? 'default' : 'pointer', flex: 'none',
+                          cursor: isAuto(step.id) ? 'default' : 'pointer', flex: 'none',
                         }}
                       >
                         <Show when={done()}><Icon name="check" size={13} color="#fff" /></Show>
@@ -193,7 +240,7 @@ export function FocusScreen(): JSX.Element {
                     <div style={{ flex: '1', 'min-width': '0', padding: '9px 0 12px 8px' }}>
                       <div
                         onClick={() => toggle(step.id)}
-                        style={{ display: 'flex', 'align-items': 'baseline', gap: '6px', cursor: autoIds.has(step.id) ? 'default' : 'pointer' }}
+                        style={{ display: 'flex', 'align-items': 'baseline', gap: '6px', cursor: isAuto(step.id) ? 'default' : 'pointer' }}
                       >
                         <span style={{
                           'font-size': '16px', 'font-weight': '600', color: done() ? 'var(--text-secondary)' : 'var(--text)',
@@ -204,6 +251,11 @@ export function FocusScreen(): JSX.Element {
                         <span style={{ 'font-size': '10px', 'font-weight': '700', color: 'var(--text-tertiary)' }}>{step.level}</span>
                       </div>
                       <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.4', margin: '2px 0 0' }}>{step.hint}</div>
+                      <Show when={measured(step.id)}>
+                        <div data-testid={`measured-${step.id}`} style={{ 'font-size': '12px', 'font-weight': '600', color: done() ? 'var(--green)' : 'var(--yellow-deep)', margin: '3px 0 0' }}>
+                          ⌚ {measured(step.id)}
+                        </div>
+                      </Show>
 
                       <Show when={step.id === 'mits'}>
                         <button data-testid="flow-open-today" onClick={() => push({ name: 'list', list: 'today' })} style={{ ...chip(false), margin: '8px 0 0', display: 'inline-flex', 'align-items': 'center', gap: '6px' }}>
@@ -271,11 +323,14 @@ export function FocusScreen(): JSX.Element {
         <Card title="Scheduled sprints">
           <For each={planned()}>
             {(s) => (
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)' }}>
-                <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-weight': '600', color: 'var(--text-secondary)', 'font-size': '14px' }}>
-                  {new Date(s.plannedAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <span style={{ flex: '1', 'font-size': '15px', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title}</span>
+              <div data-testid="planned-sprint" style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)' }}>
+                <button onClick={() => setEditSprint(s)} style={{ display: 'flex', gap: '10px', flex: '1', 'min-width': '0', 'text-align': 'left', 'align-items': 'baseline' }}>
+                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-weight': '600', color: 'var(--text-secondary)', 'font-size': '14px', 'white-space': 'nowrap' }}>
+                    {new Date(s.plannedAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <span style={{ flex: '1', 'font-size': '15px', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title}</span>
+                  <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>{s.durationMin}m · Edit</span>
+                </button>
                 <button onClick={() => openSprint({ sprintId: s.id })} style={chip(true)}>Start</button>
                 <button aria-label="Remove" onClick={() => void deleteSprint(s.id)} style={{ color: 'var(--text-tertiary)', display: 'flex', padding: '4px' }}>
                   <Icon name="close" size={16} />
@@ -285,6 +340,91 @@ export function FocusScreen(): JSX.Element {
           </For>
         </Card>
       </Show>
+
+      {/* ------------------------------------------------- sprint log */}
+      <Card title="Sprint log" testid="sprint-log" trailing={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>last 14 days · tap to edit</span>}>
+        <Show when={sprintLog().length > 0} fallback={<div style={{ 'font-size': '14px', color: 'var(--text-secondary)' }}>Finished sprints show up here. Tap one to fix its time, length or note.</div>}>
+          <For each={logExpanded() ? sprintLog() : sprintLog().slice(0, LOG_PREVIEW)}>
+            {(s, i) => (
+              <>
+                <Show when={i() === 0 || sprintLog()[i() - 1]!.date !== s.date}>
+                  <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)', margin: i() === 0 ? '0 0 2px' : '10px 0 2px' }}>
+                    {s.date === today() ? 'Today' : s.date === addDays(today(), -1) ? 'Yesterday' : s.date}
+                  </div>
+                </Show>
+                <button
+                  data-testid="sprint-log-row"
+                  onClick={() => setEditSprint(s)}
+                  style={{ display: 'flex', gap: '10px', width: '100%', 'text-align': 'left', padding: '7px 0', 'border-bottom': '1px solid var(--separator)', 'align-items': 'baseline', opacity: s.status === 'abandoned' ? '0.55' : '1' }}
+                >
+                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': '13px', color: 'var(--text-secondary)', width: '66px', flex: 'none', 'white-space': 'nowrap' }}>
+                    {new Date(s.startedAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <span style={{ flex: '1', 'min-width': '0' }}>
+                    <span style={{ display: 'block', 'font-size': '15px', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title || 'Deep work'}</span>
+                    <Show when={s.completedNote}>
+                      <span style={{ display: 'block', 'font-size': '12px', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.completedNote}</span>
+                    </Show>
+                  </span>
+                  <span data-testid="sprint-log-minutes" style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': '14px', 'font-weight': '600', color: 'var(--text)' }}>
+                    {s.status === 'abandoned' ? 'stopped' : `${Math.round((s.endedAt! - s.startedAt!) / 60_000)} min`}
+                  </span>
+                </button>
+              </>
+            )}
+          </For>
+          <Show when={sprintLog().length > LOG_PREVIEW}>
+            <button
+              data-testid="sprint-log-toggle"
+              onClick={() => setLogExpanded((v) => !v)}
+              style={{ color: 'var(--blue)', 'font-size': '14px', padding: '10px 0 0' }}
+            >
+              {logExpanded() ? 'Show less' : `Show all ${sprintLog().length}`}
+            </button>
+          </Show>
+        </Show>
+      </Card>
+
+      {/* --------------------------------------------- sleep ↔ focus */}
+      <Card title="Sleep, movement & focus" testid="insights-card">
+        <Show
+          when={insights().length > 0}
+          fallback={
+            <div style={{ 'font-size': '14px', color: 'var(--text-secondary)', 'line-height': '1.45' }}>
+              After a few days of synced sleep and sprints (at least 3 nights over and 3 under 7h), you’ll see how sleep and
+              exercise line up with your focused minutes and energy.
+            </div>
+          }
+        >
+          <For each={insights()}>
+            {(c) => {
+              const max = Math.max(c.good.focusMin, c.poor.focusMin, 1);
+              const bar = (g: typeof c.good, strong: boolean) => (
+                <div style={{ display: 'grid', 'grid-template-columns': '128px 1fr 54px', 'align-items': 'center', gap: '8px', margin: '4px 0', 'font-size': '13px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{g.label} <span style={{ color: 'var(--text-tertiary)' }}>({g.days}d)</span></span>
+                  <div style={{ height: '10px', background: 'var(--bg-inset)', 'border-radius': '5px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${(g.focusMin / max) * 100}%`, background: 'var(--blue)', opacity: strong ? '1' : '0.5', 'border-radius': '5px' }} />
+                  </div>
+                  <span style={{ 'text-align': 'right', color: 'var(--text)', 'font-variant-numeric': 'tabular-nums' }}>{g.focusMin} min</span>
+                </div>
+              );
+              return (
+                <div data-testid={`insight-${c.id}`} style={{ margin: '0 0 12px' }}>
+                  <div style={{ 'font-size': '15px', color: 'var(--text)', 'margin-bottom': '4px' }}>
+                    {c.label}: <b>{c.good.focusMin}</b> focused min/day vs <b>{c.poor.focusMin}</b>
+                    <Show when={c.good.energy !== null && c.poor.energy !== null}>
+                      {' '}· energy {c.good.energy!.toFixed(1)} vs {c.poor.energy!.toFixed(1)}
+                    </Show>
+                  </div>
+                  {bar(c.good, true)}
+                  {bar(c.poor, false)}
+                </div>
+              );
+            }}
+          </For>
+          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>Same-day averages over the last 60 days — a pattern to notice, not proof of cause.</div>
+        </Show>
+      </Card>
 
       {/* --------------------------------------------------- energy */}
       <Card
@@ -395,13 +535,47 @@ export function FocusScreen(): JSX.Element {
             <For each={BED_CHOICES}>{(b) => <button data-testid={`bed-${b}`} onClick={() => setProfile({ bed: b })} style={chip(profile().bed === b)}>{b}</button>}</For>
           </div>
           <span>Sprint</span>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
             <For each={SPRINT_CHOICES}>{(m) => <button onClick={() => setProfile({ sprintMinutes: m })} style={chip(profile().sprintMinutes === m)}>{m} min</button>}</For>
+            <input
+              data-testid="sprint-length"
+              type="number" inputmode="numeric" min={String(MIN_SPRINT)} max={String(MAX_SPRINT)}
+              value={profile().sprintMinutes}
+              onChange={(e) => {
+                const v = Math.round(Number(e.currentTarget.value));
+                if (v >= MIN_SPRINT && v <= MAX_SPRINT) setProfile({ sprintMinutes: v });
+              }}
+              aria-label="Sprint length in minutes"
+              style={{ width: '64px', padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', 'text-align': 'center', color: 'var(--text)' }}
+            />
+            <span>min</span>
+          </div>
+          <span>Morning</span>
+          <div style={{ display: 'flex', gap: '6px', 'align-items': 'center' }}>
+            <input
+              data-testid="morning-sprint-time"
+              type="time"
+              value={morningSprintTime(profile())}
+              onChange={(e) => e.currentTarget.value && setProfile({ morningSprintAt: e.currentTarget.value })}
+              style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', color: 'var(--text)' }}
+            />
+            <Show when={profile().morningSprintAt} fallback={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>auto from wake time</span>}>
+              <button onClick={() => setProfile({ morningSprintAt: null })} style={{ color: 'var(--blue)', 'font-size': '13px' }}>Auto</button>
+            </Show>
           </div>
           <span>Evening</span>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button data-testid="evening-on" onClick={() => setProfile({ eveningSprint: true })} style={chip(profile().eveningSprint)}>2nd sprint 19:00</button>
+          <div style={{ display: 'flex', gap: '6px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
+            <button data-testid="evening-on" onClick={() => setProfile({ eveningSprint: true })} style={chip(profile().eveningSprint)}>2nd sprint</button>
             <button data-testid="evening-off" onClick={() => setProfile({ eveningSprint: false })} style={chip(!profile().eveningSprint)}>Off</button>
+            <Show when={profile().eveningSprint}>
+              <input
+                data-testid="evening-sprint-time"
+                type="time"
+                value={eveningSprintTime(profile())}
+                onChange={(e) => e.currentTarget.value && setProfile({ eveningSprintAt: e.currentTarget.value })}
+                style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', color: 'var(--text)' }}
+              />
+            </Show>
           </div>
         </div>
 
@@ -419,6 +593,28 @@ export function FocusScreen(): JSX.Element {
           </For>
         </div>
 
+        <Show
+          when={isPresetProfile(profile())}
+          fallback={
+            <>
+              <button
+                data-testid="share-routine-calendar"
+                onClick={() => void deliverFile('focus-routine.ics', routineCalendar(profile()), 'text/calendar')}
+                style={{
+                  display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '8px', width: '100%',
+                  margin: '14px 0 0', padding: '13px', 'border-radius': '12px', background: 'var(--blue)',
+                  color: 'var(--text-invert)', 'font-weight': '600', 'font-size': '16px',
+                }}
+              >
+                <Icon name="calendar" size={18} /> Add routine to Calendar
+              </button>
+              <p data-testid="custom-routine-note" style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '8px 0 0', 'line-height': '1.5' }}>
+                Custom times use the share sheet: choose <b>Mail</b> (send it to yourself) or <b>Save to Files</b>, then tap the
+                file and <b>Add All</b>.
+              </p>
+            </>
+          }
+        >
         <a
           data-testid="add-routine-calendar"
           href={routineUrl()}
@@ -432,13 +628,14 @@ export function FocusScreen(): JSX.Element {
         >
           <Icon name="calendar" size={18} /> Add routine to Calendar
         </a>
+        </Show>
         <ol style={{ 'padding-left': '20px', 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.55', margin: '10px 0 0' }}>
           <li>Opens in Safari → tap <b>Add All</b> → pick a calendar (create one named “Focus Routine” so it’s easy to replace).</li>
           <li>iOS Calendar sends the alerts — they work while Clarity is closed and respect your Focus modes.</li>
           <li>Changed a time? Delete the “Focus Routine” calendar and add again.</li>
         </ol>
         <button
-          onClick={() => void deliverFile(routineFileName(profile()), routineCalendar(profile()), 'text/calendar')}
+          onClick={() => void deliverFile('focus-routine.ics', routineCalendar(profile()), 'text/calendar')}
           style={{ color: 'var(--blue)', 'font-size': '13px', margin: '6px 0 0' }}
         >
           Didn’t open? Share the file instead (Mail / Files → tap it → Add All)
@@ -468,6 +665,9 @@ export function FocusScreen(): JSX.Element {
         </p>
       </Card>
       <div style={{ height: '40px' }} />
+      <Show when={editSprint()}>
+        <SprintEditSheet sprint={editSprint()!} onClose={() => setEditSprint(null)} />
+      </Show>
     </ScreenChrome>
   );
 }

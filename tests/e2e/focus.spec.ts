@@ -64,6 +64,8 @@ test('focus sprint: five steps, next action lands in the checklist', async ({ pa
 
   await expect(sprint.getByTestId('sprint-step-title')).toHaveText('Use a visible timer');
   await expect(sprint.getByTestId('sprint-clock')).toHaveText(/^2[45]:\d\d$/);
+  // The clock ticks (not frozen at the starting value)
+  await expect(sprint.getByTestId('sprint-clock')).toHaveText(/^24:5\d$/, { timeout: 4000 });
 
   // Minimize: the pill keeps the running sprint one tap away
   await sprint.getByTestId('sprint-close').click();

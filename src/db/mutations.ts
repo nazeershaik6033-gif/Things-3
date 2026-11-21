@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
-  DailyTarget, TargetOutcome, Sprint, EnergyLog,
+  DailyTarget, TargetOutcome, Sprint, EnergyLog, HealthDay, SleepNight, ActivityDay,
 } from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
 import { fromDateStr, todayStr, toDateStr } from '../domain/dates';
@@ -16,7 +16,7 @@ type TableName =
   | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
   | 'routineItems' | 'routineLogs' | 'dailyTargets'
   | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes'
-  | 'sprints' | 'energyLogs';
+  | 'sprints' | 'energyLogs' | 'healthDays';
 
 export interface Op {
   table: TableName;
@@ -767,4 +767,82 @@ export async function deleteEnergyLog(id: string): Promise<void> {
   const before = await db.energyLogs.get(id);
   if (!before) return;
   await applyOps([{ table: 'energyLogs', key: id, before, after: null }]);
+}
+
+// ------------------------------------------------- sprint editing ---------
+
+/** Change a running sprint mid-flight: switch task, rewrite the next action,
+ *  or set how many minutes are left. The planned length follows. */
+export async function editRunningSprint(
+  id: string,
+  patch: { taskId?: string | null; title?: string; nextAction?: string; remainingMin?: number },
+  now = Date.now(),
+): Promise<void> {
+  const s = await db.sprints.get(id);
+  if (!s) return;
+  const next: Partial<Sprint> = {};
+  if (patch.taskId !== undefined) next.taskId = patch.taskId;
+  if (patch.title !== undefined) next.title = patch.title;
+  if (patch.nextAction !== undefined) next.nextAction = patch.nextAction;
+  if (patch.remainingMin !== undefined && s.startedAt !== null) {
+    const endsAt = now + Math.max(1, Math.round(patch.remainingMin)) * 60_000;
+    next.endsAt = endsAt;
+    next.durationMin = Math.max(1, Math.round((endsAt - s.startedAt) / 60_000));
+  }
+  await updateSprint(id, next);
+}
+
+/** Fix a finished sprint in the log: when it started, how long you actually
+ *  focused, what it was, what you got done. Keeps "minutes focused" honest. */
+export async function editSprintRecord(
+  id: string,
+  patch: { startedAt?: number; minutes?: number; taskId?: string | null; title?: string; completedNote?: string },
+): Promise<void> {
+  const s = await db.sprints.get(id);
+  if (!s) return;
+  const startedAt = patch.startedAt ?? s.startedAt ?? s.createdAt;
+  const minutes = Math.max(1, Math.round(
+    patch.minutes ?? (s.endedAt !== null && s.startedAt !== null ? (s.endedAt - s.startedAt) / 60_000 : s.durationMin),
+  ));
+  const endedAt = startedAt + minutes * 60_000;
+  await updateSprint(id, {
+    startedAt,
+    endedAt,
+    endsAt: endedAt,
+    durationMin: minutes,
+    date: toDateStr(new Date(startedAt)),
+    ...(patch.taskId !== undefined ? { taskId: patch.taskId } : {}),
+    ...(patch.title !== undefined ? { title: patch.title } : {}),
+    ...(patch.completedNote !== undefined ? { completedNote: patch.completedNote } : {}),
+  });
+}
+
+// ------------------------------------------------------------- health -----
+
+/** Upsert one day of Apple Watch data. Sleep replaces; rings from the
+ *  Shortcut merge upward (they only grow during a day), typed rings replace. */
+export async function saveHealth(
+  date: DateStr,
+  data: { sleep?: SleepNight | null; activity?: ActivityDay | null },
+  source: 'shortcut' | 'manual',
+  merge: (prev: ActivityDay | null, next: ActivityDay) => ActivityDay = (_p, n) => n,
+): Promise<void> {
+  const before = (await db.healthDays.get(date)) ?? null;
+  const after: HealthDay = {
+    date,
+    sleep: data.sleep !== undefined ? data.sleep : before?.sleep ?? null,
+    activity: data.activity === undefined
+      ? before?.activity ?? null
+      : data.activity === null ? null
+      : source === 'shortcut' ? merge(before?.activity ?? null, data.activity) : data.activity,
+    source,
+    updatedAt: Date.now(),
+  };
+  await applyOps([{ table: 'healthDays', key: date, before, after }]);
+}
+
+export async function deleteHealthDay(date: DateStr): Promise<void> {
+  const before = await db.healthDays.get(date);
+  if (!before) return;
+  await applyOps([{ table: 'healthDays', key: date, before, after: null }]);
 }

@@ -391,3 +391,34 @@ export interface EnergyLog {
   minuteOfDay: number; // local 0..1439
   level: number; // 1..5
 }
+
+// ------------------------------------------------- health (schema v8) ----
+// Apple Watch sleep + activity, brought in by an iOS Shortcut (Clarity is a
+// web app and cannot read HealthKit) or typed in by hand. One row per day.
+
+/** One night of sleep, keyed by the date you woke up. */
+export interface SleepNight {
+  asleepMin: number;
+  /** Sleep onset and final wake, local "HH:mm". */
+  onset: string;
+  wake: string;
+  /** Awake time between onset and wake. */
+  awakeMin: number;
+  wakeups: number;
+}
+
+/** Activity rings for one day. null = not recorded. */
+export interface ActivityDay {
+  moveKcal: number | null;
+  exerciseMin: number | null;
+  standHr: number | null;
+}
+
+export interface HealthDay {
+  date: DateStr; // primary key
+  sleep: SleepNight | null;
+  activity: ActivityDay | null;
+  /** Where the latest write came from. */
+  source: 'shortcut' | 'manual';
+  updatedAt: number;
+}

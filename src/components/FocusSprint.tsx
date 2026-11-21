@@ -3,7 +3,7 @@ import {
 } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { db } from '../db/db';
-import { createLiveQuery } from '../db/liveQuery';
+import { createLiveQuery, createReactiveLiveQuery } from '../db/liveQuery';
 import type { Sprint, Task } from '../db/models';
 import {
   createSprint, finishSprint, logEnergy, startSprint, updateSprint,
@@ -19,6 +19,9 @@ import { inToday, todaySortKey } from '../domain/smartLists';
 import { sprintCalendar } from '../domain/icsWrite';
 import { Icon } from '../ui/Icon';
 import { Checkbox } from '../ui/Checkbox';
+import { SprintEditSheet } from './SprintEditSheet';
+import { adviseDay } from '../domain/health';
+import type { HealthDay } from '../db/models';
 
 type Stage = 'schedule' | 'action' | 'environment' | 'timer' | 'recover';
 const STAGE_INDEX: Record<Stage, number> = { schedule: 1, action: 2, environment: 3, timer: 4, recover: 5 };
@@ -209,8 +212,12 @@ function SprintFlow(_props: { key: string }): JSX.Element {
   const tasks = createLiveQuery(() => db.tasks.toArray(), [] as Task[]);
   const [stage, setStage] = createSignal<Stage>('schedule');
   const [sprintId, setSprintId] = createSignal<string | null>(launch.sprintId ?? null);
-  const sprint = createLiveQuery(
-    () => (sprintId() ? db.sprints.get(sprintId()!) : undefined),
+  // Reactive on sprintId: a fresh sprint only gets its id when it starts, and
+  // Dexie can't see Solid signals — a plain live query would stay undefined
+  // (frozen clock, dead +5, no end chime).
+  const sprint = createReactiveLiveQuery(
+    sprintId,
+    (id) => (id ? db.sprints.get(id) : undefined),
     undefined as Sprint | undefined,
   );
 
@@ -231,7 +238,20 @@ function SprintFlow(_props: { key: string }): JSX.Element {
   const wake = createWakeLock();
   const [now, setNow] = createSignal(Date.now());
 
-  const minutes = () => duration() || profile().sprintMinutes;
+  // After a short night the default sprint shrinks (Level 0: build the
+  // conditions first); you can still pick any length.
+  const todayHealth = createLiveQuery(() => db.healthDays.get(currentDate()), undefined as HealthDay | undefined);
+  const advice = createMemo(() => adviseDay(todayHealth()?.sleep ?? null, profile().bed, profile().sprintMinutes));
+  const minutes = () => duration() || advice()?.sprintMinutes || profile().sprintMinutes;
+  const [editing, setEditing] = createSignal(false);
+  // Edits made in the sheet land in the DB; mirror them into the form state
+  createEffect(() => {
+    const sp = sprint();
+    if (!sp || sp.status !== 'running') return;
+    setTaskId(sp.taskId);
+    if (!sp.taskId) setFreeTitle(sp.title);
+    setNextAction(sp.nextAction);
+  });
 
   // Resume an existing sprint at the right stage
   onMount(async () => {
@@ -428,6 +448,11 @@ function SprintFlow(_props: { key: string }): JSX.Element {
             <p style={{ color: 'var(--text-tertiary)', 'font-size': '13px', margin: '8px 0 0' }}>
               Rebuilding attention? 25–45 min. Consistency beats longer sessions.
             </p>
+            <Show when={advice()?.shortNight}>
+              <p data-testid="sprint-short-night" style={{ color: 'var(--yellow-deep)', 'font-size': '13px', margin: '6px 0 0', 'line-height': '1.45' }}>
+                Short night — defaulting to {advice()!.sprintMinutes} min today.
+              </p>
+            </Show>
 
             <div style={{ 'font-weight': '600', 'font-size': '15px', margin: '20px 0 8px', color: 'var(--text)' }}>A start time</div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -575,6 +600,9 @@ function SprintFlow(_props: { key: string }): JSX.Element {
               >
                 +5 min
               </button>
+              <button data-testid="sprint-edit-open" style={secondaryBtn} onClick={() => setEditing(true)}>
+                Edit
+              </button>
               <button data-testid="sprint-stuck" style={secondaryBtn} onClick={() => setResetOpen(true)}>
                 Stuck? Reset
               </button>
@@ -643,6 +671,10 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 </div>
               </div>
             </Show>
+          </Show>
+
+          <Show when={editing() && sprint()}>
+            <SprintEditSheet sprint={sprint()!} onClose={() => setEditing(false)} />
           </Show>
 
           {/* ------------------------------------------------ 5 recover */}

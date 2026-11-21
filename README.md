@@ -84,6 +84,33 @@ An installed iPhone web app only gets closed-app notifications through Web Push,
 - **Daily routine.** At build time, `vite.config.ts` writes one recurring `.ics` file per settings combination (wake × bedtime × sprint length × evening sprint = 64 files) to `dist/cal/`. GitHub Pages serves them as `text/calendar`, so **Daily Focus → Add routine to Calendar** opens Safari's *Add All* sheet. The service worker is told not to intercept `.ics` requests. Default routine: plan 07:30, sprint 09:00 (alerts 5 minutes before and at the end), LIT batch 15:00, sprint 19:00, shutdown 22:00, lights out 23:00.
 - **One-off sprints** scheduled for later are generated in the app and handed over through the share sheet (Mail or Files → tap the file → *Add All*). This is needed because iOS standalone apps can't open generated files directly.
 
+### Editing sprints
+
+Every sprint stays editable:
+
+- **While it runs:** tap **Edit** on the timer to switch task, rewrite the next action, or set the minutes left.
+- **Scheduled:** tap it in Daily Focus → Scheduled sprints to change the time, length, task or next action, re-send its calendar alert, or cancel it.
+- **Finished:** Daily Focus → **Sprint log** (last 14 days) lets you fix the start, the minutes actually focused, the task and the note, or delete it, so "minutes focused" stays honest.
+- **Routine:** the morning and evening sprint times and the sprint length are free-form. Presets (25/45 min, auto morning time, 19:00 evening) use the one-tap static calendar file. Custom values are delivered through the share sheet instead.
+
+### Apple Watch sleep & activity
+
+Clarity is a web app, so it can't read HealthKit. An iOS Shortcut does the reading instead:
+
+- **The Shortcut** ("Clarity Health", built once from the in-app guide under Daily Focus → *Shortcut setup*) copies last night's raw sleep samples and today's Move/Exercise/Stand totals to the clipboard.
+- **Syncing:** **Sync Watch → Paste** imports them. Sync in the morning for sleep and at the evening shutdown for rings; rings merge upward, so syncing twice is safe.
+- **Manual entry:** **Enter by hand** covers anything the Shortcut can't read.
+- **The maths** lives in `src/domain/health.ts`, which is unit-tested:
+  - Sleep stages are merged across Watch and iPhone samples so they're never double-counted.
+  - Naps are split off from the main night.
+  - Nights are keyed by the date you wake up.
+- **Clarity sleep score:** Apple's Sleep Score has no API, so Clarity computes its own from the same three parts and weights (duration 50, bedtime 30, interruptions 20) against your bedtime target. For a real 5h 28m night it reproduces Apple's 54 "Low" exactly (see `tests/unit/health.test.ts`).
+- **Effect on the day:**
+  - After a night under 6h or a score ≤ 60, Today and the sprint suggest 1–2 MITs and 25-minute sprints.
+  - "Slept 7h+?" and "close the Exercise ring" tick themselves from the data.
+  - After enough days, Daily Focus compares focused minutes and energy after 7h+ nights against shorter ones, and on active days against still ones.
+- **Privacy:** health data stays on-device and is included in backups (schema 8).
+
 ### Lock-screen wallpaper
 
 `npm run gen-wallpaper` renders `public/wallpapers/focus-flow-{dark,light}.png` (1206×2622) from the same `dailyFlow()` the app uses, so the wallpaper can't drift from the app. The flowchart sits below the lock-screen clock. In the app: Daily Focus → open a wallpaper → long-press → *Save to Photos* → *Use as Wallpaper*.

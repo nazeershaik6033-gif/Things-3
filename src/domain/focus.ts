@@ -35,27 +35,54 @@ export const SPRINT_CHOICES = [25, 45] as const;
 export interface FocusProfile {
   wake: (typeof WAKE_CHOICES)[number];
   bed: (typeof BED_CHOICES)[number];
-  sprintMinutes: (typeof SPRINT_CHOICES)[number];
+  /** Any length 10–180 min; 25/45 also have pre-built calendar files. */
+  sprintMinutes: number;
   /** Mixed chronotype: a second, evening sprint. */
   eveningSprint: boolean;
+  /** Custom start of the morning sprint ("HH:mm"); null = derived from wake. */
+  morningSprintAt: string | null;
+  /** Start of the evening sprint ("HH:mm"). */
+  eveningSprintAt: string;
 }
+
+export const EVENING_SPRINT_TIME = '19:00';
 
 export const DEFAULT_PROFILE: FocusProfile = {
   wake: '07:00',
   bed: '23:00',
   sprintMinutes: 45,
   eveningSprint: true,
+  morningSprintAt: null,
+  eveningSprintAt: EVENING_SPRINT_TIME,
 };
+
+export const MIN_SPRINT = 10;
+export const MAX_SPRINT = 180;
+
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+export function isHHMM(v: unknown): v is string {
+  return typeof v === 'string' && HHMM.test(v);
+}
 
 export function normalizeProfile(p: Partial<FocusProfile> | null | undefined): FocusProfile {
   const pick = <T>(v: unknown, choices: readonly T[], fallback: T): T =>
     choices.includes(v as T) ? (v as T) : fallback;
+  const len = Number(p?.sprintMinutes);
   return {
     wake: pick(p?.wake, WAKE_CHOICES, DEFAULT_PROFILE.wake),
     bed: pick(p?.bed, BED_CHOICES, DEFAULT_PROFILE.bed),
-    sprintMinutes: pick(p?.sprintMinutes, SPRINT_CHOICES, DEFAULT_PROFILE.sprintMinutes),
+    sprintMinutes: Number.isFinite(len) && len >= MIN_SPRINT && len <= MAX_SPRINT
+      ? Math.round(len) : DEFAULT_PROFILE.sprintMinutes,
     eveningSprint: typeof p?.eveningSprint === 'boolean' ? p.eveningSprint : DEFAULT_PROFILE.eveningSprint,
+    morningSprintAt: isHHMM(p?.morningSprintAt) ? p!.morningSprintAt : null,
+    eveningSprintAt: isHHMM(p?.eveningSprintAt) ? p!.eveningSprintAt : EVENING_SPRINT_TIME,
   };
+}
+
+/** True when the profile matches one of the pre-built static calendar files. */
+export function isPresetProfile(p: FocusProfile): boolean {
+  return (SPRINT_CHOICES as readonly number[]).includes(p.sprintMinutes) &&
+    p.morningSprintAt === null && p.eveningSprintAt === EVENING_SPRINT_TIME;
 }
 
 /** "HH:mm" ± minutes, wrapping around midnight. */
@@ -70,12 +97,16 @@ export function minutesOf(hhmm: string): number {
   return h * 60 + m;
 }
 
-/** The first protected sprint lands ~2h after waking, never before 09:00. */
+/** The first protected sprint lands ~2h after waking, never before 09:00 —
+ *  unless you picked your own time. */
 export function morningSprintTime(p: FocusProfile): string {
+  if (p.morningSprintAt) return p.morningSprintAt;
   return p.wake <= '07:00' ? '09:00' : addMinutes(p.wake, 120);
 }
 
-export const EVENING_SPRINT_TIME = '19:00';
+export function eveningSprintTime(p: FocusProfile): string {
+  return p.eveningSprintAt;
+}
 /** Afternoon dip — batch Least Important Tasks here. */
 export const LIT_BATCH_TIME = '15:00';
 
@@ -129,7 +160,7 @@ export function routineItems(p: FocusProfile): RoutineItem[] {
       phase: 'afternoon',
     },
   ];
-  if (p.eveningSprint) items.push(sprint('sprint-evening', EVENING_SPRINT_TIME, 'MIT #2 (evening peak)'));
+  if (p.eveningSprint) items.push(sprint('sprint-evening', eveningSprintTime(p), 'MIT #2 (evening peak)'));
   items.push(
     {
       id: 'shutdown',
@@ -155,7 +186,8 @@ export function routineItems(p: FocusProfile): RoutineItem[] {
   return items;
 }
 
-/** File name of the pre-built routine calendar for a profile. */
+/** File name of the pre-built routine calendar for a preset profile. Custom
+ *  times/lengths have no pre-built file (see isPresetProfile). */
 export function routineFileName(p: FocusProfile): string {
   return `focus-routine-w${p.wake.replace(':', '')}-b${p.bed.replace(':', '')}-s${p.sprintMinutes}-e${p.eveningSprint ? 1 : 0}.ics`;
 }
@@ -165,7 +197,9 @@ export function allProfiles(): FocusProfile[] {
   for (const wake of WAKE_CHOICES) {
     for (const bed of BED_CHOICES) {
       for (const sprintMinutes of SPRINT_CHOICES) {
-        for (const eveningSprint of [true, false]) out.push({ wake, bed, sprintMinutes, eveningSprint });
+        for (const eveningSprint of [true, false]) {
+          out.push({ ...DEFAULT_PROFILE, wake, bed, sprintMinutes, eveningSprint });
+        }
       }
     }
   }
@@ -295,12 +329,13 @@ export function dailyFlow(p: FocusProfile): (FlowStep & { time: string | null })
     { id: 'sleep-check', phase: 'Morning', time: p.wake, level: 'L0', title: 'Slept 7h+? No phone in bed', hint: 'Foundation first: sleep drives attention, memory and mood.' },
     { id: 'everest', phase: 'Morning', time: addMinutes(p.wake, 30), level: 'L2', title: 'Look at your Everest', hint: 'Does today serve your long-term direction? Reject the rest.' },
     { id: 'mits', phase: 'Morning', time: null, level: 'L2', title: 'Pick 1–3 MITs', hint: 'Everything else is a LIT — batch it into small gaps.' },
-    { id: 'match', phase: 'Morning', time: null, level: 'L3', title: 'Match work to energy', hint: `MITs at your peaks (${sprintAt}${p.eveningSprint ? ` · ${EVENING_SPRINT_TIME}` : ''}), LITs in the dip (${LIT_BATCH_TIME}).` },
+    { id: 'match', phase: 'Morning', time: null, level: 'L3', title: 'Match work to energy', hint: `MITs at your peaks (${sprintAt}${p.eveningSprint ? ` · ${eveningSprintTime(p)}` : ''}), LITs in the dip (${LIT_BATCH_TIME}).` },
     { id: 'sprint', phase: 'Focus sprint', time: sprintAt, level: 'L4', title: `Focus Sprint · ${p.sprintMinutes} min`, hint: 'Protected block for MIT #1 — phone away, one task, defined end.' },
     { id: 'lits', phase: 'Afternoon', time: LIT_BATCH_TIME, level: 'L2', title: 'Batch LITs', hint: 'Emails, errands, admin, prep for tomorrow.' },
     { id: 'energy', phase: 'Afternoon', time: null, level: 'L3', title: 'Log energy (1–5)', hint: 'A few check-ins a day for a week reveal your peak hours.' },
+    { id: 'exercise', phase: 'Afternoon', time: null, level: 'L0', title: 'Move · close the Exercise ring', hint: 'Walk, stretch or train. Recovery supports sustained concentration.' },
     ...(p.eveningSprint
-      ? [{ id: 'sprint-evening', phase: 'Evening' as const, time: EVENING_SPRINT_TIME, level: 'L4', title: `Evening Sprint · ${p.sprintMinutes} min`, hint: 'MIT #2 at your second peak — same five steps.' }]
+      ? [{ id: 'sprint-evening', phase: 'Evening' as const, time: eveningSprintTime(p), level: 'L4', title: `Evening Sprint · ${p.sprintMinutes} min`, hint: 'MIT #2 at your second peak — same five steps.' }]
       : []),
     { id: 'shutdown', phase: 'Evening', time: addMinutes(p.bed, -60), level: 'L1', title: 'Shutdown: phone away', hint: 'Read or listen instead of scrolling. Note tomorrow’s MITs.' },
     { id: 'lights-out', phase: 'Evening', time: p.bed, level: 'L0', title: 'Lights out', hint: 'Protect 7h+. Tomorrow’s focus starts tonight.' },

@@ -5,7 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
-  Sprint, EnergyLog,
+  Sprint, EnergyLog, HealthDay,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -38,6 +38,7 @@ export class ClarityDB extends Dexie {
   quoteNotes!: EntityTable<QuoteNote, 'quoteId'>;
   sprints!: EntityTable<Sprint, 'id'>;
   energyLogs!: EntityTable<EnergyLog, 'id'>;
+  healthDays!: EntityTable<HealthDay, 'date'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -105,6 +106,11 @@ export class ClarityDB extends Dexie {
         if (t.mitDate === undefined) t.mitDate = null;
         if (t.energy === undefined) t.energy = null;
       });
+    });
+    // v8: Apple Watch sleep + activity, one row per day keyed by date.
+    // Additive: one new table, nothing existing touched.
+    this.version(8).stores({
+      healthDays: 'date, updatedAt',
     });
   }
 }
