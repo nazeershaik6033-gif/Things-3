@@ -5,6 +5,7 @@ import { createSpring, Spring, SPRING } from '../gestures/springs';
 import { release, tryClaim } from '../gestures/arbiter';
 import { Icon } from '../ui/Icon';
 import { setQuickEntry, type QuickEntryState } from '../app/uiState';
+import { haptic } from '../app/motion';
 import type { TaskDestination } from '../db/mutations';
 
 export interface MagicPlusDrop {
@@ -76,6 +77,7 @@ function MagicPlusInner(props: {
       slop: 6,
       onStart: () => {
         dragging = true;
+        haptic('select');
         const rect = fab.getBoundingClientRect();
         homeX = rect.left;
         homeY = rect.top;
@@ -109,6 +111,7 @@ function MagicPlusInner(props: {
         }
         if (slot !== gapSlot) {
           gapSlot = slot;
+          haptic('tick');
           applyGap(slot);
         }
       },
@@ -160,6 +163,22 @@ function MagicPlusInner(props: {
     sx = createSpring(0, (v) => { x = v; apply(); }, SPRING.bouncy);
     sy = createSpring(0, (v) => { y = v; apply(); }, SPRING.bouncy);
     sScale = createSpring(1, (v) => { scale = v; apply(); }, SPRING.bouncy);
+
+    // A tap that never becomes a drag still gets a spring press-down; without
+    // it the primary action of the app feels unresponsive under the finger.
+    const pressDown = () => { if (!dragging) sScale.to(0.9); };
+    const pressUp = () => { if (!dragging) sScale.to(1); };
+    fab.addEventListener('pointerdown', pressDown);
+    fab.addEventListener('pointerup', pressUp);
+    fab.addEventListener('pointercancel', pressUp);
+    fab.addEventListener('pointerleave', pressUp);
+    onCleanup(() => {
+      fab.removeEventListener('pointerdown', pressDown);
+      fab.removeEventListener('pointerup', pressUp);
+      fab.removeEventListener('pointercancel', pressUp);
+      fab.removeEventListener('pointerleave', pressUp);
+    });
+
     void dragging;
     void homeX;
     void homeY;
@@ -202,7 +221,10 @@ function MagicPlusInner(props: {
         ref={fab}
         data-testid="magic-plus"
         aria-label="New To-Do"
-        onClick={() => setQuickEntry(props.defaultEntry())}
+        onClick={() => {
+          haptic('select');
+          setQuickEntry(props.defaultEntry());
+        }}
         style={{
           position: 'fixed',
           right: '22px',
@@ -218,6 +240,7 @@ function MagicPlusInner(props: {
           'box-shadow': 'var(--shadow-fab)',
           'z-index': '50',
           'touch-action': 'none',
+          'will-change': 'transform',
         }}
       >
         <Icon name="plus" size={26} />

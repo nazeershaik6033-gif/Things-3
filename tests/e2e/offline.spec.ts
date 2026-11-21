@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, currentScreen } from './helpers';
 
 test('app works fully offline after first load (service worker)', async ({ page, context }) => {
   await loadSeeded(page);
@@ -16,7 +16,7 @@ test('app works fully offline after first load (service worker)', async ({ page,
   // Data intact and the app is interactive offline
   await expect(page.getByTestId('home-inbox')).toContainText('2');
   await page.getByTestId('home-today').click();
-  await expect(page.getByText('Buy groceries')).toBeVisible();
+  await expect(currentScreen(page).getByText('Buy groceries')).toBeVisible();
 
   // Writes work offline too
   await page.getByTestId('magic-plus').click();

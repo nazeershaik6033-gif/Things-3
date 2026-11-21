@@ -42,7 +42,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
             background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': '13px', 'font-weight': '600',
           }}
         >
-          <Icon name="play" size={11} /> Focus Sprint
+          <Icon name="start" size={11} /> Focus Sprint
         </button>
       </div>
     </div>

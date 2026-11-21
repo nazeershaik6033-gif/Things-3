@@ -223,8 +223,8 @@ describe('ICS writer', () => {
   });
 });
 
-describe('schema v2 migration + backup', () => {
-  it('upgrades v1 tasks with null focus fields', async () => {
+describe('schema v7 migration + backup', () => {
+  it('upgrades pre-v7 tasks with null focus fields', async () => {
     const name = `migrate-${Math.random()}`;
     const v1 = new Dexie(name);
     v1.version(1).stores({
@@ -249,7 +249,7 @@ describe('schema v2 migration + backup', () => {
     await createSprint({ title: 's' });
     await logEnergy(4);
     const file = await exportData();
-    expect(file.schemaVersion).toBe(2);
+    expect(file.schemaVersion).toBe(7);
     await importData(validateExport(JSON.parse(JSON.stringify(file))));
     expect(await db.sprints.count()).toBe(1);
     expect(await db.energyLogs.count()).toBe(1);

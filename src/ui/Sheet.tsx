@@ -64,6 +64,13 @@ export function Sheet(props: {
     setMounted(true);
     requestAnimationFrame(() => spring.to(0));
 
+    const ro = new ResizeObserver(() => {
+      const next = sheetEl.offsetHeight + 40;
+      if (next > 0) height = next;
+    });
+    ro.observe(sheetEl);
+    onCleanup(() => ro.disconnect());
+
     const dragTarget = props.dragAnywhere ? sheetEl : handleEl;
     const cleanup = createPan(dragTarget, {
       axis: 'y',
@@ -84,6 +91,12 @@ export function Sheet(props: {
       },
     });
     onCleanup(cleanup);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    onCleanup(() => window.removeEventListener('keydown', onKey));
   });
 
   createEffect(() => {

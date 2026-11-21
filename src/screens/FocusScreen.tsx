@@ -233,7 +233,7 @@ export function FocusScreen(): JSX.Element {
                           onClick={() => openSprint({})}
                           style={{ ...chip(true), margin: '8px 0 0', display: 'inline-flex', 'align-items': 'center', gap: '6px' }}
                         >
-                          <Icon name="play" size={12} /> Start sprint
+                          <Icon name="start" size={12} /> Start sprint
                         </button>
                       </Show>
 
