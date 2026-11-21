@@ -5,6 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
+  Sprint, EnergyLog,
 } from './models';
 
 export interface ExportFile {
@@ -44,10 +45,13 @@ export interface ExportFile {
     beliefEvidence?: BeliefEvidence[];
     quoteFavorites?: QuoteFavorite[];
     quoteNotes?: QuoteNote[];
+    /** Added in schema 7 — the Focus Framework. */
+    sprints?: Sprint[];
+    energyLogs?: EnergyLog[];
   };
 }
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -56,6 +60,7 @@ const TABLES = [
   'routineGroups', 'routineSources', 'routineWindows', 'routineChecks',
   'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
   'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
+  'sprints', 'energyLogs',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -90,6 +95,8 @@ export async function exportData(): Promise<ExportFile> {
       beliefEvidence: await db.beliefEvidence.toArray(),
       quoteFavorites: await db.quoteFavorites.toArray(),
       quoteNotes: await db.quoteNotes.toArray(),
+      sprints: await db.sprints.toArray(),
+      energyLogs: await db.energyLogs.toArray(),
     },
   };
 }
@@ -138,6 +145,10 @@ export function validateExport(json: unknown): ExportFile {
       throw new Error('Backup file is malformed.');
     }
   }
+  if ((d.sprints !== undefined && !Array.isArray(d.sprints)) ||
+      (d.energyLogs !== undefined && !Array.isArray(d.energyLogs))) {
+    throw new Error('Backup file is malformed.');
+  }
   for (const t of d.tasks) {
     if (typeof t.id !== 'string' || typeof t.title !== 'string') {
       throw new Error('Backup file contains invalid tasks.');
@@ -156,12 +167,17 @@ function withCompletionStamp<T extends { status: string; completedAt: number | n
   return { ...row, completedAt: row.modifiedAt ?? row.createdAt ?? Date.now() };
 }
 
+/** Pre-v7 backups have no focus fields on tasks; default them to null. */
+function withFocusFields(t: Task): Task {
+  return { ...t, mitDate: t.mitDate ?? null, energy: t.energy ?? null };
+}
+
 /** Replace-all import (caller confirms with the user first). */
 export async function importData(file: ExportFile): Promise<void> {
   const tables = TABLES.map((name) => db.table(name));
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.map((t) => t.clear()));
-    await db.tasks.bulkPut(file.data.tasks.map(withCompletionStamp));
+    await db.tasks.bulkPut(file.data.tasks.map(withCompletionStamp).map(withFocusFields));
     await db.projects.bulkPut(file.data.projects.map(withCompletionStamp));
     await db.headings.bulkPut(file.data.headings);
     await db.areas.bulkPut(file.data.areas);
@@ -187,5 +203,7 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.beliefEvidence.bulkPut(file.data.beliefEvidence ?? []);
     await db.quoteFavorites.bulkPut(file.data.quoteFavorites ?? []);
     await db.quoteNotes.bulkPut(file.data.quoteNotes ?? []);
+    await db.sprints.bulkPut(file.data.sprints ?? []);
+    await db.energyLogs.bulkPut(file.data.energyLogs ?? []);
   });
 }

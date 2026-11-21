@@ -25,7 +25,8 @@ export type Route =
   | { name: 'boards' }
   | { name: 'board'; id: string }
   | { name: 'boardCalendar'; id: string }
-  | { name: 'card'; id: string };
+  | { name: 'card'; id: string }
+  | { name: 'focus' };
 
 export interface StackEntry {
   route: Route;
@@ -51,6 +52,7 @@ export function hashFor(route: Route): string {
     case 'board': return `#/board/${route.id}`;
     case 'boardCalendar': return `#/board/${route.id}/calendar`;
     case 'card': return `#/card/${route.id}`;
+    case 'focus': return '#/focus';
   }
 }
 
@@ -65,6 +67,7 @@ export function parseHash(hash: string): Route {
   if (head === 'myroutine') return { name: 'myroutine' };
   if (head === 'target') return { name: 'target' };
   if (head === 'beliefs') return { name: 'beliefs' };
+  if (head === 'focus') return { name: 'focus' };
   if (head === 'project' && parts[1]) return { name: 'project', id: parts[1] };
   if (head === 'area' && parts[1]) return { name: 'area', id: parts[1] };
   if (head === 'tag' && parts[1]) return { name: 'tag', id: parts[1] };

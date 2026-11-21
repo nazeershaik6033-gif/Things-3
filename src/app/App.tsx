@@ -32,6 +32,9 @@ import { BoardsScreen } from '../screens/BoardsScreen';
 import { BoardScreen } from '../screens/BoardScreen';
 import { BoardCalendarScreen } from '../screens/BoardCalendarScreen';
 import { CardScreen } from '../screens/CardScreen';
+import { FocusScreen } from '../screens/FocusScreen';
+import { FocusSprint } from '../components/FocusSprint';
+import { Toast } from '../ui/Toast';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -59,6 +62,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'board': return <BoardScreen id={r.id} />;
     case 'boardCalendar': return <BoardCalendarScreen id={r.id} />;
     case 'card': return <CardScreen id={r.id} />;
+    case 'focus': return <FocusScreen />;
   }
 }
 
@@ -124,6 +128,8 @@ export function App(): JSX.Element {
       <SearchOverlay />
       <QuickEntry />
       <CompletionPromptHost />
+      <FocusSprint />
+      <Toast />
       <InstallCoachMark />
       <FocusTimerMiniBar />
       <FocusTimerOverlay />

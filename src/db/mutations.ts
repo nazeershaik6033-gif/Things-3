@@ -2,10 +2,10 @@ import { nanoid } from 'nanoid';
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
-  DailyTarget, TargetOutcome,
+  DailyTarget, TargetOutcome, Sprint, EnergyLog,
 } from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
-import { fromDateStr, todayStr } from '../domain/dates';
+import { fromDateStr, todayStr, toDateStr } from '../domain/dates';
 import { logId } from '../domain/routine';
 
 /** Every write flows through this module. Ops carry before/after images so an
@@ -15,7 +15,8 @@ type TableName =
   | 'tasks' | 'projects' | 'headings' | 'areas' | 'tags' | 'settings' | 'calendarEvents'
   | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
   | 'routineItems' | 'routineLogs' | 'dailyTargets'
-  | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes';
+  | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes'
+  | 'sprints' | 'energyLogs';
 
 export interface Op {
   table: TableName;
@@ -81,6 +82,8 @@ export function newTask(partial: Partial<Task> = {}): Task {
     repeatRule: null,
     repeatTemplateId: null,
     reminderTime: null,
+    mitDate: null,
+    energy: null,
     ...partial,
   };
 }
@@ -639,3 +642,129 @@ export async function setSetting(key: string, value: unknown): Promise<void> {
 }
 
 export { keyBetween };
+
+// ------------------------------------------------------ focus framework ----
+
+export type MitResult = 'added' | 'removed' | 'limit';
+
+/** Toggle "Most Important Task" for today. Picking an MIT also puts it in
+ *  Today; the 1–3 cap is enforced here so every entry point respects it. */
+export async function toggleMit(id: string, today = todayStr(), limit = 3): Promise<MitResult> {
+  const t = await db.tasks.get(id);
+  if (!t) return 'removed';
+  if (t.mitDate === today) {
+    await updateTask(id, { mitDate: null });
+    return 'removed';
+  }
+  const open = (await db.tasks.toArray()).filter(
+    (x) => x.mitDate === today && x.status === 'open' && x.trashedAt === null && x.id !== id,
+  ).length;
+  if (open >= limit) return 'limit';
+  const patch: Partial<Task> = { mitDate: today };
+  if (!t.startDate || t.startDate > today) {
+    patch.startDate = today;
+    if (t.bucket !== 'anytime') patch.bucket = 'anytime';
+  }
+  await updateTask(id, patch);
+  return 'added';
+}
+
+export async function setTaskEnergy(id: string, energy: Task['energy']): Promise<void> {
+  await updateTask(id, { energy });
+}
+
+export async function createSprint(partial: Partial<Sprint>): Promise<string> {
+  const s: Sprint = {
+    id: nanoid(),
+    taskId: null,
+    title: '',
+    nextAction: '',
+    durationMin: 45,
+    date: todayStr(),
+    plannedAt: null,
+    startedAt: null,
+    endsAt: null,
+    endedAt: null,
+    status: 'planned',
+    completedNote: '',
+    createdAt: Date.now(),
+    ...partial,
+  };
+  await applyOps([{ table: 'sprints', key: s.id, before: null, after: s }]);
+  return s.id;
+}
+
+export async function updateSprint(id: string, patch: Partial<Sprint>): Promise<void> {
+  const before = await db.sprints.get(id);
+  if (!before) return;
+  await applyOps([{ table: 'sprints', key: id, before, after: { ...before, ...patch } }]);
+}
+
+export async function deleteSprint(id: string): Promise<void> {
+  const before = await db.sprints.get(id);
+  if (!before) return;
+  await applyOps([{ table: 'sprints', key: id, before, after: null }]);
+}
+
+/** Start the visible timer (only one sprint runs at a time). */
+export async function startSprint(id: string, now = Date.now()): Promise<void> {
+  const s = await db.sprints.get(id);
+  if (!s) return;
+  const running = await db.sprints.where('status').equals('running').toArray();
+  for (const r of running) {
+    if (r.id !== id) await updateSprint(r.id, { status: 'abandoned', endedAt: now });
+  }
+  await updateSprint(id, {
+    status: 'running',
+    startedAt: now,
+    endsAt: now + s.durationMin * 60_000,
+    date: todayStr(),
+  });
+}
+
+/** Close the loop: record the outcome; the next action becomes the first
+ *  unchecked checklist item of the to-do so tomorrow starts concrete. */
+export async function finishSprint(
+  id: string,
+  outcome: { note: string; nextAction: string; completeTask: boolean },
+  now = Date.now(),
+): Promise<void> {
+  const s = await db.sprints.get(id);
+  if (!s) return;
+  await updateSprint(id, {
+    status: 'done',
+    endedAt: Math.min(now, s.endsAt ?? now),
+    completedNote: outcome.note.trim(),
+  });
+  if (!s.taskId) return;
+  const t = await db.tasks.get(s.taskId);
+  if (!t) return;
+  if (outcome.completeTask) {
+    await completeTask(t.id);
+    return;
+  }
+  const next = outcome.nextAction.trim();
+  if (next && !t.checklist.some((c) => !c.completed && c.title === next)) {
+    await updateTask(t.id, {
+      checklist: [{ id: nanoid(), title: next, completed: false }, ...t.checklist],
+    });
+  }
+}
+
+export async function logEnergy(level: number, at = new Date()): Promise<string> {
+  const log: EnergyLog = {
+    id: nanoid(),
+    at: at.getTime(),
+    date: toDateStr(at),
+    minuteOfDay: at.getHours() * 60 + at.getMinutes(),
+    level: Math.min(5, Math.max(1, Math.round(level))),
+  };
+  await applyOps([{ table: 'energyLogs', key: log.id, before: null, after: log }]);
+  return log.id;
+}
+
+export async function deleteEnergyLog(id: string): Promise<void> {
+  const before = await db.energyLogs.get(id);
+  if (!before) return;
+  await applyOps([{ table: 'energyLogs', key: id, before, after: null }]);
+}

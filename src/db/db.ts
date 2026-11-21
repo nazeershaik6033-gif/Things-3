@@ -5,6 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
+  Sprint, EnergyLog,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -35,6 +36,8 @@ export class ClarityDB extends Dexie {
   beliefEvidence!: EntityTable<BeliefEvidence, 'id'>;
   quoteFavorites!: EntityTable<QuoteFavorite, 'id'>;
   quoteNotes!: EntityTable<QuoteNote, 'quoteId'>;
+  sprints!: EntityTable<Sprint, 'id'>;
+  energyLogs!: EntityTable<EnergyLog, 'id'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -91,6 +94,17 @@ export class ClarityDB extends Dexie {
       beliefEvidence: 'id, beliefId, date',
       quoteFavorites: 'id, savedAt',
       quoteNotes: 'quoteId',
+    });
+    // v7: Focus Framework — MIT/energy fields on tasks, sprints, energy logs.
+    // Additive: two new tables; the upgrade only backfills two task fields.
+    this.version(7).stores({
+      sprints: 'id, date, status, taskId',
+      energyLogs: 'id, date, at',
+    }).upgrade(async (tx) => {
+      await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.mitDate === undefined) t.mitDate = null;
+        if (t.energy === undefined) t.energy = null;
+      });
     });
   }
 }

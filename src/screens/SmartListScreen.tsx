@@ -29,6 +29,9 @@ import { setOverlayOpen } from '../app/pomodoro';
 import type { EMQuadrant } from '../db/models';
 import type { TaskRowContext } from '../components/TaskRow';
 import type { QuickEntryState } from '../app/uiState';
+import { isMit, MIT_LIMIT } from '../domain/focus';
+import { showToast } from '../app/focusState';
+import { TodayFocusBar } from '../components/TodayFocusBar';
 
 const TITLES: Record<string, string> = {
   inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', prior: 'Prior', anytime: 'Anytime', someday: 'Someday',
@@ -52,6 +55,8 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
     showWhen: props.list !== 'today',
     showEveningBadge: false,
     onPriority: props.list === 'today' ? setPriorityFor : undefined,
+    // Today groups MITs under their own heading; elsewhere a chip marks them
+    showMit: props.list !== 'today',
   }));
 
   const setPriority = (quadrant: EMQuadrant | null) => {
@@ -102,29 +107,55 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   );
 
   // ---------------------------------------------------------------- today --
-  const todaySections = createMemo(() => todayTasks(visible(), currentDate()));
+  // Most Important Tasks (Focus Framework) are lifted into their own section
+  // on top; everything else keeps main's time-of-day sections (the LITs).
+  const todaySections = createMemo(() => {
+    const today = currentDate();
+    const all = todayTasks(visible(), today);
+    const notMit = (list: Task[]) => list.filter((t) => !isMit(t, today));
+    const mit = [...all.morning, ...all.ungrouped, ...all.afternoon, ...all.tonight]
+      .filter((t) => isMit(t, today))
+      .sort((a, b) => (todaySortKey(a) < todaySortKey(b) ? -1 : 1));
+    return {
+      mit,
+      morning: notMit(all.morning),
+      afternoon: notMit(all.afternoon),
+      ungrouped: notMit(all.ungrouped),
+      tonight: notMit(all.tonight),
+    };
+  });
   const todayEvents = createMemo(() => events().filter((e) => e.date === currentDate()));
   const handleTodayDrop = (info: DropInfo) => {
     const sections = todaySections();
     const dragged = visible().find((t) => t.id === info.key);
     if (!dragged) return;
-    type Sec = 'morning' | 'afternoon' | 'ungrouped' | 'tonight';
+    const today = currentDate();
+    const toMit = info.section === 'mit';
+    const wasMit = isMit(dragged, today);
+    if (toMit && !wasMit && sections.mit.filter((t) => t.status === 'open').length >= MIT_LIMIT) {
+      showToast(`${MIT_LIMIT} MITs max — finish or drop one first`);
+      return;
+    }
+    type Sec = 'mit' | 'morning' | 'afternoon' | 'ungrouped' | 'tonight';
     const sec = info.section as Sec;
     const sectionTasks: Task[] = sections[sec] ?? sections.ungrouped;
     const target = sectionTasks.filter((t) => t.id !== info.key);
     const ids = target.map((t) => t.id);
     ids.splice(Math.min(info.index, ids.length), 0, info.key);
-    const wantsEvening = sec === 'tonight';
-    const wantsReminder: string | null =
-      sec === 'morning' ? 'morning' : sec === 'afternoon' ? 'afternoon' : null;
+    // Dropping into "Most Important" keeps the to-do's time of day as it was
+    const wantsEvening = toMit ? dragged.evening : sec === 'tonight';
+    const wantsReminder: string | null = toMit
+      ? dragged.reminderTime
+      : sec === 'morning' ? 'morning' : sec === 'afternoon' ? 'afternoon' : null;
     void (async () => {
+      const patch: Partial<Task> = {};
       if (dragged.evening !== wantsEvening || dragged.reminderTime !== wantsReminder) {
-        await updateTask(dragged.id, {
-          evening: wantsEvening,
-          reminderTime: wantsReminder,
-          startDate: dragged.startDate ?? currentDate(),
-        });
+        patch.evening = wantsEvening;
+        patch.reminderTime = wantsReminder;
+        patch.startDate = dragged.startDate ?? today;
       }
+      if (toMit !== wasMit) patch.mitDate = toMit ? today : null;
+      if (Object.keys(patch).length) await updateTask(dragged.id, patch);
       await reorderToday(ids);
     })();
   };
@@ -236,12 +267,31 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         </Show>
 
         <Show when={props.list === 'today'}>
+          <TodayFocusBar mitCount={todaySections().mit.length} />
           <CalendarBlock events={todayEvents()} />
           <Show
-            when={todaySections().morning.length + todaySections().afternoon.length + todaySections().ungrouped.length + todaySections().tonight.length > 0}
+            when={todaySections().mit.length + todaySections().morning.length + todaySections().afternoon.length + todaySections().ungrouped.length + todaySections().tonight.length > 0}
             fallback={<EmptyState icon={<ListIcon list="today" size={44} />} text="Take a moment to plan your day, or enjoy the calm." />}
           >
             <ReorderGroup onDrop={handleTodayDrop} scrollParent={() => scrollEl ?? null}>
+              <Show when={todaySections().mit.length > 0}>
+                <div data-testid="mit-section">
+                  <SectionHeading
+                    label="Most Important"
+                    color="var(--text)"
+                    trailing={<span style={{ display: 'inline-flex', gap: '2px' }}>{todaySections().mit.map(() => <Icon name="star" size={13} color="var(--yellow-deep)" />)}</span>}
+                  />
+                </div>
+                <Rows items={todaySections().mit} section="mit" />
+                <Show when={todaySections().morning.length + todaySections().ungrouped.length + todaySections().afternoon.length > 0}>
+                  <SectionHeading
+                    label="Everything Else"
+                    color="var(--text-secondary)"
+                    small
+                    trailing={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>batch in low-energy gaps</span>}
+                  />
+                </Show>
+              </Show>
               <Show when={todaySections().morning.length > 0}>
                 <SectionHeading
                   label="Morning"
