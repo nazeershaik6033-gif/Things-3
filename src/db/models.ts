@@ -45,6 +45,15 @@ export interface Task {
    *  per day: tomorrow you choose again. */
   mitDate: DateStr | null;
   energy: Energy | null;
+  // ---- Super Productivity imports (schema v9) ----
+  /** How long you expect this to take, in minutes. null = no estimate. */
+  timeEstimateMin: number | null;
+  /** Seconds tracked per local day. Keyed by day (not one running total) so
+   *  the Worklog can say what you did *when*, and a timer left running past
+   *  midnight lands on both days. */
+  timeSpent: Record<DateStr, number>;
+  /** Link back to an imported issue, e.g. "github:owner/repo#12". */
+  issueRef: string | null;
 }
 
 export interface Project {
@@ -421,4 +430,99 @@ export interface HealthDay {
   /** Where the latest write came from. */
   source: 'shortcut' | 'manual';
   updatedAt: number;
+}
+
+// ------------------------------- Super Productivity imports (schema v9) ----
+
+/** How often a repeating to-do comes back. */
+export type RepeatFreq = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export interface RepeatRule {
+  freq: RepeatFreq;
+  /** Every N days/weeks/months/years. >= 1. */
+  interval: number;
+  /** weekly only: which weekdays (0 = Sunday … 6 = Saturday). Empty means
+   *  "the anchor's weekday". */
+  weekdays: number[];
+  /** monthly only: same day number, the same Nth weekday ("2nd Tuesday"), or
+   *  the last day of the month. */
+  monthMode: 'day' | 'nthWeekday' | 'lastDay';
+  /** First occurrence, and the phase every interval is counted from. */
+  anchor: DateStr;
+  /** Inclusive last day an occurrence may fall on. null = forever. */
+  until: DateStr | null;
+  /** Next one is scheduled from the day you finish the current one rather
+   *  than on a fixed calendar ("water the plants 3 days after last time"). */
+  afterCompletion: boolean;
+}
+
+/** What each new occurrence of a repeating to-do is stamped from. */
+export interface RepeatTemplate {
+  title: string;
+  notes: string;
+  checklist: string[];
+  tagIds: string[];
+  projectId: string | null;
+  headingId: string | null;
+  areaId: string | null;
+  evening: boolean;
+  energy: Energy | null;
+  timeEstimateMin: number | null;
+  /** Days from the occurrence to its deadline. null = no deadline. */
+  deadlineOffsetDays: number | null;
+}
+
+/** A repeating to-do's configuration. Occurrences are ordinary tasks whose
+ *  `repeatTemplateId` points here, so every list, the Logbook and the
+ *  Worklog treat them exactly like any other to-do. */
+export interface RepeatCfg {
+  id: string;
+  rule: RepeatRule;
+  template: RepeatTemplate;
+  /** Latest occurrence date an instance has been created for. */
+  lastDate: DateStr | null;
+  paused: boolean;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+/** A tally you tap (glasses of water) or a stopwatch you run (minutes of
+ *  reading), with a daily goal that drives a streak. */
+export type CounterKind = 'click' | 'stopwatch';
+
+export interface Counter {
+  id: string;
+  title: string;
+  kind: CounterKind;
+  color: string; // accent color token
+  /** Daily goal: taps for a click counter, minutes for a stopwatch. 0 = none. */
+  goal: number;
+  orderKey: string;
+  active: boolean;
+  /** Stopwatch only: when the current run started (epoch ms). */
+  runningSince: number | null;
+  createdAt: number;
+  modifiedAt: number;
+}
+
+/** One counter on one day. The id is `${date}:${counterId}`. `value` is taps
+ *  for a click counter and seconds for a stopwatch. */
+export interface CounterDay {
+  id: string;
+  counterId: string;
+  date: DateStr;
+  value: number;
+}
+
+/** The end-of-day review ("Finish Day"): how the day went, in a line. */
+export interface DayReview {
+  date: DateStr; // primary key
+  /** 1 = little impact … 4 = very high impact. */
+  impact: number | null;
+  note: string;
+  /** Snapshot when the day was closed, so the Worklog keeps the numbers even
+   *  if to-dos are later edited or deleted. */
+  trackedSec: number;
+  completedCount: number;
+  finishedAt: number;
 }

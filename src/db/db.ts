@@ -5,7 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
-  Sprint, EnergyLog, HealthDay,
+  Sprint, EnergyLog, HealthDay, RepeatCfg, Counter, CounterDay, DayReview,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -39,6 +39,10 @@ export class ClarityDB extends Dexie {
   sprints!: EntityTable<Sprint, 'id'>;
   energyLogs!: EntityTable<EnergyLog, 'id'>;
   healthDays!: EntityTable<HealthDay, 'date'>;
+  repeatCfgs!: EntityTable<RepeatCfg, 'id'>;
+  counters!: EntityTable<Counter, 'id'>;
+  counterDays!: EntityTable<CounterDay, 'id'>;
+  dayReviews!: EntityTable<DayReview, 'date'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -111,6 +115,23 @@ export class ClarityDB extends Dexie {
     // Additive: one new table, nothing existing touched.
     this.version(8).stores({
       healthDays: 'date, updatedAt',
+    });
+    // v9: features ported from Super Productivity — time tracking and
+    // estimates on tasks, repeating to-dos, counters, the Finish Day review
+    // and issue import. Four new tables; the upgrade backfills three task
+    // fields and indexes repeatTemplateId (reserved since v1, always null).
+    this.version(9).stores({
+      tasks: 'id, status, bucket, startDate, deadline, projectId, headingId, areaId, completedAt, trashedAt, *tagIds, repeatTemplateId, issueRef',
+      repeatCfgs: 'id, paused',
+      counters: 'id, active, orderKey',
+      counterDays: 'id, counterId, date',
+      dayReviews: 'date',
+    }).upgrade(async (tx) => {
+      await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.timeEstimateMin === undefined) t.timeEstimateMin = null;
+        if (t.timeSpent === undefined) t.timeSpent = {};
+        if (t.issueRef === undefined) t.issueRef = null;
+      });
     });
   }
 }

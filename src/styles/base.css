@@ -172,3 +172,20 @@ ol {
   from { opacity: 0.06; }
   to { opacity: 0.18; }
 }
+
+/* Time tracker: a small pulsing dot next to a running clock (opacity only). */
+.tracking-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex: none;
+  animation: tracking-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tracking-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tracking-dot { animation: none; }
+}

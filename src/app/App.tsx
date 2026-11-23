@@ -33,6 +33,11 @@ import { BoardScreen } from '../screens/BoardScreen';
 import { BoardCalendarScreen } from '../screens/BoardCalendarScreen';
 import { CardScreen } from '../screens/CardScreen';
 import { FocusScreen } from '../screens/FocusScreen';
+import { WorklogScreen } from '../screens/WorklogScreen';
+import { FinishDayScreen } from '../screens/FinishDayScreen';
+import { CountersScreen } from '../screens/CountersScreen';
+import { TrackerBar } from '../components/TimeControls';
+import { startRepeats, startTimeTracking } from './timeTracking';
 import { FocusSprint } from '../components/FocusSprint';
 import { Toast } from '../ui/Toast';
 import { SearchOverlay } from '../screens/SearchOverlay';
@@ -63,6 +68,9 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'boardCalendar': return <BoardCalendarScreen id={r.id} />;
     case 'card': return <CardScreen id={r.id} />;
     case 'focus': return <FocusScreen />;
+    case 'worklog': return <WorklogScreen />;
+    case 'finishDay': return <FinishDayScreen />;
+    case 'counters': return <CountersScreen />;
   }
 }
 
@@ -93,6 +101,8 @@ export function App(): JSX.Element {
     startFocusClock();
     startReminders();
     startRoutineReminders();
+    void startTimeTracking();
+    startRepeats();
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses
@@ -131,6 +141,7 @@ export function App(): JSX.Element {
       <FocusSprint />
       <Toast />
       <InstallCoachMark />
+      <TrackerBar />
       <FocusTimerMiniBar />
       <FocusTimerOverlay />
     </div>

@@ -24,6 +24,10 @@ import { MagicPlus } from '../components/MagicPlus';
 import { WidgetDeck, CalendarStrip } from '../components/HomeWidgets';
 import { QuoteCard } from '../components/QuoteCard';
 import { MenuRow } from './common';
+import { worklogDays } from '../domain/worklog';
+import { formatDuration } from '../domain/timeTracking';
+import { liveValue, metGoal } from '../domain/counters';
+import { runningSeconds, trackingTaskId } from '../app/timeTracking';
 
 /** Icon in a tinted rounded tile. The tile is what turns a flat list of links
  *  into something that reads as a board of destinations. */
@@ -216,6 +220,25 @@ export function HomeScreen(): JSX.Element {
   });
   const target = createMemo(() => targetFor(resolveAll(targets(), tasks()), currentDate()));
   const beliefSession = createMemo(() => sessionProgress(beliefs(), beliefRatings(), currentDate()));
+  const sprintsDone = createLiveQuery(() => db.sprints.where('status').equals('done').toArray(), []);
+  const dayReviews = createLiveQuery(() => db.dayReviews.toArray(), []);
+  const counterRows = createLiveQuery(() => db.counters.toArray(), []);
+  const counterDays = createLiveQuery(() => db.counterDays.toArray(), []);
+  /** Seconds tracked today, including a running timer. */
+  const trackedToday = createMemo(() => {
+    const today = currentDate();
+    const day = worklogDays(tasks(), sprintsDone(), [], { from: today, to: today })[0];
+    return (day?.totalSec ?? 0) + (trackingTaskId() ? runningSeconds() : 0);
+  });
+  const dayFinished = createMemo(() => dayReviews().some((r) => r.date === currentDate()));
+  const countersMet = createMemo(() => {
+    const live = counterRows().filter((c) => c.active);
+    const now = Date.now();
+    return {
+      total: live.length,
+      met: live.filter((c) => metGoal(c, liveValue(c, counterDays(), currentDate(), now))).length,
+    };
+  });
 
   const listRow = (list: BuiltinList, label: string, tint: string, count?: number) => (
     <HomeRow
@@ -389,13 +412,62 @@ export function HomeScreen(): JSX.Element {
             {listRow('someday', 'Someday', 'rgba(201, 168, 124, 0.16)')}
           </Board>
 
-          <Board index={2}>
+          <Board title="Productivity" index={2}>
+            <HomeRow
+              testid="home-worklog"
+              tint="rgba(47, 124, 246, 0.12)"
+              icon={<Icon name="clock" size={18} color="var(--blue)" />}
+              label="Worklog"
+              badge={
+                <Show when={trackedToday() >= 60}>
+                  <span data-testid="home-worklog-today" style={{ 'font-size': '13px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums' }}>
+                    {formatDuration(trackedToday())} today
+                  </span>
+                </Show>
+              }
+              onClick={() => push({ name: 'worklog' })}
+            />
+            <HomeRow
+              testid="home-counters"
+              tint="rgba(76, 194, 232, 0.14)"
+              icon={<Icon name="tally" size={18} color="var(--teal)" />}
+              label="Counters"
+              badge={
+                <Show when={countersMet().total > 0}>
+                  <span style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-tertiary)', 'font-size': '13px' }}>
+                    {countersMet().met}/{countersMet().total}
+                    <ProgressRing
+                      progress={countersMet().met / countersMet().total}
+                      size={20}
+                      thickness={12}
+                      color={countersMet().met === countersMet().total ? 'var(--green)' : 'var(--teal)'}
+                    />
+                  </span>
+                </Show>
+              }
+              onClick={() => push({ name: 'counters' })}
+            />
+            <HomeRow
+              testid="home-finish-day"
+              tint="rgba(182, 120, 224, 0.14)"
+              icon={<Icon name="moon" size={18} color="var(--purple)" />}
+              label="Finish Day"
+              badge={
+                <span data-testid="home-finish-day-state" style={{ 'font-size': '13px', 'font-weight': '600', color: dayFinished() ? 'var(--green)' : 'var(--text-tertiary)' }}>
+                  {dayFinished() ? 'Done' : ''}
+                </span>
+              }
+              onClick={() => push({ name: 'finishDay' })}
+            />
+          </Board>
+
+          <Board index={3}>
             {listRow('logbook', 'Logbook', 'rgba(83, 184, 85, 0.14)')}
             {listRow('trash', 'Trash', 'rgba(138, 138, 142, 0.14)')}
           </Board>
 
           <Show when={standaloneProjects().length > 0}>
-            <Board title="Projects" index={3}>
+            <Board title="Projects" index={4}>
               <For each={standaloneProjects()}>
                 {(p) => (
                   <HomeRow
@@ -410,7 +482,7 @@ export function HomeScreen(): JSX.Element {
 
           <For each={sortedAreas()}>
             {(area, i) => (
-              <Board index={4 + i()}>
+              <Board index={5 + i()}>
                 <HomeRow
                   bold
                   tint="rgba(76, 194, 232, 0.14)"

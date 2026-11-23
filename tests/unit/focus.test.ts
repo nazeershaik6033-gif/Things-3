@@ -261,7 +261,7 @@ describe('schema v7 migration + backup', () => {
     await createSprint({ title: 's' });
     await logEnergy(4);
     const file = await exportData();
-    expect(file.schemaVersion).toBe(8);
+    expect(file.schemaVersion).toBe(9);
     await importData(validateExport(JSON.parse(JSON.stringify(file))));
     expect(await db.sprints.count()).toBe(1);
     expect(await db.energyLogs.count()).toBe(1);

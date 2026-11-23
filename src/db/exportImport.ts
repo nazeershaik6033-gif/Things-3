@@ -5,7 +5,7 @@ import type {
   RoutineGroup, RoutineSource, RoutineWindow, RoutineCheck, RoutineFeed,
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
-  Sprint, EnergyLog, HealthDay,
+  Sprint, EnergyLog, HealthDay, RepeatCfg, Counter, CounterDay, DayReview,
 } from './models';
 
 export interface ExportFile {
@@ -50,10 +50,15 @@ export interface ExportFile {
     energyLogs?: EnergyLog[];
     /** Added in schema 8 — Apple Watch sleep + activity. */
     healthDays?: HealthDay[];
+    /** Added in schema 9 — features ported from Super Productivity. */
+    repeatCfgs?: RepeatCfg[];
+    counters?: Counter[];
+    counterDays?: CounterDay[];
+    dayReviews?: DayReview[];
   };
 }
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -63,6 +68,7 @@ const TABLES = [
   'routineFeeds', 'routineMisses', 'routineSeen', 'routineDays',
   'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
   'sprints', 'energyLogs', 'healthDays',
+  'repeatCfgs', 'counters', 'counterDays', 'dayReviews',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -76,7 +82,9 @@ export async function exportData(): Promise<ExportFile> {
       headings: await db.headings.toArray(),
       areas: await db.areas.toArray(),
       tags: await db.tags.toArray(),
-      settings: await db.settings.toArray(),
+      // The GitHub token is a credential: it never leaves the device in a
+      // backup file (re-enter it after restoring).
+      settings: (await db.settings.toArray()).filter((x) => x.key !== 'githubToken'),
       boards: await db.boards.toArray(),
       boardLists: await db.boardLists.toArray(),
       boardLabels: await db.boardLabels.toArray(),
@@ -100,6 +108,10 @@ export async function exportData(): Promise<ExportFile> {
       sprints: await db.sprints.toArray(),
       energyLogs: await db.energyLogs.toArray(),
       healthDays: await db.healthDays.toArray(),
+      repeatCfgs: await db.repeatCfgs.toArray(),
+      counters: await db.counters.toArray(),
+      counterDays: await db.counterDays.toArray(),
+      dayReviews: await db.dayReviews.toArray(),
     },
   };
 }
@@ -150,7 +162,11 @@ export function validateExport(json: unknown): ExportFile {
   }
   if ((d.sprints !== undefined && !Array.isArray(d.sprints)) ||
       (d.energyLogs !== undefined && !Array.isArray(d.energyLogs)) ||
-      (d.healthDays !== undefined && !Array.isArray(d.healthDays))) {
+      (d.healthDays !== undefined && !Array.isArray(d.healthDays)) ||
+      (d.repeatCfgs !== undefined && !Array.isArray(d.repeatCfgs)) ||
+      (d.counters !== undefined && !Array.isArray(d.counters)) ||
+      (d.counterDays !== undefined && !Array.isArray(d.counterDays)) ||
+      (d.dayReviews !== undefined && !Array.isArray(d.dayReviews))) {
     throw new Error('Backup file is malformed.');
   }
   for (const t of d.tasks) {
@@ -171,9 +187,17 @@ function withCompletionStamp<T extends { status: string; completedAt: number | n
   return { ...row, completedAt: row.modifiedAt ?? row.createdAt ?? Date.now() };
 }
 
-/** Pre-v7 backups have no focus fields on tasks; default them to null. */
+/** Older backups lack later task fields (focus in v7, time tracking and
+ *  issue links in v9); default them. */
 function withFocusFields(t: Task): Task {
-  return { ...t, mitDate: t.mitDate ?? null, energy: t.energy ?? null };
+  return {
+    ...t,
+    mitDate: t.mitDate ?? null,
+    energy: t.energy ?? null,
+    timeEstimateMin: t.timeEstimateMin ?? null,
+    timeSpent: t.timeSpent ?? {},
+    issueRef: t.issueRef ?? null,
+  };
 }
 
 /** Replace-all import (caller confirms with the user first). */
@@ -210,5 +234,9 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.sprints.bulkPut(file.data.sprints ?? []);
     await db.energyLogs.bulkPut(file.data.energyLogs ?? []);
     await db.healthDays.bulkPut(file.data.healthDays ?? []);
+    await db.repeatCfgs.bulkPut(file.data.repeatCfgs ?? []);
+    await db.counters.bulkPut(file.data.counters ?? []);
+    await db.counterDays.bulkPut(file.data.counterDays ?? []);
+    await db.dayReviews.bulkPut(file.data.dayReviews ?? []);
   });
 }

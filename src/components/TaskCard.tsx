@@ -24,8 +24,12 @@ import { TaskRow, type TaskRowContext } from './TaskRow';
 import { AutoTextarea, autosize } from '../ui/TextField';
 import { haptic, reduceMotion } from '../app/motion';
 import { createSpring, SPRING } from '../gestures/springs';
+import { EstimatePicker, RepeatPicker, TimeChips } from './TimeControls';
+import { stopTracking, trackingTaskId } from '../app/timeTracking';
+import { describeRule } from '../domain/repeat';
+import { createReactiveLiveQuery } from '../db/liveQuery';
 
-type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | null;
+type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | null;
 
 /** Date+time picker that downloads a one-event .ics with an alarm —
  *  opening it on iOS adds a Calendar alert (web apps can't write to the
@@ -175,6 +179,11 @@ function TaskCard(props: { task: Task }): JSX.Element {
   const projects = createLiveQuery(() => db.projects.toArray(), []);
   const areas = createLiveQuery(() => db.areas.toArray(), []);
   const allTasks = createLiveQuery(() => db.tasks.toArray(), []);
+  const repeatCfg = createReactiveLiveQuery(
+    () => props.task.repeatTemplateId,
+    async (id) => (id ? ((await db.repeatCfgs.get(id)) ?? null) : null),
+    null,
+  );
 
   // Debounced writes: title/notes buffer locally, flush on pause or collapse
   let pendingPatch: Partial<Task> = {};
@@ -455,6 +464,21 @@ function TaskCard(props: { task: Task }): JSX.Element {
             openSprint({ taskId: id });
           },
         )}
+        <TimeChips task={t()} onEstimate={() => setPicker(picker() === 'estimate' ? null : 'estimate')} />
+        <Show when={repeatCfg()}>
+          <button
+            data-testid="chip-repeat"
+            onClick={() => setPicker('repeat')}
+            style={{
+              display: 'inline-flex', 'align-items': 'center', gap: '4px', padding: '4px 10px',
+              'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+              background: 'var(--bg-inset)', color: repeatCfg()!.paused ? 'var(--text-tertiary)' : 'var(--text)',
+            }}
+          >
+            <Icon name="repeat" size={12} color="var(--purple)" />
+            {repeatCfg()!.paused ? 'Paused · ' : ''}{describeRule(repeatCfg()!.rule)}
+          </button>
+        </Show>
       </div>
 
       <div
@@ -468,9 +492,11 @@ function TaskCard(props: { task: Task }): JSX.Element {
         {actionButton(<Icon name="calendar" size={20} />, 'Schedule', () => setPicker('when'))}
         {actionButton(<Icon name="flag" size={20} />, 'Deadline', () => setPicker('deadline'))}
         {actionButton(<Icon name="bell" size={20} />, 'Remind', () => setPicker('remind'))}
+        {actionButton(<Icon name="repeat" size={20} />, 'Repeat', () => setPicker(picker() === 'repeat' ? null : 'repeat'))}
         {actionButton(<Icon name="tag" size={20} />, 'Tags', () => setPicker('tags'))}
         {actionButton(<Icon name="arrow-move" size={20} />, 'Move', () => setPicker('move'))}
         {actionButton(<Icon name="trash" size={20} />, 'Delete', () => {
+          if (trackingTaskId() === t().id) void stopTracking();
           void trashTask(t().id);
           collapse();
         })}
@@ -481,6 +507,12 @@ function TaskCard(props: { task: Task }): JSX.Element {
       </Show>
       <Show when={picker() === 'deadline'}>
         <DeadlinePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'estimate'}>
+        <EstimatePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'repeat'}>
+        <RepeatPicker task={t()} cfg={repeatCfg()} onClose={() => setPicker(null)} />
       </Show>
       <Show when={picker() === 'remind'}>
         <RemindPicker task={t()} onClose={() => setPicker(null)} />

@@ -11,6 +11,7 @@ import { formatHrMin } from '../domain/pomodoro';
 import { push } from '../app/navigation';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
+import { GitHubSettings, ShortSyntaxHelp, TimeTrackingSettings } from './SuperSettings';
 
 function Section(props: { title: string; children: JSX.Element }): JSX.Element {
   return (
@@ -228,6 +229,18 @@ export function SettingsScreen(): JSX.Element {
             with the 🎯 button in Today). Focused today: {formatHrMin(doneTodaySec())}.
           </div>
         </div>
+      </Section>
+
+      <Section title="Time tracking & breaks">
+        <TimeTrackingSettings />
+      </Section>
+
+      <Section title="Quick Entry short syntax">
+        <ShortSyntaxHelp />
+      </Section>
+
+      <Section title="GitHub issues">
+        <GitHubSettings />
       </Section>
 
       <Section title="My Routine">

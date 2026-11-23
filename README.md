@@ -25,7 +25,55 @@ A fast, beautiful to-do app for iPhone — a love letter to [Things 3](https://c
 - **Motion**: spring-driven screen transitions where the covered screen recedes and dims, staggered entrances, and press feedback on every row — all of it respecting `prefers-reduced-motion`
 - **Backup**: one-tap JSON export / import
 - Day rollover at midnight moves scheduled items into Today automatically — even while the app is open
+- **Super Productivity features** (see below): per-to-do **time tracking** and **estimates**, a **break reminder**, **repeating to-dos**, a **Worklog** with CSV timesheets, **Finish Day**, **Counters**, Quick Entry **short syntax**, and **GitHub issue import**
 - **Focus Framework** (see below): MIT/LIT, a 5-step Focus Sprint with a visible timer, energy tracking, your Everest, a daily flowchart, a lock-screen wallpaper, and native reminders via calendar alerts
+
+## Super Productivity features
+
+Ported from [Super Productivity](https://github.com/super-productivity/super-productivity) (MIT) after a feature-by-feature reverse-engineering analysis. The full mapping, including what was left out and why, is in [`docs/super-productivity-rea.md`](docs/super-productivity-rea.md). Nothing was copied: each feature was rebuilt on Clarity's own data model and UI.
+
+- **Time tracking.**
+  - Tap **Track** on any to-do; only one runs at a time.
+  - A pill at the bottom shows the live clock.
+  - It's wall-clock based, so it survives locking the phone or reloading.
+  - Time is stored per day, and a timer left running past midnight lands on both days.
+  - Finished Focus Sprints count toward their to-do.
+- **Estimates.**
+  - Set one from the card (`45m`, `1h30m`).
+  - Rows show *spent / estimate*.
+  - Today shows how much of the plan is left.
+- **Break reminder.**
+  - After 50 minutes of unbroken tracked work (adjustable in Settings), you get a nudge to step away.
+  - Switching to-dos doesn't reset the stretch; a real pause does.
+- **Repeating to-dos.**
+  - Rules: daily, weekdays, weekly on chosen days, monthly (same date, same weekday such as "2nd Tue", or last day), and yearly.
+  - Every *N*, with an optional end date.
+  - Optionally counted *from when you finish* ("water plants 3 days after last time").
+  - Missed occurrences don't pile up, and the next one always waits in Upcoming.
+  - You can pause or stop a series; stopping keeps the to-dos you already have.
+- **Worklog.**
+  - Months, then weeks, then days, each listing the to-dos you worked on and finished.
+  - Tap a time to correct it.
+  - Export a CSV timesheet for this week, this month or all time.
+- **Finish Day.**
+  - What you got done, tracked against estimated time, and what's still open (one tap rolls it to tomorrow).
+  - Rate the day's impact and write one line.
+  - The review shows under that day in the Worklog.
+- **Counters.**
+  - A tap counter (glasses of water) or a stopwatch (minutes reading).
+  - A daily goal, a streak and a week strip.
+- **Short syntax.** Type it all in Quick Entry, for example `Call Anna #work +clarity @tomorrow ~30m !fri`:
+  - `#tag` for a tag
+  - `+project` for a project
+  - `@when` for the start date: today, tonight, mon…sun, 3d, 2w, someday or 2026-12-24
+  - `!deadline` for a deadline
+  - `~estimate` for a time estimate
+
+  A live preview shows what the tokens will do.
+- **GitHub issues.**
+  - Settings → GitHub issues imports a repo's open issues into a project; labels become tags.
+  - Syncing again adds new issues, ticks off closed ones and reopens reopened ones, without touching your own dates or notes.
+  - It talks to api.github.com directly. The optional token stays on the device and is left out of backups.
 
 ## Install on your iPhone
 
@@ -109,7 +157,7 @@ Clarity is a web app, so it can't read HealthKit. An iOS Shortcut does the readi
   - After a night under 6h or a score ≤ 60, Today and the sprint suggest 1–2 MITs and 25-minute sprints.
   - "Slept 7h+?" and "close the Exercise ring" tick themselves from the data.
   - After enough days, Daily Focus compares focused minutes and energy after 7h+ nights against shorter ones, and on active days against still ones.
-- **Privacy:** health data stays on-device and is included in backups (schema 8).
+- **Privacy:** health data stays on-device and is included in backups (schema 8 and later).
 
 ### Lock-screen wallpaper
 
@@ -144,7 +192,7 @@ Two rules the animation code lives by, both learned the hard way and guarded in 
 
 ## Roadmap (iteration 2)
 
-Reminders (web push), repeating to-dos, undo — the schema already reserves fields for all three. Calendar events are still read-only: writing back to Google Calendar needs OAuth and a server, so the app hands you off to Google's own composer instead.
+Reminders (web push) and undo — the schema already reserves fields for both. Repeating to-dos shipped with the Super Productivity features. Calendar events are still read-only: writing back to Google Calendar needs OAuth and a server, so the app hands you off to Google's own composer instead.
 
 ## License
 

@@ -16,7 +16,8 @@ type TableName =
   | 'boards' | 'boardLists' | 'boardLabels' | 'cards'
   | 'routineItems' | 'routineLogs' | 'dailyTargets'
   | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes'
-  | 'sprints' | 'energyLogs' | 'healthDays';
+  | 'sprints' | 'energyLogs' | 'healthDays'
+  | 'repeatCfgs' | 'counters' | 'counterDays' | 'dayReviews';
 
 export interface Op {
   table: TableName;
@@ -84,6 +85,9 @@ export function newTask(partial: Partial<Task> = {}): Task {
     reminderTime: null,
     mitDate: null,
     energy: null,
+    timeEstimateMin: null,
+    timeSpent: {},
+    issueRef: null,
     ...partial,
   };
 }
@@ -146,10 +150,26 @@ export async function setTaskWhen(id: string, when: When): Promise<void> {
 /** `at` backdates the entry — the overdue prompt passes the day the user says
  *  they actually finished, which is what files it under that day's Logbook. */
 export async function completeTask(id: string, canceled = false, at?: number): Promise<void> {
+  const completedAt = at ?? Date.now();
   await updateTask(id, {
     status: canceled ? 'canceled' : 'completed',
-    completedAt: at ?? Date.now(),
+    completedAt,
   });
+  if (canceled) return;
+  const t = await db.tasks.get(id);
+  if (t) for (const hook of completionHooks) await hook(t, completedAt);
+}
+
+/** Features layered on top (repeating to-dos, the time tracker) react to a
+ *  completion without this module importing them. */
+type CompletionHook = (task: Task, completedAt: number) => Promise<void> | void;
+const completionHooks: CompletionHook[] = [];
+export function onTaskCompleted(hook: CompletionHook): () => void {
+  completionHooks.push(hook);
+  return () => {
+    const i = completionHooks.indexOf(hook);
+    if (i >= 0) completionHooks.splice(i, 1);
+  };
 }
 
 /** Epoch ms to stamp for "this was finished on `date`". Today keeps the real

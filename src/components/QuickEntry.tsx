@@ -15,6 +15,8 @@ import {
   WhenSheet, DeadlineSheet, DestinationSheet, destinationOptions,
 } from './Pickers';
 import { ChecklistEditor } from './ChecklistEditor';
+import { hasShortSyntax, parseShortSyntax } from '../domain/shortSyntax';
+import { formatDuration } from '../domain/timeTracking';
 
 type SubSheet = 'when' | 'deadline' | 'dest' | null;
 
@@ -77,20 +79,43 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
       close();
       return;
     }
-    const d = dest();
+    let d = dest();
     haptic('success');
+    // Short syntax (#tag +project @when !deadline ~estimate), from Super
+    // Productivity's add-task bar. Tokens override the toolbar choices.
+    const parsed = parseShortSyntax(title().trim(), projects(), currentDate());
+    const finalTags = [...tagIds()];
+    for (const name of parsed.tagTitles) {
+      const hit = tags().find((x) => x.title.toLowerCase() === name.toLowerCase());
+      const id = hit?.id ?? (await createTag(name));
+      if (!finalTags.includes(id)) finalTags.push(id);
+    }
+    let sd = startDate();
+    let ev = evening();
+    let bk = bucket();
+    const w = parsed.when;
+    if (w?.type === 'today') { sd = currentDate(); ev = false; bk = 'anytime'; }
+    else if (w?.type === 'evening') { sd = currentDate(); ev = true; bk = 'anytime'; }
+    else if (w?.type === 'date') { sd = w.date; ev = false; bk = 'anytime'; }
+    else if (w?.type === 'someday') { sd = null; ev = false; bk = 'someday'; }
+    else if (w?.type === 'anytime') { sd = null; ev = false; bk = 'anytime'; }
+    if (parsed.projectId && parsed.projectId !== d.projectId) {
+      d = { projectId: parsed.projectId, headingId: null, areaId: null };
+      if (bk === 'inbox') bk = 'anytime';
+    }
     await createTask({
-      title: title().trim(),
+      title: parsed.title || title().trim(),
       notes: notes(),
       checklist: checklist().filter((c) => c.title.trim() !== ''),
-      tagIds: tagIds(),
-      startDate: startDate(),
-      evening: evening(),
-      deadline: deadline(),
-      bucket: bucket(),
+      tagIds: finalTags,
+      startDate: sd,
+      evening: ev,
+      deadline: parsed.deadline ?? deadline(),
+      bucket: bk,
       projectId: d.projectId ?? null,
       headingId: d.headingId ?? null,
       areaId: d.areaId ?? null,
+      timeEstimateMin: parsed.estimateMin,
       ...(init.orderKey ? { orderKey: init.orderKey } : {}),
     });
     close();
@@ -241,6 +266,29 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
               padding: '2px 0 10px',
             }}
           />
+
+          <Show when={hasShortSyntax(title())}>
+            {(() => {
+              const p = () => parseShortSyntax(title(), projects(), currentDate());
+              const bits = () => {
+                const out: string[] = [];
+                const x = p();
+                for (const t of x.tagTitles) out.push(`#${t}`);
+                if (x.projectId) out.push(`→ ${projects().find((pr) => pr.id === x.projectId)?.title ?? 'Project'}`);
+                if (x.when) out.push(x.when.type === 'date' ? formatRelative(x.when.date, currentDate()) : x.when.type === 'evening' ? 'This Evening' : x.when.type[0]!.toUpperCase() + x.when.type.slice(1));
+                if (x.deadline) out.push(`⚑ ${formatRelative(x.deadline, currentDate())}`);
+                if (x.estimateMin) out.push(`⌛ ${formatDuration(x.estimateMin * 60)}`);
+                return out;
+              };
+              return (
+                <Show when={bits().length > 0}>
+                  <div data-testid="short-syntax-preview" style={{ 'font-size': '13px', color: 'var(--blue)', padding: '0 0 8px', 'font-weight': '500' }}>
+                    {bits().join('  ·  ')}
+                  </div>
+                </Show>
+              );
+            })()}
+          </Show>
 
           <Show when={tagIds().length > 0 || whenChip() || deadline()}>
             <div class="rise" style={{ display: 'flex', gap: '7px', 'flex-wrap': 'wrap', padding: '2px 0 10px' }}>

@@ -13,6 +13,8 @@ import { SwipeableRow } from './SwipeableRow';
 import { markdownPreview } from '../domain/markdown';
 import { quadrantMeta } from '../domain/eisenhower';
 import { isMit } from '../domain/focus';
+import { RowTimeChip } from './TimeControls';
+import { trackingTaskId } from '../app/timeTracking';
 
 export interface TaskRowContext {
   /** Show the Eisenhower chip and open its picker (Today only). */
@@ -124,7 +126,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             />
           </Show>
         </div>
-        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening) || t().energy || (props.ctx.showMit && isMit(t(), currentDate()))}>
+        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening) || t().energy || (props.ctx.showMit && isMit(t(), currentDate())) || t().repeatTemplateId || t().timeEstimateMin || Object.keys(t().timeSpent ?? {}).length > 0 || trackingTaskId() === t().id}>
           <div
             style={{
               display: 'flex',
@@ -148,6 +150,12 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
                 <Icon name={t().energy === 'high' ? 'bolt' : 'battery'} size={12} />
               </span>
             </Show>
+            <Show when={t().repeatTemplateId}>
+              <span data-testid="repeat-badge" aria-label="Repeating" style={{ display: 'inline-flex', color: 'var(--purple)' }}>
+                <Icon name="repeat" size={11} />
+              </span>
+            </Show>
+            <RowTimeChip task={t()} />
             <Show when={props.ctx.showWhen && t().startDate}>
               <span style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--text-secondary)', 'font-size': 'var(--fs-chip)' }}>
                 <Icon name="calendar" size={11} strokeWidth={2.2} />

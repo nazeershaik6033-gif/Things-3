@@ -1,3 +1,4 @@
+import { stopTracking } from '../app/timeTracking';
 import {
   createEffect, createMemo, createSignal, For, onCleanup, onMount, Show, type JSX,
 } from 'solid-js';
@@ -340,6 +341,9 @@ function SprintFlow(_props: { key: string }): JSX.Element {
   const start = async () => {
     unlockAudio();
     const id = await ensureSprint();
+    // A sprint's minutes already count toward its to-do; running the tracker
+    // alongside would log the same time twice.
+    await stopTracking();
     await startSprint(id);
     chimed = false;
     setStage('timer');

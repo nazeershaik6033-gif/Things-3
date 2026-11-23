@@ -32,6 +32,8 @@ import type { QuickEntryState } from '../app/uiState';
 import { isMit, MIT_LIMIT } from '../domain/focus';
 import { showToast } from '../app/focusState';
 import { TodayFocusBar } from '../components/TodayFocusBar';
+import { push } from '../app/navigation';
+import { TodayPlanStrip } from '../components/TimeControls';
 
 const TITLES: Record<string, string> = {
   inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', prior: 'Prior', anytime: 'Anytime', someday: 'Someday',
@@ -268,6 +270,10 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
 
         <Show when={props.list === 'today'}>
           <TodayFocusBar mitCount={todaySections().mit.length} />
+          <TodayPlanStrip
+            tasks={[...todaySections().mit, ...todaySections().morning, ...todaySections().afternoon, ...todaySections().ungrouped, ...todaySections().tonight]}
+            onFinish={() => push({ name: 'finishDay' })}
+          />
           <CalendarBlock events={todayEvents()} />
           <Show
             when={todaySections().mit.length + todaySections().morning.length + todaySections().afternoon.length + todaySections().ungrouped.length + todaySections().tonight.length > 0}

@@ -11,7 +11,8 @@ export type IconName =
   | 'export' | 'import' | 'link' | 'bell' | 'sunrise' | 'sun' | 'pencil'
   | 'board' | 'clock' | 'comment' | 'repeat' | 'flame' | 'grip'
   | 'chart' | 'sparkle' | 'send' | 'rss' | 'play' | 'snooze'
-  | 'bolt' | 'battery' | 'mountain' | 'timer' | 'target' | 'chevron-down' | 'start';
+  | 'bolt' | 'battery' | 'mountain' | 'timer' | 'target' | 'chevron-down' | 'start'
+  | 'pause' | 'resume' | 'tally' | 'hourglass';
 
 /** Factories, not elements: Solid JSX creates real DOM nodes, so a shared
  *  element would be MOVED between icons instead of rendered in each. */
@@ -258,6 +259,28 @@ const PATHS: Record<IconName, () => JSX.Element> = {
       <circle cx="6.2" cy="17.8" r="1.9" fill="currentColor" stroke="none" />
       <path d="M4.3 11.2a8.5 8.5 0 0 1 8.5 8.5" />
       <path d="M4.3 5.1A14.6 14.6 0 0 1 18.9 19.7" />
+    </>
+  ),
+  pause: () => (
+    <>
+      <rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none" />
+      <rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
+  resume: () => (
+    <path d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L8.7 4.5a.8.8 0 0 0-1.2.7Z" fill="currentColor" stroke-linejoin="round" />
+  ),
+  tally: () => (
+    <>
+      <path d="M6 5v14M10 5v14M14 5v14M18 5v14" stroke-linecap="round" />
+      <path d="M3.5 15.5 20.5 8.5" stroke-linecap="round" />
+    </>
+  ),
+  hourglass: () => (
+    <>
+      <path d="M7 3.5h10M7 20.5h10" stroke-linecap="round" />
+      <path d="M8 3.5c0 4 4 5.5 4 8.5s-4 4.5-4 8.5M16 3.5c0 4-4 5.5-4 8.5s4 4.5 4 8.5" stroke-linejoin="round" />
+      <path d="M9.6 18.6c.6-1.6 2.4-2.6 2.4-2.6s1.8 1 2.4 2.6Z" fill="currentColor" stroke="none" />
     </>
   ),
   play: () => (
