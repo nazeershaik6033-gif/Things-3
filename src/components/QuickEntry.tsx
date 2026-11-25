@@ -5,6 +5,7 @@ import { TagPill } from '../ui/TagPill';
 import { AutoTextarea, SyncedInput } from '../ui/TextField';
 import { haptic } from '../app/motion';
 import { quickEntry, setQuickEntry, type QuickEntryState } from '../app/uiState';
+import { DEFAULT_BLOCK_MIN, formatRange, parseHHMM } from '../domain/timeline';
 import { createTask, createTag, updateTask, type TaskDestination, type When } from '../db/mutations';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
@@ -116,6 +117,9 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
       headingId: d.headingId ?? null,
       areaId: d.areaId ?? null,
       timeEstimateMin: parsed.estimateMin,
+      // A slot from the timeline holds while the to-do keeps that day
+      startTime: init.startTime && sd && !ev && sd === (init.startDate ?? null) ? init.startTime : null,
+      durationMin: init.startTime && sd && !ev && sd === (init.startDate ?? null) ? (init.durationMin ?? null) : null,
       ...(init.orderKey ? { orderKey: init.orderKey } : {}),
     });
     close();
@@ -130,9 +134,13 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
     return 'Anytime';
   });
 
+  const slot = () => {
+    const m = init.startTime && startDate() === (init.startDate ?? null) ? parseHHMM(init.startTime) : null;
+    return m === null ? '' : ` ${formatRange(m, Math.min(1440, m + (init.durationMin ?? DEFAULT_BLOCK_MIN)))}`;
+  };
   const whenChip = createMemo(() => {
-    if (startDate() && startDate()! <= currentDate()) return evening() ? 'This Evening' : 'Today';
-    if (startDate()) return formatRelative(startDate()!, currentDate());
+    if (startDate() && startDate()! <= currentDate()) return (evening() ? 'This Evening' : 'Today') + slot();
+    if (startDate()) return formatRelative(startDate()!, currentDate()) + slot();
     if (bucket() === 'someday') return 'Someday';
     return null;
   });

@@ -133,6 +133,16 @@ export class ClarityDB extends Dexie {
         if (t.issueRef === undefined) t.issueRef = null;
       });
     });
+    // v10: the day planner — a time of day and a block length on to-dos,
+    // plus a time on deadlines. No new tables or indexes (the timeline reads
+    // by startDate, already indexed); the upgrade only backfills three fields.
+    this.version(10).stores({}).upgrade(async (tx) => {
+      await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.startTime === undefined) t.startTime = null;
+        if (t.durationMin === undefined) t.durationMin = null;
+        if (t.deadlineTime === undefined) t.deadlineTime = null;
+      });
+    });
   }
 }
 

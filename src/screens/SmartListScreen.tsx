@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
 import type { BuiltinList } from '../app/navigation';
-import type { Task } from '../db/models';
+import type { Sprint, Task } from '../db/models';
 import {
   inInbox, inToday, inUpcoming, inAnytime, inSomeday,
   todayTasks, upcomingGroups, priorGroups, groupByHome, todaySortKey,
@@ -34,6 +34,8 @@ import { showToast } from '../app/focusState';
 import { TodayFocusBar } from '../components/TodayFocusBar';
 import { push } from '../app/navigation';
 import { TodayPlanStrip } from '../components/TimeControls';
+import { Timeline } from '../components/Timeline';
+import { setTodayView, todayView } from '../app/planner';
 
 const TITLES: Record<string, string> = {
   inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', prior: 'Prior', anytime: 'Anytime', someday: 'Someday',
@@ -45,6 +47,8 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
   const areas = createLiveQuery(() => db.areas.toArray(), []);
   const tags = createLiveQuery(() => db.tags.toArray(), []);
   const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
+  // Focus Sprints show on Today's timeline (dayBlocks picks out the day)
+  const sprints = createLiveQuery(() => db.sprints.toArray(), [] as Sprint[]);
   const { schedule, SchedulerHost } = createScheduler();
   let scrollEl: HTMLDivElement | undefined;
   const [dragging] = createSignal(false);
@@ -155,6 +159,8 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         patch.evening = wantsEvening;
         patch.reminderTime = wantsReminder;
         patch.startDate = dragged.startDate ?? today;
+        // A vague slot (Morning/Afternoon/Tonight) replaces an exact time
+        if (wantsEvening || wantsReminder) patch.startTime = null;
       }
       if (toMit !== wasMit) patch.mitDate = toMit ? today : null;
       if (Object.keys(patch).length) await updateTask(dragged.id, patch);
@@ -274,6 +280,34 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
             tasks={[...todaySections().mit, ...todaySections().morning, ...todaySections().afternoon, ...todaySections().ungrouped, ...todaySections().tonight]}
             onFinish={() => push({ name: 'finishDay' })}
           />
+          <div data-testid="today-view" style={{ display: 'flex', gap: '2px', margin: '2px 16px 8px', padding: '2px', 'border-radius': '10px', background: 'var(--bg-inset)', width: 'fit-content' }}>
+            {(['list', 'timeline'] as const).map((v) => (
+              <button
+                data-testid={`today-view-${v}`}
+                aria-pressed={todayView() === v}
+                onClick={() => setTodayView(v)}
+                style={{
+                  padding: '5px 14px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+                  background: todayView() === v ? 'var(--bg-card)' : 'transparent',
+                  color: todayView() === v ? 'var(--text)' : 'var(--text-secondary)',
+                  'box-shadow': todayView() === v ? 'var(--shadow-card)' : 'none',
+                }}
+              >
+                {v === 'list' ? 'List' : 'Timeline'}
+              </button>
+            ))}
+          </div>
+          <Show when={todayView() === 'timeline'}>
+            <Timeline
+              dates={[currentDate()]}
+              tasks={tasks()}
+              events={events()}
+              sprints={sprints()}
+              scrollParent={() => scrollEl ?? null}
+              autoScroll
+            />
+          </Show>
+          <Show when={todayView() === 'list'}>
           <CalendarBlock events={todayEvents()} />
           <Show
             when={todaySections().mit.length + todaySections().morning.length + todaySections().afternoon.length + todaySections().ungrouped.length + todaySections().tonight.length > 0}
@@ -324,6 +358,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                 <Rows items={todaySections().tonight} section="tonight" />
               </Show>
             </ReorderGroup>
+          </Show>
           </Show>
         </Show>
 

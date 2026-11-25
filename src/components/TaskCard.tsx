@@ -28,8 +28,11 @@ import { EstimatePicker, RepeatPicker, TimeChips } from './TimeControls';
 import { stopTracking, trackingTaskId } from '../app/timeTracking';
 import { describeRule } from '../domain/repeat';
 import { createReactiveLiveQuery } from '../db/liveQuery';
+import { undoable } from '../app/undo';
+import { TimeChip, TimePicker } from './PlannerControls';
+import { formatClock, parseHHMM } from '../domain/timeline';
 
-type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | null;
+type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | 'time' | null;
 
 /** Date+time picker that downloads a one-event .ics with an alarm —
  *  opening it on iOS adds a Calendar alert (web apps can't write to the
@@ -161,8 +164,9 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
   );
 }
 
-/** The expanded inline editor — Things' signature interaction. */
-function TaskCard(props: { task: Task }): JSX.Element {
+/** The expanded inline editor — Things' signature interaction. Also opened
+ *  in a sheet from the timeline, which passes `onCollapse` to close it. */
+export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?: boolean }): JSX.Element {
   const t = () => props.task;
   const [picker, setPicker] = createSignal<PickerKind>(null);
   const [editingNotes, setEditingNotes] = createSignal(false);
@@ -205,6 +209,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
   const collapse = () => {
     flush();
     setExpandedTaskId(null);
+    props.onCollapse?.();
   };
 
   onMount(() => {
@@ -357,7 +362,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
           />
         </Show>
 
-        <Show when={checklist().length > 0 || expandedTaskId() === t().id}>
+        <Show when={checklist().length > 0 || expandedTaskId() === t().id || props.inSheet}>
           <ChecklistEditor
             items={checklist()}
             onChange={(items) => {
@@ -417,7 +422,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
               }}
             >
               <Icon name="flag" size={13} color="var(--red)" />
-              {formatDeadline(t().deadline!, currentDate())}
+              {formatDeadline(t().deadline!, currentDate())}{parseHHMM(t().deadlineTime) !== null ? ` · ${formatClock(parseHHMM(t().deadlineTime)!)}` : ''}
             </button>
           </Show>
           {taskTags().map((tag) => (
@@ -464,6 +469,7 @@ function TaskCard(props: { task: Task }): JSX.Element {
             openSprint({ taskId: id });
           },
         )}
+        <TimeChip task={t()} active={picker() === 'time'} onClick={() => setPicker(picker() === 'time' ? null : 'time')} />
         <TimeChips task={t()} onEstimate={() => setPicker(picker() === 'estimate' ? null : 'estimate')} />
         <Show when={repeatCfg()}>
           <button
@@ -497,7 +503,8 @@ function TaskCard(props: { task: Task }): JSX.Element {
         {actionButton(<Icon name="arrow-move" size={20} />, 'Move', () => setPicker('move'))}
         {actionButton(<Icon name="trash" size={20} />, 'Delete', () => {
           if (trackingTaskId() === t().id) void stopTracking();
-          void trashTask(t().id);
+          const id = t().id;
+          void undoable('Delete', () => trashTask(id), 'Moved to Trash');
           collapse();
         })}
       </div>
@@ -507,6 +514,9 @@ function TaskCard(props: { task: Task }): JSX.Element {
       </Show>
       <Show when={picker() === 'deadline'}>
         <DeadlinePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'time'}>
+        <TimePicker task={t()} onClose={() => setPicker(null)} />
       </Show>
       <Show when={picker() === 'estimate'}>
         <EstimatePicker task={t()} onClose={() => setPicker(null)} />

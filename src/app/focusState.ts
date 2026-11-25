@@ -23,10 +23,25 @@ export function closeSprint(): void {
 
 /** Lightweight toast for focus actions ("3 MITs max", "Saved"). */
 const [toast, setToast] = createSignal<string | null>(null);
+/** Optional button on the toast (Undo). Cleared with the toast. */
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+const [toastAction, setToastAction] = createSignal<ToastAction | null>(null);
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export { toast };
-export function showToast(text: string, ms = 2400): void {
+export { toast, toastAction };
+export function showToast(text: string, ms = 2400, action?: ToastAction): void {
   clearTimeout(toastTimer);
   setToast(text);
-  toastTimer = setTimeout(() => setToast(null), ms);
+  setToastAction(action ?? null);
+  toastTimer = setTimeout(() => {
+    setToast(null);
+    setToastAction(null);
+  }, ms);
+}
+export function hideToast(): void {
+  clearTimeout(toastTimer);
+  setToast(null);
+  setToastAction(null);
 }

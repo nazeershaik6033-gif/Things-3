@@ -36,8 +36,11 @@ import { FocusScreen } from '../screens/FocusScreen';
 import { WorklogScreen } from '../screens/WorklogScreen';
 import { FinishDayScreen } from '../screens/FinishDayScreen';
 import { CountersScreen } from '../screens/CountersScreen';
+import { PlannerScreen } from '../screens/PlannerScreen';
 import { TrackerBar } from '../components/TimeControls';
 import { startRepeats, startTimeTracking } from './timeTracking';
+import { startUndoKeys } from './undo';
+import { startPlannerSettings } from './planner';
 import { FocusSprint } from '../components/FocusSprint';
 import { Toast } from '../ui/Toast';
 import { SearchOverlay } from '../screens/SearchOverlay';
@@ -71,6 +74,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'worklog': return <WorklogScreen />;
     case 'finishDay': return <FinishDayScreen />;
     case 'counters': return <CountersScreen />;
+    case 'planner': return <PlannerScreen />;
   }
 }
 
@@ -96,6 +100,7 @@ export function App(): JSX.Element {
     startTheme();
     startDateTicker();
     void startSettings();
+    void startPlannerSettings();
     startNavigation();
     startCalendarSync();
     startFocusClock();
@@ -103,6 +108,7 @@ export function App(): JSX.Element {
     startRoutineReminders();
     void startTimeTracking();
     startRepeats();
+    onCleanup(startUndoKeys());
     void navigator.storage?.persist?.();
 
     // Left-edge swipe-back, scrubbing the same spring the back button uses

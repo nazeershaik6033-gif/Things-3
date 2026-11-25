@@ -55,7 +55,37 @@ export function templateFromTask(t: Task): RepeatTemplate {
     energy: t.energy,
     timeEstimateMin: t.timeEstimateMin ?? null,
     deadlineOffsetDays: t.deadline && t.startDate ? Math.max(0, daysBetween(t.startDate, t.deadline)) : null,
+    startTime: t.startTime ?? null,
+    durationMin: t.durationMin ?? null,
+    deadlineTime: t.deadlineTime ?? null,
   };
+}
+
+/** A time set from a repeating to-do's card applies to the series: the
+ *  template takes it, and so do open occurrences that haven't started yet
+ *  and still carry the series' old time. (A block dragged on the timeline
+ *  changes that one day only, and doesn't come through here.) */
+export async function setRepeatSeriesTime(
+  cfgId: string,
+  startTime: string | null,
+  durationMin: number | null,
+  today = todayStr(),
+): Promise<void> {
+  const before = await db.repeatCfgs.get(cfgId);
+  if (!before) return;
+  const oldTime = before.template.startTime ?? null;
+  const now = Date.now();
+  const ops: Op[] = [{
+    table: 'repeatCfgs', key: cfgId, before,
+    after: { ...before, template: { ...before.template, startTime, durationMin }, modifiedAt: now },
+  }];
+  const instances = await db.tasks.where('repeatTemplateId').equals(cfgId).toArray();
+  for (const t of instances) {
+    if (t.status !== 'open' || t.trashedAt !== null || !t.startDate || t.startDate <= today) continue;
+    if ((t.startTime ?? null) !== oldTime) continue;
+    ops.push({ table: 'tasks', key: t.id, before: t, after: { ...t, startTime, durationMin, modifiedAt: now } });
+  }
+  await applyOps(ops);
 }
 
 async function createOccurrence(cfg: RepeatCfg, date: DateStr): Promise<string> {
@@ -74,6 +104,9 @@ async function createOccurrence(cfg: RepeatCfg, date: DateStr): Promise<string> 
     startDate: date,
     bucket: 'anytime',
     deadline: tp.deadlineOffsetDays !== null ? addDays(date, tp.deadlineOffsetDays) : null,
+    startTime: tp.startTime ?? null,
+    durationMin: tp.durationMin ?? null,
+    deadlineTime: tp.deadlineOffsetDays !== null ? (tp.deadlineTime ?? null) : null,
     repeatTemplateId: cfg.id,
   });
 }

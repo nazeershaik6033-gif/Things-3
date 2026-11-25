@@ -54,6 +54,16 @@ export interface Task {
   timeSpent: Record<DateStr, number>;
   /** Link back to an imported issue, e.g. "github:owner/repo#12". */
   issueRef: string | null;
+  // ---- Day planner (schema v10) ----
+  /** "HH:mm" local time on `startDate` — places the to-do on the timeline.
+   *  Meaningless without a startDate. Separate from `reminderTime`, which
+   *  holds the Today section slot ("morning"/"afternoon") or a reminder. */
+  startTime: string | null;
+  /** Planned length of the timeline block, in minutes. null falls back to
+   *  the estimate, then to the default block length. */
+  durationMin: number | null;
+  /** "HH:mm" local time on `deadline`. null = due any time that day. */
+  deadlineTime: string | null;
 }
 
 export interface Project {
@@ -470,6 +480,10 @@ export interface RepeatTemplate {
   timeEstimateMin: number | null;
   /** Days from the occurrence to its deadline. null = no deadline. */
   deadlineOffsetDays: number | null;
+  /** Day planner (schema v10). Optional: configs saved before v10 lack them. */
+  startTime?: string | null;
+  durationMin?: number | null;
+  deadlineTime?: string | null;
 }
 
 /** A repeating to-do's configuration. Occurrences are ordinary tasks whose

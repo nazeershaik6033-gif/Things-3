@@ -8,7 +8,8 @@ export type GestureKind =
   | 'sheet'
   | 'magic-plus'
   | 'edge-back'
-  | 'belief-card';
+  | 'belief-card'
+  | 'timeline';
 
 let active: GestureKind | null = null;
 

@@ -26,7 +26,37 @@ A fast, beautiful to-do app for iPhone — a love letter to [Things 3](https://c
 - **Backup**: one-tap JSON export / import
 - Day rollover at midnight moves scheduled items into Today automatically — even while the app is open
 - **Super Productivity features** (see below): per-to-do **time tracking** and **estimates**, a **break reminder**, **repeating to-dos**, a **Worklog** with CSV timesheets, **Finish Day**, **Counters**, Quick Entry **short syntax**, and **GitHub issue import**
+- **Day planner** (see below): times and lengths on to-dos, a timeline in Today and a 1/3/7-day **Planner** — drag to move, resize and draw blocks, push the rest when you run late — and **undo** for every change
 - **Focus Framework** (see below): MIT/LIT, a 5-step Focus Sprint with a visible timer, energy tracking, your Everest, a daily flowchart, a lock-screen wallpaper, and native reminders via calendar alerts
+
+## Day planner
+
+Built after a reverse-engineering analysis of [obsidian-day-planner](https://github.com/ivan-lednev/obsidian-day-planner), [TaskNotes](https://github.com/callumalpass/tasknotes) and [obsidian-calendar-plugin](https://github.com/liamcain/obsidian-calendar-plugin) (all MIT). The full mapping, the decisions and the phased plan are in [`docs/obsidian-planners-rea.md`](docs/obsidian-planners-rea.md). Nothing was copied.
+
+- **Times on to-dos.**
+  - Tap **Time** on a to-do's card to set a start time and a length.
+  - Deadlines can carry a "due by" time.
+  - Rows show the time.
+  - A time survives a change of day, and goes when the to-do goes to Someday or a vague Morning/Afternoon/Tonight slot.
+  - A repeating to-do keeps its time on every occurrence.
+- **Timeline.**
+  - Today has a **List | Timeline** switch, and **Home → Planner** shows 1, 3 or 7 days. Phones open on 3 days, wide screens on the week.
+  - To-dos, calendar events and Focus Sprints are blocks on an hour grid, with a line at the current time.
+  - All-day events and deadlines sit in a row on top.
+- **Touch, like iOS Calendar.**
+  - Press and hold a block to lift it and drag it, across days too.
+  - It then stays selected, with handles on both edges to change its length.
+  - Press and hold empty space and drag to draw a block; Quick Entry opens for that slot.
+  - Drag a to-do from the **Unscheduled** tray onto the grid, or tap it and then tap a time.
+  - A plain tap never changes anything.
+- **Mouse and keyboard.** Everything works on a plain drag. Arrow keys move the selected block, Shift+arrows resize it, Enter opens it.
+- **Replanning.**
+  - With **Push rest** on, a block that grows or moves into the next one pushes it, and the push cascades. Gaps absorb the delay.
+  - **Running late +15m / +30m** shifts everything still ahead today.
+  - Snap to 5, 10, 15 or 30 minutes (Settings → Planner).
+- **Undo.**
+  - Moves, resizes, pushes, scheduling, moving and deleting show a toast with **Undo**. On a keyboard, ⌘Z or Ctrl+Z works too.
+  - An undo never overwrites something you changed since; it says so instead.
 
 ## Super Productivity features
 
@@ -190,7 +220,16 @@ Two rules the animation code lives by, both learned the hard way and guarded in 
 - **Never animate a layout property.** `transform` and `opacity` only.
 - **Never read layout inside an animation frame.** A single `window.innerWidth` in a per-frame callback forces a synchronous layout after the transform you just wrote.
 
-## Roadmap (iteration 2)
+## Roadmap
+
+The day planner ships in phases (see [`docs/obsidian-planners-rea.md`](docs/obsidian-planners-rea.md)):
+
+1. **Times, timeline, undo.** Shipped.
+2. Reminders through calendar alerts, and natural-language capture with times and repeats ("gym tue thu 7am 1h").
+3. Week, day and year calendar views; calendar-event fixes (cancelled and moved instances, colours) and turning an event into a to-do; skipping one occurrence of a repeat.
+4. Kanban of to-dos with In progress / Waiting statuses, dependencies with a Can do now list, Daily Note and Weekly Review, saved views, templates.
+
+### Earlier notes (iteration 2)
 
 Reminders (web push) and undo — the schema already reserves fields for both. Repeating to-dos shipped with the Super Productivity features. Calendar events are still read-only: writing back to Google Calendar needs OAuth and a server, so the app hands you off to Google's own composer instead.
 

@@ -5,6 +5,7 @@ import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
 import { aiConfig, askCompletionDate, setAskCompletionDate, updateAiConfig } from '../app/settings';
+import { SNAP_CHOICES, setSnapStep, snapStep } from '../app/planner';
 import { GEMINI_MODELS, OPENROUTER_MODELS, type AiProvider } from '../net/ai';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
@@ -210,6 +211,33 @@ export function SettingsScreen(): JSX.Element {
           Ticking a to-do whose date has already passed asks which day you
           actually finished it, and files it under that day in the Logbook. Turn
           this off to always log the moment you tick.
+        </div>
+      </Section>
+
+      <Section title="Planner">
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '10px 0 6px' }}>
+          <span style={{ flex: '1', 'font-size': '15px' }}>Snap blocks to</span>
+          {SNAP_CHOICES.map((m) => (
+            <button
+              data-testid={`snap-${m}`}
+              aria-pressed={snapStep() === m}
+              onClick={() => void setSnapStep(m)}
+              style={{
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                background: snapStep() === m ? 'var(--blue)' : 'var(--bg-inset)',
+                color: snapStep() === m ? 'var(--text-invert)' : 'var(--text)',
+              }}
+            >
+              {m}m
+            </button>
+          ))}
+        </div>
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
+          On the timeline, press and hold a to-do to drag it; it stays selected
+          with handles to change its length. Press and hold empty space to draw a
+          new block. Turn on Push rest to have a block that grows push the ones
+          after it, and use Running late to shift the rest of today. Every change
+          can be undone from its toast, or with ⌘Z / Ctrl+Z on a keyboard.
         </div>
       </Section>
 

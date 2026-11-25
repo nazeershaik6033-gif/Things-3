@@ -302,6 +302,13 @@ export function HomeScreen(): JSX.Element {
             {listRow('inbox', 'Inbox', 'rgba(47, 124, 246, 0.12)', counts().inbox)}
             {listRow('today', 'Today', 'rgba(247, 206, 70, 0.16)', counts().today)}
             <HomeRow
+              testid="home-planner"
+              tint="rgba(47, 124, 246, 0.12)"
+              icon={<Icon name="clock" size={18} color="var(--blue)" />}
+              label="Planner"
+              onClick={() => push({ name: 'planner' })}
+            />
+            <HomeRow
               testid="home-focus"
               tint="rgba(47, 124, 246, 0.12)"
               icon={<Icon name="target" size={19} color="var(--blue)" />}

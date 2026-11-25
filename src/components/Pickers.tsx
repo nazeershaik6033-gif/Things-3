@@ -12,6 +12,8 @@ import {
 } from '../db/mutations';
 import { projectProgress } from '../domain/smartLists';
 import { haptic } from '../app/motion';
+import { undoable } from '../app/undo';
+import { formatRelative as relDay } from '../domain/dates';
 
 function PickerRow(props: {
   icon: JSX.Element;
@@ -172,10 +174,23 @@ export function WhenPicker(props: { task: Task; onClose: () => void }): JSX.Elem
   return (
     <WhenSheet
       current={{ ...props.task, reminderTime: props.task.reminderTime }}
-      onPick={(when) => void setTaskWhen(props.task.id, when)}
+      onPick={(when) => void undoable('Reschedule', () => setTaskWhen(props.task.id, when), whenToast(when))}
       onClose={props.onClose}
     />
   );
+}
+
+function whenToast(when: When): string {
+  switch (when.type) {
+    case 'today': return 'Moved to Today';
+    case 'morning': return 'Moved to This Morning';
+    case 'afternoon': return 'Moved to This Afternoon';
+    case 'evening': return 'Moved to Tonight';
+    case 'date': return `Moved to ${relDay(when.date, currentDate())}`;
+    case 'someday': return 'Moved to Someday';
+    case 'anytime': return 'Moved to Anytime';
+    case 'clear': return 'Date cleared';
+  }
 }
 
 /** Value-based Deadline sheet, shared by the task card and Quick Entry. */
@@ -183,14 +198,38 @@ export function DeadlineSheet(props: {
   value: DateStr | null;
   onChange: (d: DateStr | null) => void;
   onClose: () => void;
+  /** Optional time of day on the deadline (the task card offers it). */
+  time?: string | null;
+  onTimeChange?: (t: string | null) => void;
 }): JSX.Element {
   const set = (d: DateStr | null) => {
     props.onChange(d);
     props.onClose();
   };
   return (
-    <Sheet onClose={props.onClose} dragAnywhere>
+    <Sheet onClose={props.onClose}>
       <SheetTitle>Deadline</SheetTitle>
+      <Show when={props.onTimeChange && props.value}>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '0 20px 6px' }}>
+          <span style={{ flex: '1', 'font-size': '15px', color: 'var(--text-secondary)' }}>Due by</span>
+          <input
+            type="time"
+            data-testid="deadline-time"
+            value={props.time ?? ''}
+            step={300}
+            onChange={(e) => props.onTimeChange!(e.currentTarget.value || null)}
+            style={{
+              padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)',
+              'font-size': '16px', border: 'none', 'color-scheme': 'inherit',
+            }}
+          />
+          <Show when={props.time}>
+            <button data-testid="deadline-time-clear" onClick={() => props.onTimeChange!(null)} style={{ color: 'var(--text-secondary)', 'font-size': '14px' }}>
+              Any time
+            </button>
+          </Show>
+        </div>
+      </Show>
       <MonthGrid selected={props.value} onSelect={set} />
       <Show when={props.value}>
         <PickerRow icon={<Icon name="close" size={18} color="var(--text-secondary)" />} label="Remove Deadline" dim onClick={() => set(null)} />
@@ -204,7 +243,9 @@ export function DeadlinePicker(props: { task: Task; onClose: () => void }): JSX.
   return (
     <DeadlineSheet
       value={props.task.deadline}
-      onChange={(d) => void updateTask(props.task.id, { deadline: d })}
+      onChange={(d) => void updateTask(props.task.id, d === null ? { deadline: null, deadlineTime: null } : { deadline: d })}
+      time={props.task.deadlineTime}
+      onTimeChange={(t) => void updateTask(props.task.id, { deadlineTime: t })}
       onClose={props.onClose}
     />
   );
@@ -361,7 +402,7 @@ export function MovePicker(props: {
       title="Move to"
       options={options()}
       isSelected={(dest) => destMatchesTask(dest, props.task)}
-      onPick={(dest) => void moveTask(props.task.id, dest)}
+      onPick={(dest) => void undoable('Move', () => moveTask(props.task.id, dest), 'Moved')}
       onClose={props.onClose}
     />
   );

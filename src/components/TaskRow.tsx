@@ -15,6 +15,7 @@ import { quadrantMeta } from '../domain/eisenhower';
 import { isMit } from '../domain/focus';
 import { RowTimeChip } from './TimeControls';
 import { trackingTaskId } from '../app/timeTracking';
+import { timeLabel } from './PlannerControls';
 
 export interface TaskRowContext {
   /** Show the Eisenhower chip and open its picker (Today only). */
@@ -126,7 +127,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             />
           </Show>
         </div>
-        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening) || t().energy || (props.ctx.showMit && isMit(t(), currentDate())) || t().repeatTemplateId || t().timeEstimateMin || Object.keys(t().timeSpent ?? {}).length > 0 || trackingTaskId() === t().id}>
+        <Show when={notePreview() || t().checklist.length > 0 || tags().length > 0 || (props.ctx.showWhen && t().startDate) || (props.ctx.showEveningBadge && t().evening) || t().energy || (props.ctx.showMit && isMit(t(), currentDate())) || t().repeatTemplateId || t().startTime || t().timeEstimateMin || Object.keys(t().timeSpent ?? {}).length > 0 || trackingTaskId() === t().id}>
           <div
             style={{
               display: 'flex',
@@ -155,11 +156,18 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
                 <Icon name="repeat" size={11} />
               </span>
             </Show>
+            {/* Today shows the time of day; other lists show the day, with the time */}
+            <Show when={!props.ctx.showWhen && timeLabel(t(), currentDate())}>
+              <span data-testid="row-time" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--blue)', 'font-size': 'var(--fs-chip)', 'font-weight': '600', 'font-variant-numeric': 'tabular-nums' }}>
+                <Icon name="clock" size={11} />
+                {timeLabel(t(), currentDate())}
+              </span>
+            </Show>
             <RowTimeChip task={t()} />
             <Show when={props.ctx.showWhen && t().startDate}>
               <span style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--text-secondary)', 'font-size': 'var(--fs-chip)' }}>
                 <Icon name="calendar" size={11} strokeWidth={2.2} />
-                {formatRelative(t().startDate!, currentDate())}
+                {timeLabel(t(), currentDate(), true) ?? formatRelative(t().startDate!, currentDate())}
               </span>
             </Show>
             <Show when={props.ctx.showEveningBadge && t().evening}>

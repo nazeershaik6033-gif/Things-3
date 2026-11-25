@@ -57,6 +57,10 @@ export interface QuickEntryState {
   evening?: boolean;
   /** Insert at a specific position (Magic Plus drag). */
   orderKey?: string;
+  /** From the timeline: the slot that was pressed or drawn. Kept only while
+   *  the entry still has a day (picking Someday drops it). */
+  startTime?: string | null;
+  durationMin?: number | null;
 }
 
 const [quickEntry, setQuickEntry] = createSignal<QuickEntryState | null>(null);

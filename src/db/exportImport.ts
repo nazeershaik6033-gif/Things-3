@@ -1,4 +1,5 @@
 import { db } from './db';
+import { clearUndo } from './undo';
 import type {
   Task, Project, Heading, Area, Tag, Setting,
   Board, BoardList, BoardLabel, Card, RoutineItem, RoutineLog, DailyTarget,
@@ -58,7 +59,7 @@ export interface ExportFile {
   };
 }
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -188,7 +189,7 @@ function withCompletionStamp<T extends { status: string; completedAt: number | n
 }
 
 /** Older backups lack later task fields (focus in v7, time tracking and
- *  issue links in v9); default them. */
+ *  issue links in v9, planner times in v10); default them. */
 function withFocusFields(t: Task): Task {
   return {
     ...t,
@@ -197,6 +198,9 @@ function withFocusFields(t: Task): Task {
     timeEstimateMin: t.timeEstimateMin ?? null,
     timeSpent: t.timeSpent ?? {},
     issueRef: t.issueRef ?? null,
+    startTime: t.startTime ?? null,
+    durationMin: t.durationMin ?? null,
+    deadlineTime: t.deadlineTime ?? null,
   };
 }
 
@@ -239,4 +243,6 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.counterDays.bulkPut(file.data.counterDays ?? []);
     await db.dayReviews.bulkPut(file.data.dayReviews ?? []);
   });
+  // Nothing recorded before a replace-all import refers to rows that exist now
+  clearUndo();
 }

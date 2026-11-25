@@ -7,6 +7,7 @@ import type {
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
 import { fromDateStr, todayStr, toDateStr } from '../domain/dates';
 import { logId } from '../domain/routine';
+import { noteOps } from './undo';
 
 /** Every write flows through this module. Ops carry before/after images so an
  *  undo ring buffer can be layered on later (iteration 2) without rewrites. */
@@ -36,6 +37,7 @@ export async function applyOps(ops: Op[]): Promise<void> {
       else await table.put(op.after);
     }
   });
+  noteOps(ops);
 }
 
 // ---------------------------------------------------------------- tasks ----
@@ -88,6 +90,9 @@ export function newTask(partial: Partial<Task> = {}): Task {
     timeEstimateMin: null,
     timeSpent: {},
     issueRef: null,
+    startTime: null,
+    durationMin: null,
+    deadlineTime: null,
     ...partial,
   };
 }
@@ -144,7 +149,57 @@ export async function setTaskWhen(id: string, when: When): Promise<void> {
     const t = await db.tasks.get(id);
     if (t && t.bucket !== 'anytime') patch.bucket = 'anytime';
   }
+  // A time of day survives a change of *day* (Today, a date): "10 AM" still
+  // means 10 AM. It goes when the to-do loses its day, or when a vague slot
+  // (Morning/Afternoon/Tonight) is picked instead of an exact time.
+  if (when.type !== 'today' && when.type !== 'date') patch.startTime = null;
   await updateTask(id, patch);
+}
+
+/** Put a to-do on the timeline: a day, a start time and a block length.
+ *  `startTime: null` takes it off the grid but keeps its day. */
+export async function setTaskTime(
+  id: string,
+  date: DateStr,
+  startTime: string | null,
+  durationMin?: number | null,
+): Promise<void> {
+  const t = await db.tasks.get(id);
+  if (!t) return;
+  const patch: Partial<Task> = { startDate: date, startTime };
+  if (durationMin !== undefined) patch.durationMin = durationMin;
+  // Timed means it has a day, so it can't stay in the Inbox or Someday; and
+  // an exact time replaces Today's vague Morning/Afternoon/Tonight slot.
+  if (startTime !== null) {
+    if (t.bucket !== 'anytime') patch.bucket = 'anytime';
+    patch.evening = false;
+    if (t.reminderTime === 'morning' || t.reminderTime === 'afternoon') patch.reminderTime = null;
+  }
+  await updateTask(id, patch);
+}
+
+/** Several timeline changes as one write (a push or a shift moves many). */
+export async function setTaskTimes(
+  changes: { id: string; date: DateStr; startTime: string; durationMin: number }[],
+): Promise<void> {
+  const ops: Op[] = [];
+  const now = Date.now();
+  for (const c of changes) {
+    const before = await db.tasks.get(c.id);
+    if (!before) continue;
+    const after: Task = {
+      ...before,
+      startDate: c.date,
+      startTime: c.startTime,
+      durationMin: c.durationMin,
+      bucket: 'anytime',
+      evening: false,
+      reminderTime: before.reminderTime === 'morning' || before.reminderTime === 'afternoon' ? null : before.reminderTime,
+      modifiedAt: now,
+    };
+    ops.push({ table: 'tasks', key: c.id, before, after });
+  }
+  await applyOps(ops);
 }
 
 /** `at` backdates the entry — the overdue prompt passes the day the user says
@@ -227,7 +282,7 @@ export async function moveTask(
   if (dest.bucket === 'inbox') {
     // Moving back to inbox clears dates and homes
     patch.projectId = null; patch.headingId = null; patch.areaId = null;
-    patch.startDate = null; patch.evening = false;
+    patch.startDate = null; patch.evening = false; patch.startTime = null;
   }
   patch.orderKey = orderKey ?? keyAtEnd(await containerTasks({ ...t, ...patch } as Task));
   await updateTask(id, patch);
