@@ -2,10 +2,14 @@ import { createSignal, onMount, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
 import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
-import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
+import { DEFAULT_PROXY, extraCalendars, importIcsText, loadCalendarPrefs, refreshCalendar } from '../app/calendar';
+import { CalendarSources } from '../components/CalendarSources';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
 import { aiConfig, askCompletionDate, setAskCompletionDate, updateAiConfig } from '../app/settings';
-import { DEFAULT_ALERT_CHOICES, SNAP_CHOICES, defaultAlert, setDefaultAlert, setSnapStep, snapStep } from '../app/planner';
+import {
+  DEFAULT_ALERT_CHOICES, SNAP_CHOICES, defaultAlert, setDefaultAlert, setShowWeekNumbers, setSnapStep, setWeekStart,
+  showWeekNumbers, snapStep, weekStart,
+} from '../app/planner';
 import { GEMINI_MODELS, OPENROUTER_MODELS, type AiProvider } from '../net/ai';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
@@ -29,6 +33,8 @@ function Section(props: { title: string; children: JSX.Element }): JSX.Element {
 
 export function SettingsScreen(): JSX.Element {
   const [icsUrl, setIcsUrl] = createSignal('');
+  /** The main link as saved (the field above may hold unsaved edits). */
+  const [savedIcsUrl, setSavedIcsUrl] = createSignal('');
   const [icsProxy, setIcsProxy] = createSignal(DEFAULT_PROXY);
   const [calStatus, setCalStatus] = createSignal('');
   const [importStatus, setImportStatus] = createSignal('');
@@ -38,6 +44,7 @@ export function SettingsScreen(): JSX.Element {
 
   onMount(async () => {
     setIcsUrl(await getSetting('icsUrl', ''));
+    setSavedIcsUrl(icsUrl());
     // Show the default if a previous save left the proxy empty
     setIcsProxy((await getSetting('icsProxy', DEFAULT_PROXY)).trim() || DEFAULT_PROXY);
     if (navigator.storage?.estimate) {
@@ -53,10 +60,15 @@ export function SettingsScreen(): JSX.Element {
     const proxy = icsProxy().trim() || DEFAULT_PROXY;
     setIcsProxy(proxy);
     await setSetting('icsUrl', icsUrl().trim());
+    setSavedIcsUrl(icsUrl().trim());
     await setSetting('icsProxy', proxy);
     await setSetting('lastIcsFetch', 0);
+    // Drop events of a main link that was removed or replaced — but keep the
+    // extra calendars' events and imported files
+    const keep = new Set([icsUrl().trim(), 'file', ...extraCalendars().map((c) => c.url)]);
+    await db.calendarEvents.filter((e) => !keep.has(e.calendarUrl)).delete();
+    await loadCalendarPrefs();
     if (!icsUrl().trim()) {
-      await db.calendarEvents.clear();
       setCalStatus('Calendar removed.');
       return;
     }
@@ -231,6 +243,38 @@ export function SettingsScreen(): JSX.Element {
               {m}m
             </button>
           ))}
+        </div>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0' }}>
+          <span style={{ flex: '1', 'font-size': '15px' }}>Week starts on</span>
+          {([1, 0] as const).map((d) => (
+            <button
+              data-testid={`week-start-${d}`}
+              aria-pressed={weekStart() === d}
+              onClick={() => void setWeekStart(d)}
+              style={{
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                background: weekStart() === d ? 'var(--blue)' : 'var(--bg-inset)',
+                color: weekStart() === d ? 'var(--text-invert)' : 'var(--text)',
+              }}
+            >
+              {d === 1 ? 'Monday' : 'Sunday'}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0' }}>
+          <span style={{ flex: '1', 'font-size': '15px' }}>Week numbers in the calendar</span>
+          <button
+            data-testid="toggle-week-numbers"
+            aria-pressed={showWeekNumbers()}
+            onClick={() => void setShowWeekNumbers(!showWeekNumbers())}
+            style={{
+              padding: '5px 12px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+              background: showWeekNumbers() ? 'var(--blue)' : 'var(--bg-inset)',
+              color: showWeekNumbers() ? 'var(--text-invert)' : 'var(--text)',
+            }}
+          >
+            {showWeekNumbers() ? 'On' : 'Off'}
+          </button>
         </div>
         <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0', 'flex-wrap': 'wrap' }}>
           <span style={{ flex: '1', 'font-size': '15px', 'min-width': '140px' }}>Default alert</span>
@@ -494,6 +538,7 @@ export function SettingsScreen(): JSX.Element {
         <Show when={calStatus()}>
           <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{calStatus()}</div>
         </Show>
+        <CalendarSources mainUrl={savedIcsUrl()} />
         <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
           Events appear in the Calendar screen and in Today / Upcoming, read-only. They refresh
           automatically when you open the app (hourly at most) — use the refresh button in the

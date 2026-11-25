@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import { getSetting, setSetting } from '../db/mutations';
 import { DEFAULT_SNAP_MIN } from '../domain/timeline';
+import type { DateStr } from '../db/models';
 
 /** Day planner preferences.
  *
@@ -87,4 +88,34 @@ export async function startAlertSettings(): Promise<void> {
 export async function setDefaultAlert(v: number | null): Promise<void> {
   setDefaultAlertSignal(v);
   await setSetting('defaultAlertMin', v);
+}
+
+/** First day of the week in the calendar views: 1 Monday (default), 0 Sunday. */
+const [weekStart, setWeekStartSignal] = createSignal<0 | 1>(1);
+const [showWeekNumbers, setShowWeekNumbersSignal] = createSignal(false);
+export { weekStart, showWeekNumbers };
+
+export async function startCalendarViewSettings(): Promise<void> {
+  setWeekStartSignal((await getSetting<number>('weekStart', 1)) === 0 ? 0 : 1);
+  setShowWeekNumbersSignal(await getSetting<boolean>('showWeekNumbers', false));
+}
+export async function setWeekStart(v: 0 | 1): Promise<void> {
+  setWeekStartSignal(v);
+  await setSetting('weekStart', v);
+}
+export async function setShowWeekNumbers(v: boolean): Promise<void> {
+  setShowWeekNumbersSignal(v);
+  await setSetting('showWeekNumbers', v);
+}
+
+/** The day the Planner opens on when another screen sends you there (the
+ *  calendar's Week/Day buttons, a week number). Read once on open. */
+let plannerFocus: DateStr | null = null;
+export function focusPlannerOn(d: DateStr): void {
+  plannerFocus = d;
+}
+export function takePlannerFocus(): DateStr | null {
+  const d = plannerFocus;
+  plannerFocus = null;
+  return d;
 }

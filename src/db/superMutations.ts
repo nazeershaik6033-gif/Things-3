@@ -3,7 +3,7 @@ import { db } from './db';
 import type {
   Counter, CounterKind, DateStr, DayReview, RepeatCfg, RepeatRule, RepeatTemplate, Task,
 } from './models';
-import { applyOps, createProject, createTag, createTask, onTaskCompleted, updateTask, type Op } from './mutations';
+import { applyOps, completeTask, completionTimeFor, createProject, createTag, createTask, onTaskCompleted, updateTask, type Op } from './mutations';
 import { keyAtEnd, sortByOrderKey } from './ordering';
 import { addDays, dateStrOf, daysBetween, todayStr } from '../domain/dates';
 import { addTime, splitAcrossDays } from '../domain/timeTracking';
@@ -242,6 +242,17 @@ export async function onRepeatCompleted(task: Task, completedAt: number): Promis
 }
 
 onTaskCompleted(onRepeatCompleted);
+
+/** Skip one occurrence (TaskNotes' skipped_instances): it's marked canceled
+ *  — the Logbook and the series history show it as skipped, not done — and
+ *  the series moves on exactly as if it had been finished. */
+export async function skipOccurrence(taskId: string, today = todayStr()): Promise<void> {
+  const t = await db.tasks.get(taskId);
+  if (!t || !t.repeatTemplateId || t.status !== 'open') return;
+  await completeTask(taskId, true);
+  await onRepeatCompleted(t, completionTimeFor(today, today));
+  await runRepeats(today);
+}
 
 // ------------------------------------------------------------ counters ----
 

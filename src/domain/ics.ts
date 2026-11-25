@@ -16,6 +16,10 @@ interface RawEvent {
   dtendIsDate: boolean;
   rrule: string | null;
   status: string | null;
+  /** EXDATE values (each may be a comma list), with their TZID. */
+  exdates: { value: string; tzid: string | null }[];
+  /** RECURRENCE-ID: this VEVENT replaces one instance of the series `uid`. */
+  recurrenceId: { value: string; tzid: string | null } | null;
 }
 
 /** Unfold continuation lines (CRLF followed by space/tab) per RFC 5545. */
@@ -63,7 +67,7 @@ function parseRawEvents(src: string): RawEvent[] {
     if (!parsed) continue;
     const { name, params, value } = parsed;
     if (name === 'BEGIN' && value.toUpperCase() === 'VEVENT') {
-      cur = { uid: '', summary: '', dtstartTzid: null, dtstartIsDate: false, dtend: null, dtendTzid: null, dtendIsDate: false, rrule: null, status: null };
+      cur = { uid: '', summary: '', dtstartTzid: null, dtstartIsDate: false, dtend: null, dtendTzid: null, dtendIsDate: false, rrule: null, status: null, exdates: [], recurrenceId: null };
     } else if (name === 'END' && value.toUpperCase() === 'VEVENT') {
       if (cur && cur.dtstart) events.push(cur as RawEvent);
       cur = null;
@@ -83,6 +87,10 @@ function parseRawEvents(src: string): RawEvent[] {
           break;
         case 'RRULE': cur.rrule = value; break;
         case 'STATUS': cur.status = value.toUpperCase(); break;
+        case 'EXDATE':
+          for (const v of value.split(',')) if (v.trim()) cur.exdates!.push({ value: v.trim(), tzid: params.get('TZID') ?? null });
+          break;
+        case 'RECURRENCE-ID': cur.recurrenceId = { value, tzid: params.get('TZID') ?? null }; break;
       }
     }
   }
@@ -273,11 +281,36 @@ export interface ParseOptions {
   to: DateStr;
 }
 
+/** The local date an EXDATE / RECURRENCE-ID names: a DATE value as is, a
+ *  DATE-TIME converted from its zone. Instances are matched by date, which
+ *  is how the series is expanded here (one instance per day at most). */
+function instanceDate(v: { value: string; tzid: string | null }): DateStr | null {
+  if (/^\d{8}$/.test(v.value)) return parseDateValue(v.value);
+  const ms = parseDateTime(v.value, v.tzid);
+  return ms === null ? null : dateStrOf(ms);
+}
+
 export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
   const out: CalendarEvent[] = [];
-  for (const raw of parseRawEvents(src)) {
+  const raws = parseRawEvents(src);
+  // Instances removed from a series: EXDATEs (cancelled single meetings) and
+  // instances replaced by their own VEVENT with RECURRENCE-ID (moved or
+  // edited meetings — and cancelled ones, which carry STATUS:CANCELLED).
+  const removed = new Map<string, Set<DateStr>>();
+  const removeFrom = (uid: string, d: DateStr | null) => {
+    if (!d) return;
+    const set = removed.get(uid) ?? new Set<DateStr>();
+    set.add(d);
+    removed.set(uid, set);
+  };
+  for (const raw of raws) {
+    if (raw.recurrenceId) removeFrom(raw.uid, instanceDate(raw.recurrenceId));
+    if (raw.rrule) for (const x of raw.exdates) removeFrom(raw.uid, instanceDate(x));
+  }
+  for (const raw of raws) {
     if (raw.status === 'CANCELLED') continue;
     const title = raw.summary || '(No title)';
+    const skip = (raw.rrule && removed.get(raw.uid)) || new Set<DateStr>();
 
     if (raw.rrule) {
       // Recurring event: expand within the display window
@@ -297,6 +330,7 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
         })();
 
         for (const occDate of expandRRuleDates(rule, startDateStr, opts)) {
+          if (skip.has(occDate)) continue;
           for (let i = 0; i < durationDays; i++) {
             const d = i === 0 ? occDate : addDays(occDate, i);
             if (d >= opts.from && d <= opts.to) {
@@ -321,6 +355,7 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
         const timeOffset = startMs - midnightMs;
 
         for (const occDate of expandRRuleDates(rule, startDateStr, opts)) {
+          if (skip.has(occDate)) continue;
           const occMidnight = fromDateStr(occDate).getTime();
           const occStart = occMidnight + timeOffset;
           const occEnd = durationMs > 0 ? occStart + durationMs : null;
@@ -359,7 +394,7 @@ export function parseICS(src: string, opts: ParseOptions): CalendarEvent[] {
       const date = dateStrOf(start);
       if (date < opts.from || date > opts.to) continue;
       out.push({
-        id: `${opts.calendarUrl}#${raw.uid || title}#${raw.dtstart}`,
+        id: `${opts.calendarUrl}#${raw.uid || title}#${raw.dtstart}${raw.recurrenceId ? '#moved' : ''}`,
         date, start, end, title, allDay: false,
         calendarUrl: opts.calendarUrl,
       });

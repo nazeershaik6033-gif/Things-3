@@ -258,3 +258,27 @@ export function describeRule(rule: RepeatRule): string {
   }
   return text;
 }
+
+export type OccurrenceState = 'done' | 'skipped' | 'missed' | 'open' | 'upcoming';
+
+/** A repeating to-do's recent record, oldest first: each occurrence by its
+ *  day — done, skipped (canceled), missed (still open, day passed), today's
+ *  open one, and what's coming. TaskNotes shows this as a completion calendar. */
+export function seriesHistory(
+  occurrences: { startDate: DateStr | null; status: 'open' | 'completed' | 'canceled'; trashedAt: number | null }[],
+  today: DateStr,
+  limit = 14,
+): { date: DateStr; state: OccurrenceState }[] {
+  return occurrences
+    .filter((o) => o.startDate && o.trashedAt === null)
+    .map((o) => ({
+      date: o.startDate!,
+      state: (o.status === 'completed' ? 'done'
+        : o.status === 'canceled' ? 'skipped'
+        : o.startDate! < today ? 'missed'
+        : o.startDate === today ? 'open'
+        : 'upcoming') as OccurrenceState,
+    }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .slice(-limit);
+}

@@ -196,3 +196,44 @@ what made morning planning and mid-day replanning hard.
   - ordinary words left alone ("Read 1984", "Sat down with Sam");
   - alert defaults, ordering, the calendar events, sent state, day selection and in-app moments.
 - **`tests/e2e/capture.spec.ts`:** the full capture flow including the repeat, Keep as text, tag suggestions, and the alerts panel and timeline button.
+
+## Phase 3 as built
+
+### Calendar events
+
+- **Exceptions in repeating series.** `EXDATE` (comma lists, `DATE` or zoned `DATE-TIME`) and `RECURRENCE-ID` overrides are applied when a series is expanded:
+  - a moved instance replaces the original;
+  - a cancelled one (`STATUS:CANCELLED`) removes it.
+
+  Instances are matched by local date, because the expander produces at most one instance a day. This is Day Planner's ical handling, minus attendee status: a web app can't know which attendee is you.
+- **Several subscriptions.**
+  - Stored as `icsExtra` (`{url, name}`), each synced like the main link.
+  - Events stay keyed by source URL, so each calendar keeps its own colour (`calendarColors`).
+  - Changing or clearing the main link now removes only its own events. Before, clearing it wiped everything, and changing it left the old events behind.
+- **Events into to-dos.** Tapping a timed or all-day event opens a sheet (TaskNotes' create task from event):
+  - **Make it a to-do** at the event's time and length;
+  - **Add a prep to-do** for the 30 minutes before it.
+
+  Both can be undone.
+
+### Repeats
+
+- **Skip this one.** `skipOccurrence` marks the occurrence canceled (logged as skipped), then advances the series exactly as a completion would: after-completion rules schedule the next one from today, and fixed rules re-plan. This matches TaskNotes' `skipped_instances`, on Clarity's one-task-per-occurrence model. It can be undone.
+- **History.** `seriesHistory` lists a series' recent occurrences as done, skipped, missed, today or coming. The card shows it as a strip with a done count, a compact form of TaskNotes' completion calendar.
+
+### Calendar views
+
+- **Day and Week** are the Planner, opened on the selected day.
+- **Year** (TaskNotes' year view) shows twelve mini months shaded by each day's load.
+- **Month dots** follow the calendar plugin's meters. Filled dots (up to three) grow with planned plus done (`dayStats`, `dotCount`). A hollow ring marks a day with open to-dos, red when the day has passed.
+- **Settings.** Week start (Monday/Sunday, also used by the Planner's week) and ISO week numbers, which open that week in the Planner.
+
+### Moved to phase 4
+
+Multi-select and group reschedule, and deadline span bars. Both are list and timeline changes that fit better beside the Kanban and saved views work.
+
+### Tests
+
+- `tests/unit/ics.test.ts`: EXDATE (timed and all-day, comma lists), moved and cancelled overrides, unique ids.
+- `tests/unit/calendarMonth.test.ts`: day stats, dot counts, ISO weeks at year boundaries.
+- `tests/e2e/phase3.spec.ts`: event to prep and to-do, skip with history, year view, week numbers, Sunday weeks, Week opening the Planner.

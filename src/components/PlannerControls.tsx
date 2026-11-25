@@ -4,7 +4,10 @@ import { setTaskAlerts, setTaskTime } from '../db/mutations';
 import { defaultAlert } from '../app/planner';
 import { sendAlerts } from '../app/taskAlerts';
 import { alertState, describeBefore, effectiveAlerts, hasAlert, toggleAlert } from '../domain/taskAlerts';
-import { setRepeatSeriesTime } from '../db/superMutations';
+import { setRepeatSeriesTime, skipOccurrence } from '../db/superMutations';
+import { db } from '../db/db';
+import { createReactiveLiveQuery } from '../db/liveQuery';
+import { seriesHistory, type OccurrenceState } from '../domain/repeat';
 import { currentDate } from '../app/currentDate';
 import { undoable } from '../app/undo';
 import { haptic } from '../app/motion';
@@ -221,6 +224,68 @@ export function AlertsPanel(props: { task: Task }): JSX.Element {
           <span data-testid="alerts-state" style={{ 'font-size': '12px', color: state() === 'sent' ? 'var(--green)' : state() === 'changed' ? 'var(--orange, var(--red))' : 'var(--text-tertiary)' }}>
             {state() === 'sent' ? '✓ In Calendar' : state() === 'changed' ? 'Changed since sent' : ''}
           </span>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- repeats --
+
+const STATE_STYLE: Record<OccurrenceState, { bg: string; label: string }> = {
+  done: { bg: 'var(--green)', label: 'done' },
+  skipped: { bg: 'var(--text-tertiary)', label: 'skipped' },
+  missed: { bg: 'var(--red)', label: 'missed' },
+  open: { bg: 'var(--blue)', label: 'today' },
+  upcoming: { bg: 'transparent', label: 'coming' },
+};
+
+/** Skip this occurrence (with undo) and a strip of the series' recent days. */
+export function RepeatExtras(props: { task: Task; onSkipped?: () => void }): JSX.Element {
+  const series = createReactiveLiveQuery(
+    () => props.task.repeatTemplateId,
+    async (id) => (id ? db.tasks.where('repeatTemplateId').equals(id).toArray() : []),
+    [] as Task[],
+  );
+  const history = () => seriesHistory(series(), currentDate());
+  const done = () => history().filter((h) => h.state === 'done').length;
+  const past = () => history().filter((h) => h.state === 'done' || h.state === 'skipped' || h.state === 'missed').length;
+  return (
+    <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', 'flex-wrap': 'wrap', padding: '2px 0 6px 31px' }}>
+      <Show when={props.task.status === 'open'}>
+        <button
+          data-testid="chip-skip"
+          onClick={() => {
+            haptic('tick');
+            const id = props.task.id;
+            void undoable('Skip', () => skipOccurrence(id, currentDate()), 'Skipped — the next one is planned');
+            props.onSkipped?.();
+          }}
+          style={{
+            display: 'inline-flex', 'align-items': 'center', gap: '4px', padding: '4px 10px', 'border-radius': '999px',
+            'font-size': '13px', 'font-weight': '600', background: 'var(--bg-inset)', color: 'var(--text)',
+          }}
+        >
+          <Icon name="chevron-right" size={12} color="var(--purple)" /> Skip this one
+        </button>
+      </Show>
+      <Show when={history().length > 1}>
+        <div data-testid="repeat-history" title={`${done()} of the last ${past()} done`} style={{ display: 'flex', 'align-items': 'center', gap: '3px' }}>
+          <For each={history()}>
+            {(h) => (
+              <span
+                data-state={h.state}
+                title={`${h.date}: ${STATE_STYLE[h.state].label}`}
+                style={{
+                  width: '9px', height: '9px', 'border-radius': '3px', background: STATE_STYLE[h.state].bg,
+                  border: h.state === 'upcoming' ? '1.5px solid var(--text-tertiary)' : 'none',
+                }}
+              />
+            )}
+          </For>
+          <Show when={past() > 0}>
+            <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>{done()}/{past()}</span>
+          </Show>
         </div>
       </Show>
     </div>

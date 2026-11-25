@@ -29,7 +29,7 @@ import { stopTracking, trackingTaskId } from '../app/timeTracking';
 import { describeRule } from '../domain/repeat';
 import { createReactiveLiveQuery } from '../db/liveQuery';
 import { undoable } from '../app/undo';
-import { AlertsPanel, TimeChip, TimePicker } from './PlannerControls';
+import { AlertsPanel, RepeatExtras, TimeChip, TimePicker } from './PlannerControls';
 import { formatClock, parseHHMM } from '../domain/timeline';
 
 type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | 'time' | null;
@@ -488,6 +488,10 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
           </button>
         </Show>
       </div>
+
+      <Show when={repeatCfg()}>
+        <RepeatExtras task={t()} onSkipped={collapse} />
+      </Show>
 
       <div
         style={{

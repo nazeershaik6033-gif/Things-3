@@ -169,3 +169,44 @@ describe('buildReminderIcs', () => {
     expect(events[0]!.date).toBe('2026-07-01');
   });
 });
+
+describe('recurring exceptions', () => {
+  const cal = (body: string) => `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${body}END:VCALENDAR\r\n`;
+  const series = [
+    'BEGIN:VEVENT', 'UID:standup', 'SUMMARY:Standup',
+    'DTSTART;TZID=America/New_York:20261123T093000', 'DTEND;TZID=America/New_York:20261123T094500',
+    'RRULE:FREQ=DAILY;COUNT=5',
+    'EXDATE;TZID=America/New_York:20261124T093000',
+    'END:VEVENT',
+    // Wednesday's moved to 11:00
+    'BEGIN:VEVENT', 'UID:standup', 'SUMMARY:Standup (moved)',
+    'RECURRENCE-ID;TZID=America/New_York:20261125T093000',
+    'DTSTART;TZID=America/New_York:20261125T110000', 'DTEND;TZID=America/New_York:20261125T111500',
+    'END:VEVENT',
+    // Thursday's cancelled
+    'BEGIN:VEVENT', 'UID:standup', 'SUMMARY:Standup',
+    'RECURRENCE-ID;TZID=America/New_York:20261126T093000', 'STATUS:CANCELLED',
+    'DTSTART;TZID=America/New_York:20261126T093000', 'DTEND;TZID=America/New_York:20261126T094500',
+    'END:VEVENT', '',
+  ].join('\r\n');
+
+  it('drops EXDATEs, replaces moved instances and hides cancelled ones', () => {
+    const evs = parseICS(cal(series), { calendarUrl: 'u', from: '2026-11-20', to: '2026-11-30' });
+    const byDate = evs.map((e) => `${e.date} ${e.title} ${new Date(e.start!).getHours()}`);
+    expect(byDate).toEqual([
+      '2026-11-23 Standup 9',
+      '2026-11-25 Standup (moved) 11',
+      '2026-11-27 Standup 9',
+    ]);
+    expect(new Set(evs.map((e) => e.id)).size).toBe(evs.length);
+  });
+
+  it('handles all-day EXDATEs and comma lists', () => {
+    const allDay = [
+      'BEGIN:VEVENT', 'UID:gym', 'SUMMARY:Gym', 'DTSTART;VALUE=DATE:20261123', 'RRULE:FREQ=DAILY;COUNT=4',
+      'EXDATE;VALUE=DATE:20261124,20261126', 'END:VEVENT', '',
+    ].join('\r\n');
+    const evs = parseICS(cal(allDay), { calendarUrl: 'u', from: '2026-11-20', to: '2026-11-30' });
+    expect(evs.map((e) => e.date)).toEqual(['2026-11-23', '2026-11-25']);
+  });
+});

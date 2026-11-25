@@ -40,7 +40,7 @@ import { PlannerScreen } from '../screens/PlannerScreen';
 import { TrackerBar } from '../components/TimeControls';
 import { startRepeats, startTimeTracking } from './timeTracking';
 import { startUndoKeys } from './undo';
-import { startAlertSettings, startPlannerSettings } from './planner';
+import { startAlertSettings, startCalendarViewSettings, startPlannerSettings } from './planner';
 import { startTaskNudges } from './taskAlerts';
 import { FocusSprint } from '../components/FocusSprint';
 import { Toast } from '../ui/Toast';
@@ -103,6 +103,7 @@ export function App(): JSX.Element {
     void startSettings();
     void startPlannerSettings();
     void startAlertSettings();
+    void startCalendarViewSettings();
     onCleanup(startTaskNudges());
     startNavigation();
     startCalendarSync();

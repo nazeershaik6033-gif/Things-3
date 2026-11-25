@@ -11,6 +11,8 @@ import { setQuickEntry } from '../app/uiState';
 import { toggleComplete } from '../app/completion';
 import { defaultAlert, pushMode, setPushMode, snapStep } from '../app/planner';
 import { sendAlerts } from '../app/taskAlerts';
+import { calendarColor } from '../app/calendar';
+import { EventSheet } from './EventSheet';
 import { alertState, effectiveAlerts, tasksWithAlertsOn } from '../domain/taskAlerts';
 import { release, tryClaim } from '../gestures/arbiter';
 import { dayOfMonth, weekdayName } from '../domain/dates';
@@ -94,6 +96,8 @@ export function Timeline(props: {
   const [ghost, setGhost] = createSignal<{ x: number; y: number; title: string } | null>(null);
 
   const taskById = createMemo(() => new Map(props.tasks.map((t) => [t.id, t])));
+  const eventById = createMemo(() => new Map(props.events.map((e) => [e.id, e])));
+  const [sheetEvent, setSheetEvent] = createSignal<string | null>(null);
 
   const blocksByDate = createMemo(() => {
     const m = new Map<DateStr, TimeBlock[]>();
@@ -457,7 +461,8 @@ export function Timeline(props: {
       const b = findBlock(blockEl.dataset.tlBlock!);
       if (!b) return;
       if (b.kind === 'task') setSheetTask(b.refId);
-      else showToast(`${b.title || (b.kind === 'event' ? 'Event' : 'Focus sprint')} · ${formatRange(b.startMin, b.endMin)}`);
+      else if (b.kind === 'event') setSheetEvent(b.refId);
+      else showToast(`${b.title || 'Focus sprint'} · ${formatRange(b.startMin, b.endMin)}`);
       return;
     }
     const col = target.closest<HTMLElement>('[data-tl-col]');
@@ -672,7 +677,11 @@ export function Timeline(props: {
             {(d) => (
               <div data-testid="tl-allday" style={{ flex: '1', 'min-width': '0', display: 'flex', 'flex-direction': 'column', gap: '2px', padding: '4px 2px' }}>
                 <For each={allDay(d).events}>
-                  {(e) => <div style={allDayChip('var(--text-tertiary)')}>{e.title}</div>}
+                  {(e) => (
+                    <div data-tl-nodrag onClick={() => setSheetEvent(e.id)} style={{ ...allDayChip(calendarColor(e.calendarUrl)), cursor: 'pointer' }}>
+                      {e.title}
+                    </div>
+                  )}
                 </For>
                 <For each={allDay(d).deadlines}>
                   {(t) => (
@@ -743,6 +752,7 @@ export function Timeline(props: {
                     selected={selected() === p().block.key}
                     dragging={drag()?.kind === 'edit' && (drag() as { key: string }).key === p().block.key}
                     task={p().block.kind === 'task' ? taskById().get(p().block.refId) : undefined}
+                    color={p().block.kind === 'event' ? calendarColor(eventById().get(p().block.refId)?.calendarUrl ?? '') : undefined}
                   />
                 )}
               </Key>
@@ -792,6 +802,10 @@ export function Timeline(props: {
         )}
       </Show>
 
+      <Show when={sheetEvent() ? eventById().get(sheetEvent()!) : undefined}>
+        {(e) => <EventSheet event={e()} onClose={() => setSheetEvent(null)} />}
+      </Show>
+
       <Show when={sheetTask() ? taskById().get(sheetTask()!) : undefined}>
         {(t) => (
           <Sheet onClose={() => setSheetTask(null)}>
@@ -820,12 +834,14 @@ function BlockView(props: {
   selected: boolean;
   dragging: boolean;
   task?: Task;
+  /** Calendar colour for event blocks. */
+  color?: string;
 }): JSX.Element {
   const b = () => props.block;
   const height = () => Math.max(16, (b().endMin - b().startMin) * PX_PER_MIN - 2);
   const roomy = () => height() >= 34;
   const accent = () =>
-    b().kind === 'event' ? 'var(--text-tertiary)'
+    b().kind === 'event' ? (props.color ?? 'var(--text-tertiary)')
     : b().kind === 'sprint' ? 'var(--purple)'
     : props.task && isMit(props.task, currentDate()) ? 'var(--yellow-deep)'
     : 'var(--blue)';
@@ -859,7 +875,7 @@ function BlockView(props: {
         'border-radius': '6px',
         'border-left': `3px solid ${accent()}`,
         background: b().kind === 'event'
-          ? 'var(--bg-inset)'
+          ? `color-mix(in srgb, ${accent()} 10%, var(--bg-inset))`
           : `color-mix(in srgb, ${accent()} 16%, var(--bg-card))`,
         color: 'var(--text)',
         padding: roomy() ? '3px 6px' : '0 6px',

@@ -3,25 +3,25 @@ import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import type { DateStr } from '../db/models';
 import { currentDate } from '../app/currentDate';
-import { plannerDays, setPlannerDays, type PlannerDays } from '../app/planner';
+import { plannerDays, setPlannerDays, takePlannerFocus, weekStart as weekStartPref, type PlannerDays } from '../app/planner';
 import { addDays, monthName, weekdayOf, yearOf } from '../domain/dates';
 import { Timeline } from '../components/Timeline';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
 
 /** The Planner: the timeline across 1, 3 or 7 days, with the same blocks,
- *  drags and tray as Today's timeline. A week starts on Monday, like the
- *  Worklog and the Calendar; 1 and 3 days start wherever you are. */
+ *  drags and tray as Today's timeline. A week starts on the day set in
+ *  Settings (Monday by default); 1 and 3 days start wherever you are. */
 
 function weekStart(d: DateStr): DateStr {
-  return addDays(d, -((weekdayOf(d) + 6) % 7));
+  return addDays(d, -((weekdayOf(d) - weekStartPref() + 7) % 7));
 }
 
 export function PlannerScreen(): JSX.Element {
   const tasks = createLiveQuery(() => db.tasks.toArray(), []);
   const events = createLiveQuery(() => db.calendarEvents.toArray(), []);
   const sprints = createLiveQuery(() => db.sprints.toArray(), []);
-  const [anchor, setAnchor] = createSignal<DateStr>(currentDate());
+  const [anchor, setAnchor] = createSignal<DateStr>(takePlannerFocus() ?? currentDate());
   let scrollEl: HTMLDivElement | undefined;
 
   const first = () => (plannerDays() === 7 ? weekStart(anchor()) : anchor());

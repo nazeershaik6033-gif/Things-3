@@ -1,3 +1,4 @@
+import { createSignal } from 'solid-js';
 import { db } from '../db/db';
 import { getSetting, setSetting } from '../db/mutations';
 import { defaultWindow, parseICS } from '../domain/ics';
@@ -95,27 +96,107 @@ const EMBED_HELP =
   'in iCal format” instead (it ends in .ics): Google Calendar → Settings → ' +
   'your calendar → Integrate calendar → Secret address in iCal format.';
 
-export async function refreshCalendar(force = false): Promise<CalendarStatus | null> {
-  const rawUrl = await getSetting<string>('icsUrl', '');
-  if (!rawUrl) return null;
-  const last = await getSetting<number>('lastIcsFetch', 0);
-  if (!force && Date.now() - last < 60 * 60 * 1000) return null;
-  // Empty/cleared proxy field must not disable sync — fall back to default
-  const proxy = (await getSetting<string>('icsProxy', DEFAULT_PROXY)).trim() || DEFAULT_PROXY;
+// ------------------------------------------------- several calendars --
+
+/** Calendars beyond the main one (work, family…), each synced like it.
+ *  Events are keyed by their source URL, so each keeps its own colour. */
+export interface ExtraCalendar {
+  url: string;
+  name: string;
+}
+
+export const CALENDAR_COLORS = [
+  'var(--teal)', 'var(--blue)', 'var(--green)', 'var(--orange, var(--yellow-deep))',
+  'var(--purple)', 'var(--red)', 'var(--text-tertiary)',
+] as const;
+
+const [calendarColors, setCalendarColorsSignal] = createSignal<Record<string, string>>({});
+const [extraCalendars, setExtraCalendarsSignal] = createSignal<ExtraCalendar[]>([]);
+const [mainCalendarUrl, setMainCalendarUrl] = createSignal('');
+export { calendarColors, extraCalendars };
+
+/** A calendar's colour: chosen in Settings, else by its place in the list
+ *  (main teal, then the palette), imported files grey. */
+export function calendarColor(url: string): string {
+  const chosen = calendarColors()[url];
+  if (chosen) return chosen;
+  if (url === 'file') return 'var(--text-tertiary)';
+  if (url === mainCalendarUrl()) return CALENDAR_COLORS[0];
+  const i = extraCalendars().findIndex((c) => c.url === url);
+  return CALENDAR_COLORS[(i + 1) % (CALENDAR_COLORS.length - 1)]!;
+}
+
+export async function loadCalendarPrefs(): Promise<void> {
+  setCalendarColorsSignal(await getSetting<Record<string, string>>('calendarColors', {}));
+  setExtraCalendarsSignal(await getSetting<ExtraCalendar[]>('icsExtra', []));
+  setMainCalendarUrl(await getSetting<string>('icsUrl', ''));
+}
+
+export async function setCalendarColor(url: string, color: string): Promise<void> {
+  const next = { ...calendarColors(), [url]: color };
+  setCalendarColorsSignal(next);
+  await setSetting('calendarColors', next);
+}
+
+export async function addExtraCalendar(rawUrl: string, name: string): Promise<CalendarStatus> {
+  const url = rawUrl.trim();
+  if (!url) return { ok: false, message: 'Paste the calendar’s .ics link first.' };
+  if (url === mainCalendarUrl() || extraCalendars().some((c) => c.url === url)) {
+    return { ok: false, message: 'That calendar is already added.' };
+  }
+  const next = [...extraCalendars(), { url, name: name.trim() || `Calendar ${extraCalendars().length + 2}` }];
+  setExtraCalendarsSignal(next);
+  await setSetting('icsExtra', next);
+  return (await refreshCalendar(true)) ?? { ok: true, message: 'Added.' };
+}
+
+export async function removeExtraCalendar(url: string): Promise<void> {
+  const next = extraCalendars().filter((c) => c.url !== url);
+  setExtraCalendarsSignal(next);
+  await setSetting('icsExtra', next);
+  await db.calendarEvents.where('calendarUrl').equals(url).delete();
+}
+
+/** Every subscribed calendar: the main one (Settings' link) and the extras. */
+async function subscriptions(): Promise<string[]> {
+  const main = await getSetting<string>('icsUrl', '');
+  setMainCalendarUrl(main);
+  const extra = await getSetting<ExtraCalendar[]>('icsExtra', []);
+  return [...(main ? [main] : []), ...extra.map((c) => c.url)];
+}
+
+async function syncOne(rawUrl: string, proxy: string): Promise<CalendarStatus & { count: number }> {
   const { url, fromEmbed } = normalizeCalendarUrl(rawUrl);
   try {
     const text = await fetchIcsText(url, proxy);
     const count = await importIcsText(text, rawUrl);
-    await setSetting('lastIcsFetch', Date.now());
-    return { ok: true, message: `Updated — ${count} events synced.` };
+    return { ok: true, message: '', count };
   } catch (e) {
-    if (fromEmbed) return { ok: false, message: EMBED_HELP };
-    return { ok: false, message: e instanceof Error ? e.message : 'Calendar update failed.' };
+    if (fromEmbed) return { ok: false, message: EMBED_HELP, count: 0 };
+    return { ok: false, message: e instanceof Error ? e.message : 'Calendar update failed.', count: 0 };
   }
 }
 
+export async function refreshCalendar(force = false): Promise<CalendarStatus | null> {
+  const urls = await subscriptions();
+  if (urls.length === 0) return null;
+  const last = await getSetting<number>('lastIcsFetch', 0);
+  if (!force && Date.now() - last < 60 * 60 * 1000) return null;
+  // Empty/cleared proxy field must not disable sync — fall back to default
+  const proxy = (await getSetting<string>('icsProxy', DEFAULT_PROXY)).trim() || DEFAULT_PROXY;
+  const results = await Promise.all(urls.map((u) => syncOne(u, proxy)));
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length < results.length) await setSetting('lastIcsFetch', Date.now());
+  if (failed.length === 0) {
+    const count = results.reduce((n, r) => n + r.count, 0);
+    return { ok: true, message: `Updated — ${count} events synced${urls.length > 1 ? ` from ${urls.length} calendars` : ''}.` };
+  }
+  if (results.length === 1) return { ok: false, message: failed[0]!.message };
+  return { ok: false, message: `${failed.length} of ${results.length} calendars failed: ${failed[0]!.message}` };
+}
+
 export function startCalendarSync(): void {
-  void refreshCalendar();
+  void loadCalendarPrefs().then(() => refreshCalendar());
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') void refreshCalendar();
   });

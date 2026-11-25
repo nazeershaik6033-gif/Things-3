@@ -80,6 +80,18 @@ Built after a reverse-engineering analysis of [obsidian-day-planner](https://git
   - The app remembers what it sent. A bell turns green once a to-do is in Calendar, and "Changed since sent" tells you to send again.
   - While Clarity is open, alerts also appear in the app.
 
+### Calendars and repeats (phase 3)
+
+- **Moved and cancelled meetings.** Moved and cancelled single meetings in a repeating series now show correctly (`EXDATE`, and `RECURRENCE-ID` overrides). Before, a moved meeting showed at both times and a cancelled one still appeared.
+- **Several calendars, each with a colour.** Settings → Google Calendar → *Add another calendar* (work, family…). Every calendar gets a colour, shown on its blocks in the timeline and in Today's event list.
+- **Meetings into to-dos.** Tap a meeting on the timeline: **Make it a to-do** at its time, or **Add a prep to-do** for the 30 minutes before it.
+- **Skip one occurrence.** A repeating to-do's card has **Skip this one**. It's logged as skipped, not done, and the series moves on. A strip shows the series' recent days (done, skipped, missed, coming) with a done count.
+- **Calendar views.**
+  - Day / Week / Month / Year. Day and Week open the Planner on the selected day.
+  - Year shows twelve small months, each day shaded by how full it was.
+  - Month dots grow with how much a day holds (planned plus done, up to three), and a ring marks a day with something still open.
+  - In Settings → Planner you can start weeks on Sunday and show ISO week numbers. Tapping a week number opens that week in the Planner.
+
 ## Super Productivity features
 
 Ported from [Super Productivity](https://github.com/super-productivity/super-productivity) (MIT) after a feature-by-feature reverse-engineering analysis. The full mapping, including what was left out and why, is in [`docs/super-productivity-rea.md`](docs/super-productivity-rea.md). Nothing was copied: each feature was rebuilt on Clarity's own data model and UI.
@@ -160,7 +172,7 @@ export default {
 
 Then set the proxy prefix in Settings to `https://ics-proxy.yourname.workers.dev/?url=`.
 
-Recurring events are not expanded yet (v1 limitation).
+Recurring events are expanded, including cancelled (`EXDATE`) and moved (`RECURRENCE-ID`) instances.
 
 ## Focus Framework
 
@@ -248,8 +260,8 @@ The day planner ships in phases (see [`docs/obsidian-planners-rea.md`](docs/obsi
 
 1. **Times, timeline, undo.** Shipped.
 2. **Alerts through iOS Calendar, and plain-words capture.** Shipped.
-3. Week, day and year calendar views; calendar-event fixes (cancelled and moved instances, colours) and turning an event into a to-do; skipping one occurrence of a repeat.
-4. Kanban of to-dos with In progress / Waiting statuses, dependencies with a Can do now list, Daily Note and Weekly Review, saved views, templates.
+3. **Calendar views, calendar-event fixes and colours, events into to-dos, skipping a repeat.** Shipped.
+4. Kanban of to-dos with In progress / Waiting statuses, dependencies with a Can do now list, Daily Note and Weekly Review, saved views, templates, multi-select.
 
 ### Earlier notes (iteration 2)
 

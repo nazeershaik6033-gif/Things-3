@@ -178,3 +178,55 @@ export function nextEvent(
     });
   return upcoming[0] ?? null;
 }
+
+// ------------------------------------------------------------ day stats ----
+
+export interface DayStat {
+  /** Events plus open to-dos dated that day (start or deadline). */
+  planned: number;
+  /** To-dos finished that day (by completion time). */
+  done: number;
+  /** Any open to-do is still dated that day. */
+  open: boolean;
+}
+
+/** What the month and year views draw for each day, after the calendar
+ *  plugin's meters: filled dots grow with how full the day was (planned +
+ *  done), a hollow ring says something on it is still open. */
+export function dayStats(events: CalendarEvent[], tasks: Task[], from: DateStr, to: DateStr): Map<DateStr, DayStat> {
+  const m = new Map<DateStr, DayStat>();
+  const at = (d: DateStr) => {
+    let s = m.get(d);
+    if (!s) m.set(d, (s = { planned: 0, done: 0, open: false }));
+    return s;
+  };
+  for (const e of events) if (e.date >= from && e.date <= to) at(e.date).planned++;
+  for (const entry of taskEntries(tasks)) {
+    if (entry.date < from || entry.date > to) continue;
+    const s = at(entry.date);
+    s.planned++;
+    s.open = true;
+  }
+  for (const t of tasks) {
+    if (t.status !== 'completed' || t.completedAt === null || t.trashedAt !== null) continue;
+    const d = toDateStr(new Date(t.completedAt));
+    if (d >= from && d <= to) at(d).done++;
+  }
+  return m;
+}
+
+/** 0–3 filled dots for a day. */
+export function dotCount(s: DayStat | undefined): number {
+  if (!s) return 0;
+  const n = s.planned + s.done;
+  return n === 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : 3;
+}
+
+/** ISO-8601 week number of a date. */
+export function isoWeek(d: DateStr): number {
+  const x = fromDateStr(d);
+  const day = (x.getDay() + 6) % 7; // Mon = 0
+  x.setDate(x.getDate() - day + 3); // Thursday of this week
+  const firstThu = new Date(x.getFullYear(), 0, 4);
+  return 1 + Math.round(((x.getTime() - firstThu.getTime()) / 86_400_000 - 3 + ((firstThu.getDay() + 6) % 7)) / 7);
+}

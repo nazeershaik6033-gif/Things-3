@@ -162,3 +162,25 @@ describe('nextEvent', () => {
     expect(nextEvent([], Date.now(), TODAY)).toBeNull();
   });
 });
+
+describe('day stats and week numbers', () => {
+  it('counts planned, done and open per day', async () => {
+    const { dayStats, dotCount, isoWeek } = await import('../../src/domain/calendarMonth');
+    const { newTask } = await import('../../src/db/mutations');
+    const tasks = [
+      newTask({ startDate: '2026-11-25' }),
+      newTask({ deadline: '2026-11-25' }),
+      newTask({ status: 'completed', completedAt: new Date('2026-11-24T10:00:00').getTime() }),
+    ];
+    const m = dayStats([], tasks, '2026-11-01', '2026-11-30');
+    expect(m.get('2026-11-25')).toEqual({ planned: 2, done: 0, open: true });
+    expect(m.get('2026-11-24')).toEqual({ planned: 0, done: 1, open: false });
+    expect(dotCount(m.get('2026-11-25'))).toBe(1);
+    expect(dotCount({ planned: 4, done: 2, open: false })).toBe(3);
+    expect(dotCount(undefined)).toBe(0);
+    expect(isoWeek('2026-11-25')).toBe(48);
+    expect(isoWeek('2026-01-01')).toBe(1);
+    expect(isoWeek('2027-01-01')).toBe(53);
+    expect(isoWeek('2024-12-30')).toBe(1);
+  });
+});

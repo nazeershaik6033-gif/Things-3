@@ -1,6 +1,7 @@
 import { For, Show, type JSX } from 'solid-js';
 import type { CalendarEvent } from '../db/models';
 import { formatTime } from '../domain/dates';
+import { calendarColor } from '../app/calendar';
 
 /** Gray rounded block of read-only calendar events atop Today / Upcoming days. */
 export function CalendarBlock(props: { events: CalendarEvent[]; compact?: boolean }): JSX.Element {
@@ -37,6 +38,7 @@ export function CalendarBlock(props: { events: CalendarEvent[]; compact?: boolea
               >
                 {event.allDay ? 'all-day' : event.start !== null ? formatTime(event.start) : ''}
               </span>
+              <span style={{ width: '6px', height: '6px', 'border-radius': '50%', background: calendarColor(event.calendarUrl), flex: 'none', 'align-self': 'center' }} />
               <span
                 style={{
                   color: 'var(--text)',

@@ -7,7 +7,11 @@ import { todayStr, toDateStr, fromDateStr, formatTime, formatRelative } from '..
 import type { DateStr } from '../db/models';
 import { Icon } from '../ui/Icon';
 import { googleCalendarEventUrl } from '../domain/googleCal';
-import { entriesOn, markedDays, monthAgenda, type AgendaEntry } from '../domain/calendarMonth';
+import {
+  dayStats, dotCount, entriesOn, isoWeek, monthAgenda, monthWeeks, weekdayLabels, type AgendaEntry,
+} from '../domain/calendarMonth';
+import { focusPlannerOn, setPlannerDays, showWeekNumbers, weekStart } from '../app/planner';
+import { YearView } from '../components/YearView';
 import { staggerDelay } from '../app/motion';
 import { setExpandedTaskId } from '../app/uiState';
 import { ScreenChrome } from './common';
@@ -15,16 +19,6 @@ import { ScreenChrome } from './common';
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
-
-/** All visible cells for a month: leading blanks (Mon-first) then days. */
-function monthCells(year: number, month: number): (DateStr | null)[] {
-  const first = new Date(year, month, 1);
-  const lead = (first.getDay() + 6) % 7; // Mon = 0
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (DateStr | null)[] = Array(lead).fill(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(toDateStr(new Date(year, month, d)));
-  return cells;
-}
 
 export function CalendarScreen(): JSX.Element {
   const today = todayStr();
@@ -52,9 +46,16 @@ export function CalendarScreen(): JSX.Element {
   };
 
   const monthStr = createMemo(() => `${year()}-${String(month() + 1).padStart(2, '0')}`);
-  /** Days in the visible month carrying anything — the grid's dots. */
-  const marked = createMemo(() => markedDays(events(), tasks(), monthStr()));
-  const cells = createMemo(() => monthCells(year(), month()));
+  const [view, setView] = createSignal<'month' | 'year'>('month');
+  const weeks = createMemo(() => monthWeeks(monthStr(), weekStart()));
+  const gridCols = () => (showWeekNumbers() ? '22px repeat(7, 1fr)' : 'repeat(7, 1fr)');
+  const stats = createMemo(() => dayStats(events(), tasks(), `${monthStr()}-01`, `${monthStr()}-31`));
+  const yearStats = createMemo(() => (view() === 'year' ? dayStats(events(), tasks(), `${year()}-01-01`, `${year()}-12-31`) : new Map()));
+  const openPlanner = (date: DateStr, days: 1 | 7) => {
+    setPlannerDays(days);
+    focusPlannerOn(date);
+    push({ name: 'planner' });
+  };
   const dayEvents = createMemo(() => entriesOn(events(), tasks(), selected()));
   /** Every day of the month that has something on it, oldest first. */
   const agenda = createMemo(() => monthAgenda(events(), tasks(), monthStr()));
@@ -127,6 +128,40 @@ export function CalendarScreen(): JSX.Element {
         </button>
       }
     >
+      {/* Views: Month and Year here; Week and Day open the Planner */}
+      <div style={{ display: 'flex', gap: '2px', margin: '0 16px 8px', padding: '2px', 'border-radius': '10px', background: 'var(--bg-inset)', width: 'fit-content' }}>
+        {(['day', 'week', 'month', 'year'] as const).map((v) => (
+          <button
+            data-testid={`cal-view-${v}`}
+            aria-pressed={view() === v}
+            onClick={() => (v === 'day' ? openPlanner(selected(), 1) : v === 'week' ? openPlanner(selected(), 7) : setView(v))}
+            style={{
+              padding: '5px 12px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+              background: view() === v ? 'var(--bg-card)' : 'transparent',
+              color: view() === v ? 'var(--text)' : 'var(--text-secondary)',
+              'box-shadow': view() === v ? 'var(--shadow-card)' : 'none',
+            }}
+          >
+            {v[0]!.toUpperCase() + v.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <Show when={view() === 'year'}>
+        <YearView
+          year={year()}
+          today={today}
+          stats={yearStats()}
+          weekStart={weekStart()}
+          onYear={(d) => setYear(year() + d)}
+          onMonth={(m) => {
+            setMonth(m);
+            setView('month');
+          }}
+        />
+      </Show>
+
+      <Show when={view() === 'month'}>
       {/* Month header */}
       <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', padding: '4px 16px 8px' }}>
         <button aria-label="Previous month" data-testid="cal-prev" onClick={() => changeMonth(-1)}
@@ -142,50 +177,75 @@ export function CalendarScreen(): JSX.Element {
         </button>
       </div>
 
-      {/* Weekday header */}
-      <div style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', padding: '0 12px' }}>
-        <For each={WEEKDAYS}>
+      {/* Weekday header (week start from Settings; optional week numbers) */}
+      <div style={{ display: 'grid', 'grid-template-columns': gridCols(), padding: '0 12px' }}>
+        <Show when={showWeekNumbers()}><div /></Show>
+        <For each={weekdayLabels(weekStart())}>
           {(w) => (
             <div style={{ 'text-align': 'center', 'font-size': '11px', 'font-weight': '600', color: 'var(--text-tertiary)', padding: '2px 0 6px' }}>
-              {w.slice(0, 1)}
+              {w}
             </div>
           )}
         </For>
       </div>
 
-      {/* Month grid */}
-      <div data-testid="cal-grid" style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', padding: '0 12px', gap: '2px' }}>
-        <For each={cells()}>
-          {(date) => (
-            <Show when={date} fallback={<div />}>
-              <button
-                data-testid={date === today ? 'cal-today' : undefined}
-                onClick={() => setSelected(date!)}
-                style={{
-                  display: 'flex',
-                  'flex-direction': 'column',
-                  'align-items': 'center',
-                  padding: '5px 0 3px',
-                  'border-radius': '10px',
-                  background: selected() === date ? 'var(--blue)' : 'transparent',
-                }}
-              >
-                <span style={{
-                  'font-size': '15px',
-                  'font-variant-numeric': 'tabular-nums',
-                  'font-weight': date === today ? '700' : '400',
-                  color: selected() === date ? '#fff' : date === today ? 'var(--blue)' : 'var(--text)',
-                }}>
-                  {Number(date!.slice(8))}
-                </span>
-                <span style={{
-                  width: '5px', height: '5px', 'border-radius': '50%', 'margin-top': '2px',
-                  background: marked().has(date!)
-                    ? (selected() === date ? '#fff' : 'var(--red)')
-                    : 'transparent',
-                }} />
-              </button>
-            </Show>
+      {/* Month grid: dots grow with how full the day was; a ring means
+          something on it is still open (after the calendar plugin's meters) */}
+      <div data-testid="cal-grid" style={{ display: 'grid', 'grid-template-columns': gridCols(), padding: '0 12px', gap: '2px' }}>
+        <For each={weeks()}>
+          {(row) => (
+            <>
+              <Show when={showWeekNumbers()}>
+                <button
+                  data-testid="cal-weeknum"
+                  title="Open this week in the Planner"
+                  onClick={() => openPlanner(row.find((d) => d) ?? today, 7)}
+                  style={{ 'font-size': '11px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums', padding: '7px 0 0' }}
+                >
+                  {isoWeek(row.find((d) => d)!)}
+                </button>
+              </Show>
+              <For each={row}>
+                {(date) => (
+                  <Show when={date} fallback={<div />}>
+                    <button
+                      data-testid={date === today ? 'cal-today' : undefined}
+                      data-date={date!}
+                      onClick={() => setSelected(date!)}
+                      style={{
+                        display: 'flex',
+                        'flex-direction': 'column',
+                        'align-items': 'center',
+                        padding: '5px 0 3px',
+                        'border-radius': '10px',
+                        background: selected() === date ? 'var(--blue)' : 'transparent',
+                      }}
+                    >
+                      <span style={{
+                        'font-size': '15px',
+                        'font-variant-numeric': 'tabular-nums',
+                        'font-weight': date === today ? '700' : '400',
+                        color: selected() === date ? '#fff' : date === today ? 'var(--blue)' : 'var(--text)',
+                      }}>
+                        {Number(date!.slice(8))}
+                      </span>
+                      <span data-testid="cal-dots" data-dots={dotCount(stats().get(date!))} data-open={stats().get(date!)?.open ? '1' : '0'}
+                        style={{ display: 'flex', gap: '2px', height: '5px', 'margin-top': '2px' }}>
+                        <For each={Array.from({ length: dotCount(stats().get(date!)) })}>
+                          {() => <span style={{ width: '4px', height: '4px', 'border-radius': '50%', background: selected() === date ? '#fff' : 'var(--red)' }} />}
+                        </For>
+                        <Show when={stats().get(date!)?.open && date! >= today}>
+                          <span style={{ width: '4px', height: '4px', 'border-radius': '50%', border: `1px solid ${selected() === date ? '#fff' : 'var(--blue)'}`, 'box-sizing': 'border-box' }} />
+                        </Show>
+                        <Show when={stats().get(date!)?.open && date! < today}>
+                          <span style={{ width: '4px', height: '4px', 'border-radius': '50%', border: `1px solid ${selected() === date ? '#fff' : 'var(--red)'}`, 'box-sizing': 'border-box' }} />
+                        </Show>
+                      </span>
+                    </button>
+                  </Show>
+                )}
+              </For>
+            </>
           )}
         </For>
       </div>
@@ -269,6 +329,8 @@ export function CalendarScreen(): JSX.Element {
           </For>
         </Show>
       </div>
+
+      </Show>
 
       <div style={{ padding: '0 16px 10px' }}>
         <button
