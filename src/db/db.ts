@@ -6,6 +6,7 @@ import type {
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
   Sprint, EnergyLog, HealthDay, RepeatCfg, Counter, CounterDay, DayReview,
+  DayNote, SavedView, ProjectTemplate,
 } from './models';
 
 export class ClarityDB extends Dexie {
@@ -43,6 +44,9 @@ export class ClarityDB extends Dexie {
   counters!: EntityTable<Counter, 'id'>;
   counterDays!: EntityTable<CounterDay, 'id'>;
   dayReviews!: EntityTable<DayReview, 'date'>;
+  dayNotes!: EntityTable<DayNote, 'key'>;
+  savedViews!: EntityTable<SavedView, 'id'>;
+  templates!: EntityTable<ProjectTemplate, 'id'>;
 
   constructor(name = 'clarity') {
     super(name);
@@ -148,6 +152,19 @@ export class ClarityDB extends Dexie {
       await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
         if (t.alerts === undefined) t.alerts = null;
         if (t.alertsSentSig === undefined) t.alertsSentSig = null;
+      });
+    });
+    // v12: workflow — Kanban stages and dependencies on to-dos, day/week
+    // notes, saved views and project templates. Three new tables; the upgrade
+    // backfills two task fields.
+    this.version(12).stores({
+      dayNotes: 'key, updatedAt',
+      savedViews: 'id, orderKey',
+      templates: 'id, createdAt',
+    }).upgrade(async (tx) => {
+      await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.stage === undefined) t.stage = null;
+        if (t.blockedBy === undefined) t.blockedBy = [];
       });
     });
   }

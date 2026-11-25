@@ -155,7 +155,7 @@ describe('times on to-dos', () => {
   it('round-trips through a backup, and old backups get the new fields', async () => {
     const id = await createTask({ title: 'Gym', startDate: TODAY, startTime: '07:00', durationMin: 60, deadline: TODAY, deadlineTime: '18:00' });
     const file = await exportData();
-    expect(file.schemaVersion).toBe(11);
+    expect(file.schemaVersion).toBe(12);
     await importData(file);
     expect((await db.tasks.get(id))!).toMatchObject({ startTime: '07:00', durationMin: 60, deadlineTime: '18:00' });
     const old = JSON.parse(JSON.stringify(file));

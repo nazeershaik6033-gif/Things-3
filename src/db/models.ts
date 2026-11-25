@@ -71,6 +71,72 @@ export interface Task {
   /** Signature of what was last sent to the Calendar, so the app can tell
    *  "in Calendar" from "changed since — send again". */
   alertsSentSig: string | null;
+  // ---- Workflow (schema v12) ----
+  /** Where an open to-do stands, for the Kanban: null = to do. Separate from
+   *  `status` (open/completed/canceled), which every list already relies on. */
+  stage: TaskStage | null;
+  /** Ids of to-dos this one waits for (TaskNotes' blockedBy, finish-to-start).
+   *  It is blocked while any of them is still open. */
+  blockedBy: string[];
+}
+
+export type TaskStage = 'doing' | 'waiting';
+
+/** A free-form note for a day ("2026-11-25") or a week ("2026-W48"). */
+export interface DayNote {
+  key: string;
+  text: string;
+  updatedAt: number;
+}
+
+export type StageFilter = 'todo' | 'doing' | 'waiting';
+
+/** A saved, filtered list (TaskNotes' saved Bases views). Every condition
+ *  that is set must hold; empty lists and nulls mean "any". */
+export interface ViewFilter {
+  tagIds: string[];
+  /** "p:<projectId>" or "a:<areaId>" (an area includes its projects). */
+  home: string | null;
+  stages: StageFilter[];
+  quadrants: EMQuadrant[];
+  energy: Energy | null;
+  /** Due within this many days (overdue included). */
+  dueWithinDays: number | null;
+  when: 'any' | 'today' | 'scheduled' | 'unscheduled' | 'someday';
+  unblockedOnly: boolean;
+  search: string;
+}
+
+export interface SavedView {
+  id: string;
+  title: string;
+  filter: ViewFilter;
+  /** How the list is grouped. */
+  groupBy: 'none' | 'home' | 'stage' | 'quadrant' | 'when';
+  orderKey: string;
+  createdAt: number;
+}
+
+export interface TemplateTask {
+  title: string;
+  notes: string;
+  checklist: string[];
+  tagIds: string[];
+  timeEstimateMin: number | null;
+  /** Indexes (within the template's flat task list) this one waits for. */
+  waitsFor: number[];
+}
+
+/** A reusable project plan: headings and to-dos, made from a project and
+ *  turned back into a new one. */
+export interface ProjectTemplate {
+  id: string;
+  title: string;
+  notes: string;
+  /** Flat, in project order; `heading` indexes into `headings` or null. */
+  tasks: (TemplateTask & { heading: number | null })[];
+  headings: string[];
+  createdAt: number;
 }
 
 export interface TaskAlert {

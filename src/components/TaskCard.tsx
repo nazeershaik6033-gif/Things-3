@@ -30,9 +30,10 @@ import { describeRule } from '../domain/repeat';
 import { createReactiveLiveQuery } from '../db/liveQuery';
 import { undoable } from '../app/undo';
 import { AlertsPanel, RepeatExtras, TimeChip, TimePicker } from './PlannerControls';
+import { StageChips, WaitsChip, WaitsForPicker } from './WorkflowControls';
 import { formatClock, parseHHMM } from '../domain/timeline';
 
-type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | 'time' | null;
+type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | 'time' | 'waits' | null;
 
 /** Date+time picker that downloads a one-event .ics with an alarm —
  *  opening it on iOS adds a Calendar alert (web apps can't write to the
@@ -471,6 +472,8 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
             openSprint({ taskId: id });
           },
         )}
+        <StageChips task={t()} />
+        <WaitsChip task={t()} allTasks={allTasks()} active={picker() === 'waits'} onClick={() => setPicker(picker() === 'waits' ? null : 'waits')} />
         <TimeChip task={t()} active={picker() === 'time'} onClick={() => setPicker(picker() === 'time' ? null : 'time')} />
         <TimeChips task={t()} onEstimate={() => setPicker(picker() === 'estimate' ? null : 'estimate')} />
         <Show when={repeatCfg()}>
@@ -520,6 +523,9 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
       </Show>
       <Show when={picker() === 'deadline'}>
         <DeadlinePicker task={t()} onClose={() => setPicker(null)} />
+      </Show>
+      <Show when={picker() === 'waits'}>
+        <WaitsForPicker task={t()} onClose={() => setPicker(null)} />
       </Show>
       <Show when={picker() === 'time'}>
         <TimePicker task={t()} onClose={() => setPicker(null)} />

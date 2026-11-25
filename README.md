@@ -92,6 +92,34 @@ Built after a reverse-engineering analysis of [obsidian-day-planner](https://git
   - Month dots grow with how much a day holds (planned plus done, up to three), and a ring marks a day with something still open.
   - In Settings → Planner you can start weeks on Sunday and show ISO week numbers. Tapping a week number opens that week in the Planner.
 
+### Workflow: Kanban, dependencies, notes, reviews, views, templates (phase 4)
+
+- **Stages.** A to-do can be **To Do**, **In Progress** or **Waiting**. Set the stage on its card; rows show it.
+- **Kanban of your to-dos.**
+  - Today has **List | Timeline | Board**. A project has **List / Board / By heading / By priority**.
+  - Hold a card (or drag it with a mouse) onto another column to move it. Tap a card to edit it. Every move can be undone.
+- **Dependencies.**
+  - On a to-do's card, **Waits for…** picks the to-dos it can't start before. It shows a 🔒 until they're done, and loops are refused.
+  - **Can Do Now** (Home) lists only what's ready: not blocked, not waiting, not in the Inbox or Someday, not dated later.
+  - Finishing a blocker tells you what it freed.
+- **Daily Note.** One free-form page per day, from Home or the day you pick, with a starter template and what you finished that day.
+- **Weekly Review**, in seven steps. Home marks it *Due* once a week.
+  1. Celebrate what got done.
+  2. Empty the Inbox.
+  3. Deal with what's overdue.
+  4. Chase what you're waiting on.
+  5. Give stuck projects a next step.
+  6. Look at the week ahead.
+  7. Write a note for the week.
+- **Saved views.**
+  - Home → New List → **New View** builds a filtered list from tags, project or area, stage, priority, energy, "due within", when, "not blocked only" and text, grouped how you like.
+  - Views appear on Home.
+- **Templates.** A project's menu → **Save as Template** keeps its headings, to-dos, checklists and dependencies. Home → New List → **Project from Template** starts a fresh copy.
+- **Multi-select.**
+  - **Select** on a list, tap rows, then send them to Today, Tomorrow or Someday, set them In Progress or Waiting, complete or delete them, all in one go.
+  - It can be undone.
+- **Span bars.** In the Planner's all-day row, a to-do with both a start date and a deadline shows a bar on the days in between.
+
 ## Super Productivity features
 
 Ported from [Super Productivity](https://github.com/super-productivity/super-productivity) (MIT) after a feature-by-feature reverse-engineering analysis. The full mapping, including what was left out and why, is in [`docs/super-productivity-rea.md`](docs/super-productivity-rea.md). Nothing was copied: each feature was rebuilt on Clarity's own data model and UI.
@@ -261,7 +289,7 @@ The day planner ships in phases (see [`docs/obsidian-planners-rea.md`](docs/obsi
 1. **Times, timeline, undo.** Shipped.
 2. **Alerts through iOS Calendar, and plain-words capture.** Shipped.
 3. **Calendar views, calendar-event fixes and colours, events into to-dos, skipping a repeat.** Shipped.
-4. Kanban of to-dos with In progress / Waiting statuses, dependencies with a Can do now list, Daily Note and Weekly Review, saved views, templates, multi-select.
+4. **Kanban and stages, dependencies and Can Do Now, Daily Note, Weekly Review, saved views, templates, multi-select, span bars.** Shipped.
 
 ### Earlier notes (iteration 2)
 

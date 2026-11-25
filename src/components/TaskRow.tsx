@@ -5,7 +5,7 @@ import { TagPill, DeadlineFlag, ChecklistChip } from '../ui/TagPill';
 import { Icon } from '../ui/Icon';
 import { setTaskWhen } from '../db/mutations';
 import { toggleComplete } from '../app/completion';
-import { graceIds, setExpandedTaskId } from '../app/uiState';
+import { graceIds, selection, setExpandedTaskId, toggleSelected } from '../app/uiState';
 import { currentDate } from '../app/currentDate';
 import { formatDeadline, formatRelative } from '../domain/dates';
 import { isOverdue } from '../domain/smartLists';
@@ -16,6 +16,7 @@ import { isMit } from '../domain/focus';
 import { RowTimeChip } from './TimeControls';
 import { trackingTaskId } from '../app/timeTracking';
 import { timeLabel } from './PlannerControls';
+import { blockedIds } from '../app/workflow';
 
 export interface TaskRowContext {
   /** Show the Eisenhower chip and open its picker (Today only). */
@@ -47,7 +48,8 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
     <div
       class="task-row no-select"
       data-task-id={t().id}
-      onClick={() => setExpandedTaskId(t().id)}
+      onClick={() => (selection() ? toggleSelected(t().id) : setExpandedTaskId(t().id))}
+      data-selected={selection()?.has(t().id) ? '1' : undefined}
       style={{
         display: 'flex',
         'align-items': 'flex-start',
@@ -59,11 +61,25 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
       }}
     >
       <div style={{ 'padding-top': '2px' }}>
-        <Checkbox
-          checked={checked()}
-          canceled={t().status === 'canceled'}
-          onToggle={() => toggleComplete(t())}
-        />
+        <Show
+          when={selection()}
+          fallback={
+            <Checkbox
+              checked={checked()}
+              canceled={t().status === 'canceled'}
+              onToggle={() => toggleComplete(t())}
+            />
+          }
+        >
+          {/* Selecting: a selection circle instead of the checkbox */}
+          <span data-testid="select-mark" style={{
+            width: '19px', height: '19px', 'border-radius': '50%', display: 'flex', 'align-items': 'center', 'justify-content': 'center',
+            background: selection()!.has(t().id) ? 'var(--blue)' : 'transparent',
+            border: selection()!.has(t().id) ? 'none' : '1.5px solid var(--check-border)', color: '#fff', 'font-size': '12px',
+          }}>
+            {selection()!.has(t().id) ? '✓' : ''}
+          </span>
+        </Show>
       </div>
       <div style={{ flex: '1', 'min-width': '0' }}>
         <div
@@ -119,6 +135,17 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             >
               {t().priority ? quadrantMeta(t().priority!).label : 'EM'}
             </button>
+          </Show>
+          <Show when={t().status === 'open' && blockedIds().has(t().id)}>
+            <span data-testid="row-locked" title="Waits for another to-do" style={{ 'font-size': '12px', 'flex-shrink': '0' }}>🔒</span>
+          </Show>
+          <Show when={t().status === 'open' && t().stage}>
+            <span data-testid={`row-stage-${t().stage}`} style={{
+              'font-size': '11px', 'font-weight': '700', 'flex-shrink': '0', padding: '1px 7px', 'border-radius': '999px',
+              color: '#fff', background: t().stage === 'doing' ? 'var(--blue)' : 'var(--orange, var(--yellow-deep))',
+            }}>
+              {t().stage === 'doing' ? 'In Progress' : 'Waiting'}
+            </span>
           </Show>
           <Show when={t().deadline}>
             <DeadlineFlag
@@ -204,7 +231,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
   );
 
   return (
-    <Show when={!props.ctx.noSwipe} fallback={row}>
+    <Show when={!props.ctx.noSwipe && !selection()} fallback={row}>
       <SwipeableRow
         onComplete={() => {
           if (t().status === 'open') toggleComplete(t());

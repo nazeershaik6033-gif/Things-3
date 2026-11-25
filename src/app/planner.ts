@@ -27,9 +27,10 @@ function save(key: string, value: string): void {
   }
 }
 
-export type TodayView = 'list' | 'timeline';
+export type TodayView = 'list' | 'timeline' | 'board';
 const TODAY_VIEW_KEY = 'clarity-today-view';
-const [todayView, setTodayViewSignal] = createSignal<TodayView>(load(TODAY_VIEW_KEY) === 'timeline' ? 'timeline' : 'list');
+const storedTodayView = load(TODAY_VIEW_KEY);
+const [todayView, setTodayViewSignal] = createSignal<TodayView>(storedTodayView === 'timeline' || storedTodayView === 'board' ? storedTodayView : 'list');
 export { todayView };
 export function setTodayView(v: TodayView): void {
   setTodayViewSignal(v);
@@ -118,4 +119,16 @@ export function takePlannerFocus(): DateStr | null {
   const d = plannerFocus;
   plannerFocus = null;
   return d;
+}
+
+/** A project's view: List, or Board grouped by stage/heading/priority. */
+export type ProjectView = 'list' | 'board-stage' | 'board-heading' | 'board-quadrant';
+const PROJECT_VIEW_KEY = 'clarity-project-view';
+const [projectView, setProjectViewSignal] = createSignal<ProjectView>(
+  (['board-stage', 'board-heading', 'board-quadrant'] as string[]).includes(load(PROJECT_VIEW_KEY) ?? '') ? (load(PROJECT_VIEW_KEY) as ProjectView) : 'list',
+);
+export { projectView };
+export function setProjectView(v: ProjectView): void {
+  setProjectViewSignal(v);
+  save(PROJECT_VIEW_KEY, v);
 }

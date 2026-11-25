@@ -22,6 +22,11 @@ import { MagicPlus, type MagicPlusDrop } from '../components/MagicPlus';
 import { ScreenChrome, EmptyState, MenuRow, createScheduler } from './common';
 import { TaskRow, type TaskRowContext } from '../components/TaskRow';
 import type { Task } from '../db/models';
+import { TaskKanban } from '../components/TaskKanban';
+import { SelectButton } from '../components/Selection';
+import { saveProjectAsTemplate } from '../db/workflowMutations';
+import { showToast } from '../app/focusState';
+import { projectView, setProjectView } from '../app/planner';
 
 export function ProjectScreen(props: { id: string }): JSX.Element {
   const project = createLiveQuery(async () => (await db.projects.get(props.id)) ?? null, null);
@@ -113,7 +118,8 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
         }
         icon={<ProgressPie progress={progress()} size={26} />}
         scrollRef={(el) => (scrollEl = el)}
-        trailing={
+        trailing={<>
+          <SelectButton />
           <button
             aria-label="Project menu"
             data-testid="project-menu"
@@ -122,7 +128,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
           >
             <Icon name="ellipsis" size={20} />
           </button>
-        }
+        </>}
       >
         {/* Editable notes */}
         <div style={{ padding: '0 16px 6px' }}>
@@ -139,9 +145,34 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
           />
         </div>
 
+        <div data-testid="project-view" style={{ display: 'flex', gap: '2px', margin: '0 16px 8px', padding: '2px', 'border-radius': '10px', background: 'var(--bg-inset)', width: 'fit-content', 'flex-wrap': 'wrap' }}>
+          {([['list', 'List'], ['board-stage', 'Board'], ['board-heading', 'By heading'], ['board-quadrant', 'By priority']] as const).map(([v, label]) => (
+            <button
+              data-testid={`project-view-${v}`}
+              aria-pressed={projectView() === v}
+              onClick={() => setProjectView(v)}
+              style={{
+                padding: '5px 11px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+                background: projectView() === v ? 'var(--bg-card)' : 'transparent',
+                color: projectView() === v ? 'var(--text)' : 'var(--text-secondary)',
+                'box-shadow': projectView() === v ? 'var(--shadow-card)' : 'none',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <Show when={projectView() !== 'list'}>
+          <TaskKanban
+            tasks={tasks().filter((t) => t.projectId === props.id)}
+            group={projectView() === 'board-heading' ? 'heading' : projectView() === 'board-quadrant' ? 'quadrant' : 'stage'}
+            headings={headings()}
+            tags={tags()}
+          />
+        </Show>
         <Show
-          when={sections().sections.some((s) => s.tasks.length > 0) || headings().length > 0 || sections().loggedToday.length > 0}
-          fallback={<EmptyState icon={<ProgressPie progress={0} size={40} />} text="No to-dos yet — add the first step." />}
+          when={projectView() === 'list' && (sections().sections.some((s) => s.tasks.length > 0) || headings().length > 0 || sections().loggedToday.length > 0)}
+          fallback={<Show when={projectView() === 'list'}><EmptyState icon={<ProgressPie progress={0} size={40} />} text="No to-dos yet — add the first step." /></Show>}
         >
           <ReorderGroup onDrop={handleDrop} scrollParent={() => scrollEl ?? null}>
             <Key each={sections().sections} by={(s) => s.heading?.id ?? 'root'}>
@@ -231,6 +262,14 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
                 void completeProject(props.id, true);
                 setMenuOpen(false);
                 back();
+              }}
+            />
+            <MenuRow
+              icon={<Icon name="checklist" size={20} color="var(--blue)" />}
+              label="Save as Template"
+              onClick={() => {
+                setMenuOpen(false);
+                void saveProjectAsTemplate(props.id).then(() => showToast('Saved — start a copy from Home → New List → Project from Template'));
               }}
             />
             <MenuRow

@@ -1,4 +1,4 @@
-import { For, onCleanup, onMount, Show, type JSX } from 'solid-js';
+import { createEffect, For, on, onCleanup, onMount, Show, type JSX } from 'solid-js';
 import {
   edgeBack, registerScreen, startNavigation, stack, unregisterScreen,
   type Route, type StackEntry,
@@ -14,7 +14,7 @@ import { startReminders } from './reminders';
 import { startRoutineReminders } from './routineReminders';
 import { createPan } from '../gestures/createPan';
 import { closeOpenRow } from '../gestures/arbiter';
-import { setExpandedTaskId, expandedTaskId } from './uiState';
+import { endSelecting, setExpandedTaskId, expandedTaskId } from './uiState';
 import { HomeScreen } from '../screens/HomeScreen';
 import { SmartListScreen } from '../screens/SmartListScreen';
 import { ProjectScreen } from '../screens/ProjectScreen';
@@ -37,13 +37,16 @@ import { WorklogScreen } from '../screens/WorklogScreen';
 import { FinishDayScreen } from '../screens/FinishDayScreen';
 import { CountersScreen } from '../screens/CountersScreen';
 import { PlannerScreen } from '../screens/PlannerScreen';
+import { CanDoNowScreen, DayNoteScreen, SavedViewScreen, WeeklyReviewScreen } from '../screens/WorkflowScreens';
 import { TrackerBar } from '../components/TimeControls';
 import { startRepeats, startTimeTracking } from './timeTracking';
 import { startUndoKeys } from './undo';
 import { startAlertSettings, startCalendarViewSettings, startPlannerSettings } from './planner';
 import { startTaskNudges } from './taskAlerts';
+import { startWorkflow } from './workflow';
 import { FocusSprint } from '../components/FocusSprint';
 import { Toast } from '../ui/Toast';
+import { SelectionBar } from '../components/Selection';
 import { SearchOverlay } from '../screens/SearchOverlay';
 import { QuickEntry } from '../components/QuickEntry';
 import { InstallCoachMark } from '../components/InstallCoachMark';
@@ -76,6 +79,10 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'finishDay': return <FinishDayScreen />;
     case 'counters': return <CountersScreen />;
     case 'planner': return <PlannerScreen />;
+    case 'cando': return <CanDoNowScreen />;
+    case 'note': return <DayNoteScreen date={r.key} />;
+    case 'review': return <WeeklyReviewScreen />;
+    case 'view': return <SavedViewScreen id={r.id} />;
   }
 }
 
@@ -105,7 +112,10 @@ export function App(): JSX.Element {
     void startAlertSettings();
     void startCalendarViewSettings();
     onCleanup(startTaskNudges());
+    onCleanup(startWorkflow());
     startNavigation();
+    // Leaving a list ends a selection made in it
+    createEffect(on(() => stack().length, () => endSelecting(), { defer: true }));
     startCalendarSync();
     startFocusClock();
     startReminders();
@@ -149,6 +159,7 @@ export function App(): JSX.Element {
       <QuickEntry />
       <CompletionPromptHost />
       <FocusSprint />
+      <SelectionBar />
       <Toast />
       <InstallCoachMark />
       <TrackerBar />

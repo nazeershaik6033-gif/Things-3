@@ -143,7 +143,7 @@ describe('backup', () => {
     await createCounter('Water', 'click');
     await saveDayReview(MON, { impact: 2, note: '' }, { trackedSec: 5, completed: [] });
     const file = validateExport(JSON.parse(JSON.stringify(await exportData())));
-    expect(file.schemaVersion).toBe(11);
+    expect(file.schemaVersion).toBe(12);
     await Promise.all(db.tables.map((t) => t.clear()));
     await importData(file);
     expect(await db.repeatCfgs.count()).toBe(1);

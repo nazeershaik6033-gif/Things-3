@@ -237,3 +237,50 @@ Multi-select and group reschedule, and deadline span bars. Both are list and tim
 - `tests/unit/ics.test.ts`: EXDATE (timed and all-day, comma lists), moved and cancelled overrides, unique ids.
 - `tests/unit/calendarMonth.test.ts`: day stats, dot counts, ISO weeks at year boundaries.
 - `tests/e2e/phase3.spec.ts`: event to prep and to-do, skip with history, year view, week numbers, Sunday weeks, Week opening the Planner.
+
+## Phase 4 as built
+
+### Data (schema v12)
+
+- **On to-dos:**
+  - `stage` (`'doing' | 'waiting' | null`). It is kept apart from `status`, which every list, the Logbook and repeats rely on, so a stage never changes what's open.
+  - `blockedBy`: ids, TaskNotes' `blockedBy` with finish-to-start meaning.
+- **New tables:** `dayNotes` (a day `YYYY-MM-DD` or an ISO week `YYYY-Www`), `savedViews` and `templates`.
+- **Migration and backups.** The upgrade is additive. Backups move to schema 12, and older ones import with the new fields defaulted.
+
+### Logic (`src/domain/workflow.ts`)
+
+- **Dependencies.**
+  - A to-do is blocked while any listed blocker exists and is open. A finished, canceled or deleted blocker stops blocking.
+  - "Blocking" is never stored; it's read back from the other side, as TaskNotes does.
+  - `wouldCycle` refuses loops.
+  - `unlockedBy` names what a completion frees, and the app shows it in a toast.
+- **Can Do Now:** open, not Inbox or Someday, not dated later, not Waiting, not blocked.
+- **Kanban:** columns by stage, heading or Eisenhower quadrant. `columnPatch` is the write for a drop.
+- **Saved views:** every condition that's set must hold (tags as "all of", home, stage, quadrant, energy, due within N days with overdue included, when, not-blocked, text). `describeView` summarises one.
+- **Templates:** a project's to-dos in order with headings, checklists, tags, estimates and in-project dependencies as indexes. Dates and completion are dropped, so a new project starts clean and re-links its dependencies.
+- **Weekly review:** done in 7 days, overdue deadlines, inbox count, waiting, stuck projects (nothing you can do now) and the next 7 days.
+
+### UI
+
+- **On the card:** stage chips and a Waits-for picker (search, same project first). Rows show 🔒 and the stage. The blocked set is one app-wide live query, not one per screen.
+- **`TaskKanban`:** hold (touch) or drag (mouse) a card onto a column; window-level listeners; undoable; tap to edit in a sheet.
+- **Screens:** Can Do Now, Daily Note (previous/next day, markdown preview, starter template, done that day), Weekly Review (seven steps and a week note, marked done in settings so Home shows *Due* after a week), saved views (editor sheet, edit and delete).
+- **Templates:** Save as Template in the project menu; Project from Template in Home's New List.
+- **Multi-select:** a Select button on Today and the other lists, projects, views and Can Do Now; a bottom bar for Today, Tomorrow, Someday, In Progress, Waiting, Complete and Delete. Undoable, and it ends when you leave the list.
+- **Span bars** in the Planner's all-day row.
+
+### Bugs caught by testing
+
+- `unlockedBy` evaluated blockers against the list from before the completion, so nothing ever counted as unlocked (unit test).
+- Focusing an empty note filled in the template before the editor was marked as editing, so the textarea was swapped for the preview under the finger (e2e test).
+
+### Tests
+
+- `tests/unit/workflow.test.ts`:
+  - dependencies, loops, unlocks and Can Do Now;
+  - Kanban columns and patches;
+  - every saved-view condition;
+  - a template round-trip that keeps headings, checklists and re-linked dependencies;
+  - notes, ISO week keys, the review lists, bulk patch and the v12 backup round-trip.
+- `tests/e2e/phase4.spec.ts`: every flow above on the iPhone profile.

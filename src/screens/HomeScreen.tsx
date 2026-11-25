@@ -1,4 +1,11 @@
 import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
+import { ViewEditor } from '../components/ViewEditor';
+import { TemplatesSheet } from '../components/TemplatesSheet';
+import { createSavedView } from '../db/workflowMutations';
+import { canDoNow } from '../domain/workflow';
+import { reviewDue } from './WorkflowScreens';
+import type { SavedView } from '../db/models';
+import { sortByOrderKey as sortViews } from '../db/ordering';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
@@ -187,6 +194,11 @@ export function HomeScreen(): JSX.Element {
   const beliefs = createLiveQuery(() => db.beliefs.toArray(), []);
   const beliefRatings = createLiveQuery(() => db.beliefRatings.toArray(), []);
   const [newListOpen, setNewListOpen] = createSignal(false);
+  const [viewEditorOpen, setViewEditorOpen] = createSignal(false);
+  const [templatesOpen, setTemplatesOpen] = createSignal(false);
+  const savedViews = createLiveQuery(async () => sortViews(await db.savedViews.toArray()), [] as SavedView[]);
+  const canDoCount = createMemo(() => canDoNow(tasks(), currentDate()).length);
+  const reviewIsDue = createLiveQuery(() => reviewDue(currentDate()), false);
 
   const counts = createMemo(() => sidebarCounts(tasks(), currentDate()));
   const todaySections = createMemo(() => todayTasks(tasks(), currentDate()));
@@ -301,6 +313,29 @@ export function HomeScreen(): JSX.Element {
           <Board title="Lists" index={1}>
             {listRow('inbox', 'Inbox', 'rgba(47, 124, 246, 0.12)', counts().inbox)}
             {listRow('today', 'Today', 'rgba(247, 206, 70, 0.16)', counts().today)}
+            <HomeRow
+              testid="home-cando"
+              tint="rgba(83, 184, 85, 0.14)"
+              icon={<span style={{ 'font-size': '16px' }}>🔓</span>}
+              label="Can Do Now"
+              badge={<span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>{canDoCount() || ''}</span>}
+              onClick={() => push({ name: 'cando' })}
+            />
+            <HomeRow
+              testid="home-note"
+              tint="rgba(247, 206, 70, 0.16)"
+              icon={<Icon name="notes" size={18} color="var(--yellow-deep)" />}
+              label="Daily Note"
+              onClick={() => push({ name: 'note', key: currentDate() })}
+            />
+            <HomeRow
+              testid="home-review"
+              tint="rgba(182, 120, 224, 0.14)"
+              icon={<Icon name="restore" size={18} color="var(--purple)" />}
+              label="Weekly Review"
+              badge={<Show when={reviewIsDue()}><span data-testid="home-review-due" style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--purple)' }}>Due</span></Show>}
+              onClick={() => push({ name: 'review' })}
+            />
             <HomeRow
               testid="home-planner"
               tint="rgba(47, 124, 246, 0.12)"
@@ -418,6 +453,22 @@ export function HomeScreen(): JSX.Element {
             {listRow('anytime', 'Anytime', 'rgba(76, 194, 232, 0.14)')}
             {listRow('someday', 'Someday', 'rgba(201, 168, 124, 0.16)')}
           </Board>
+
+          <Show when={savedViews().length > 0}>
+            <Board title="Views" index={2}>
+              <For each={savedViews()}>
+                {(v) => (
+                  <HomeRow
+                    testid="home-view"
+                    tint="rgba(76, 194, 232, 0.14)"
+                    icon={<Icon name="layers" size={18} color="var(--teal)" />}
+                    label={v.title}
+                    onClick={() => push({ name: 'view', id: v.id })}
+                  />
+                )}
+              </For>
+            </Board>
+          </Show>
 
           <Board title="Productivity" index={2}>
             <HomeRow
@@ -557,6 +608,22 @@ export function HomeScreen(): JSX.Element {
             }}
           />
           <MenuRow
+            icon={<Icon name="layers" size={20} color="var(--teal)" />}
+            label="New View (filtered list)"
+            onClick={() => {
+              setNewListOpen(false);
+              setViewEditorOpen(true);
+            }}
+          />
+          <MenuRow
+            icon={<Icon name="checklist" size={20} color="var(--blue)" />}
+            label="Project from Template"
+            onClick={() => {
+              setNewListOpen(false);
+              setTemplatesOpen(true);
+            }}
+          />
+          <MenuRow
             icon={<Icon name="board" size={20} color="var(--blue)" />}
             label="New Board"
             onClick={() => {
@@ -566,6 +633,15 @@ export function HomeScreen(): JSX.Element {
           />
           <div style={{ height: '10px' }} />
         </Sheet>
+      </Show>
+      <Show when={viewEditorOpen()}>
+        <ViewEditor
+          onSave={(title, filter, groupBy) => void createSavedView(title, filter, groupBy).then((id) => push({ name: 'view', id }))}
+          onClose={() => setViewEditorOpen(false)}
+        />
+      </Show>
+      <Show when={templatesOpen()}>
+        <TemplatesSheet onClose={() => setTemplatesOpen(false)} />
       </Show>
     </>
   );

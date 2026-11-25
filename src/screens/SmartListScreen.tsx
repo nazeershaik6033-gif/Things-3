@@ -35,6 +35,8 @@ import { TodayFocusBar } from '../components/TodayFocusBar';
 import { push } from '../app/navigation';
 import { TodayPlanStrip } from '../components/TimeControls';
 import { Timeline } from '../components/Timeline';
+import { TaskKanban } from '../components/TaskKanban';
+import { SelectButton } from '../components/Selection';
 import { setTodayView, todayView } from '../app/planner';
 
 const TITLES: Record<string, string> = {
@@ -253,7 +255,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
         title={TITLES[props.list] ?? props.list}
         icon={icon()}
         scrollRef={(el) => (scrollEl = el)}
-        trailing={
+        trailing={<><SelectButton />{
           props.list === 'today' ? (
             <button
               aria-label="Focus timer"
@@ -264,7 +266,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               🎯
             </button>
           ) : undefined
-        }
+        }</>}
       >
         <Show when={props.list === 'inbox'}>
           <Show when={visible().length > 0} fallback={<EmptyState icon={<ListIcon list="inbox" size={44} />} text="Collect your thoughts here, then organize them later." />}>
@@ -281,7 +283,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
             onFinish={() => push({ name: 'finishDay' })}
           />
           <div data-testid="today-view" style={{ display: 'flex', gap: '2px', margin: '2px 16px 8px', padding: '2px', 'border-radius': '10px', background: 'var(--bg-inset)', width: 'fit-content' }}>
-            {(['list', 'timeline'] as const).map((v) => (
+            {(['list', 'timeline', 'board'] as const).map((v) => (
               <button
                 data-testid={`today-view-${v}`}
                 aria-pressed={todayView() === v}
@@ -293,7 +295,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                   'box-shadow': todayView() === v ? 'var(--shadow-card)' : 'none',
                 }}
               >
-                {v === 'list' ? 'List' : 'Timeline'}
+                {v === 'list' ? 'List' : v === 'timeline' ? 'Timeline' : 'Board'}
               </button>
             ))}
           </div>
@@ -305,6 +307,13 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               sprints={sprints()}
               scrollParent={() => scrollEl ?? null}
               autoScroll
+            />
+          </Show>
+          <Show when={todayView() === 'board'}>
+            <TaskKanban
+              tasks={[...todaySections().mit, ...todaySections().morning, ...todaySections().afternoon, ...todaySections().ungrouped, ...todaySections().tonight]}
+              group="stage"
+              tags={tags()}
             />
           </Show>
           <Show when={todayView() === 'list'}>

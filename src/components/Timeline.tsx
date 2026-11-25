@@ -156,10 +156,14 @@ export function Timeline(props: {
   const allDay = (date: DateStr) => ({
     events: allDayEvents(date, props.events),
     deadlines: props.tasks.filter((t) => t.deadline === date && t.status === 'open' && t.trashedAt === null),
+    // Span bars (TaskNotes): an open to-do running from its start toward its
+    // deadline shows on every day in between
+    spans: props.tasks.filter((t) => t.status === 'open' && t.trashedAt === null && t.startDate && t.deadline &&
+      t.startDate <= date && date < t.deadline),
   });
   const hasAllDay = createMemo(() => props.dates.some((d) => {
     const a = allDay(d);
-    return a.events.length + a.deadlines.length > 0;
+    return a.events.length + a.deadlines.length + a.spans.length > 0;
   }));
 
   // ------------------------------------------------------------- geometry --
@@ -680,6 +684,19 @@ export function Timeline(props: {
                   {(e) => (
                     <div data-tl-nodrag onClick={() => setSheetEvent(e.id)} style={{ ...allDayChip(calendarColor(e.calendarUrl)), cursor: 'pointer' }}>
                       {e.title}
+                    </div>
+                  )}
+                </For>
+                <For each={allDay(d).spans}>
+                  {(t) => (
+                    <div
+                      data-tl-nodrag
+                      data-testid="tl-span"
+                      onClick={() => setSheetTask(t.id)}
+                      title={`Due ${t.deadline}`}
+                      style={{ ...allDayChip('var(--blue)'), cursor: 'pointer', opacity: '0.8' }}
+                    >
+                      ↦ {t.title}
                     </div>
                   )}
                 </For>

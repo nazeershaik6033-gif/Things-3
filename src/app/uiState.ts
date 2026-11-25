@@ -107,3 +107,24 @@ export interface CompletionPrompt {
 
 const [completionPrompt, setCompletionPrompt] = createSignal<CompletionPrompt | null>(null);
 export { completionPrompt, setCompletionPrompt };
+
+// ------------------------------------------------------------ multi-select --
+
+/** Multi-select (TaskNotes' task selection): null when not selecting. */
+const [selection, setSelection] = createSignal<Set<string> | null>(null);
+export { selection };
+export function startSelecting(): void {
+  setExpandedTaskId(null);
+  setSelection(new Set<string>());
+}
+export function endSelecting(): void {
+  setSelection(null);
+}
+export function toggleSelected(id: string): void {
+  const s = selection();
+  if (!s) return;
+  const next = new Set(s);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  setSelection(next);
+}

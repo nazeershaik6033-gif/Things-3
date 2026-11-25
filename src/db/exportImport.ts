@@ -7,6 +7,7 @@ import type {
   RoutineMiss, RoutineSeen, RoutineDay,
   Belief, BeliefRating, BeliefEvidence, QuoteFavorite, QuoteNote,
   Sprint, EnergyLog, HealthDay, RepeatCfg, Counter, CounterDay, DayReview,
+  DayNote, SavedView, ProjectTemplate,
 } from './models';
 
 export interface ExportFile {
@@ -56,10 +57,14 @@ export interface ExportFile {
     counters?: Counter[];
     counterDays?: CounterDay[];
     dayReviews?: DayReview[];
+    /** Added in schema 12 — day/week notes, saved views, project templates. */
+    dayNotes?: DayNote[];
+    savedViews?: SavedView[];
+    templates?: ProjectTemplate[];
   };
 }
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -70,6 +75,7 @@ const TABLES = [
   'beliefs', 'beliefRatings', 'beliefEvidence', 'quoteFavorites', 'quoteNotes',
   'sprints', 'energyLogs', 'healthDays',
   'repeatCfgs', 'counters', 'counterDays', 'dayReviews',
+  'dayNotes', 'savedViews', 'templates',
 ] as const;
 
 export async function exportData(): Promise<ExportFile> {
@@ -113,6 +119,9 @@ export async function exportData(): Promise<ExportFile> {
       counters: await db.counters.toArray(),
       counterDays: await db.counterDays.toArray(),
       dayReviews: await db.dayReviews.toArray(),
+      dayNotes: await db.dayNotes.toArray(),
+      savedViews: await db.savedViews.toArray(),
+      templates: await db.templates.toArray(),
     },
   };
 }
@@ -189,7 +198,8 @@ function withCompletionStamp<T extends { status: string; completedAt: number | n
 }
 
 /** Older backups lack later task fields (focus in v7, time tracking and
- *  issue links in v9, planner times in v10, alerts in v11); default them. */
+ *  issue links in v9, planner times in v10, alerts in v11, stage and dependencies in v12);
+ *  default them. */
 function withFocusFields(t: Task): Task {
   return {
     ...t,
@@ -203,6 +213,8 @@ function withFocusFields(t: Task): Task {
     deadlineTime: t.deadlineTime ?? null,
     alerts: t.alerts ?? null,
     alertsSentSig: t.alertsSentSig ?? null,
+    stage: t.stage ?? null,
+    blockedBy: t.blockedBy ?? [],
   };
 }
 
@@ -244,6 +256,9 @@ export async function importData(file: ExportFile): Promise<void> {
     await db.counters.bulkPut(file.data.counters ?? []);
     await db.counterDays.bulkPut(file.data.counterDays ?? []);
     await db.dayReviews.bulkPut(file.data.dayReviews ?? []);
+    await db.dayNotes.bulkPut(file.data.dayNotes ?? []);
+    await db.savedViews.bulkPut(file.data.savedViews ?? []);
+    await db.templates.bulkPut(file.data.templates ?? []);
   });
   // Nothing recorded before a replace-all import refers to rows that exist now
   clearUndo();

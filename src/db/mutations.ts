@@ -18,7 +18,8 @@ type TableName =
   | 'routineItems' | 'routineLogs' | 'dailyTargets'
   | 'beliefs' | 'beliefRatings' | 'beliefEvidence' | 'quoteFavorites' | 'quoteNotes'
   | 'sprints' | 'energyLogs' | 'healthDays'
-  | 'repeatCfgs' | 'counters' | 'counterDays' | 'dayReviews';
+  | 'repeatCfgs' | 'counters' | 'counterDays' | 'dayReviews'
+  | 'dayNotes' | 'savedViews' | 'templates';
 
 export interface Op {
   table: TableName;
@@ -95,6 +96,8 @@ export function newTask(partial: Partial<Task> = {}): Task {
     deadlineTime: null,
     alerts: null,
     alertsSentSig: null,
+    stage: null,
+    blockedBy: [],
     ...partial,
   };
 }
