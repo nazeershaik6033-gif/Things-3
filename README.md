@@ -58,6 +58,28 @@ Built after a reverse-engineering analysis of [obsidian-day-planner](https://git
   - Moves, resizes, pushes, scheduling, moving and deleting show a toast with **Undo**. On a keyboard, ⌘Z or Ctrl+Z works too.
   - An undo never overwrites something you changed since; it says so instead.
 
+### Alerts and plain-words capture (phase 2)
+
+- **Plain words in Quick Entry**, after TaskNotes:
+  - `Gym tue thu 7am 1h` → every Tue and Thu, 7–8 AM
+  - `Call Anna tomorrow at 3` → tomorrow, 3 PM
+  - `Review deck fri 9-10:30` → Friday, 9–10:30 AM
+  - `Pay rent every month`, `Standup every weekday 9:30am for 15m`, `Gift dec 24`, `Visa in 2 weeks`
+- **What it recognises:**
+  - days: today, tonight, tomorrow, weekdays, "next week", "in 3 days", "dec 24";
+  - times: "7am", "at 3", "14:00", ranges like "9-10:30";
+  - lengths: "1h", "45 min";
+  - repeats: "every …", daily/weekly/monthly, "weekdays", or two or more weekdays in a row.
+- **Ordinary words are left alone.** Bare numbers stay text, as do "sat" and "sun".
+- **You can see and undo the reading.** Quick Entry shows what it read, and **Keep as text** turns the reading off for that entry. The `#tag +project @when !due ~est` short syntax still works and wins where both say something.
+- **Suggestions.** Typing `#` or `+` suggests your tags and projects.
+- **Alerts through iOS Calendar.** No push server: nothing leaves the phone.
+  - A to-do's alerts follow its start time or its deadline: at start, 5/15/30/60 minutes before, or when due, 1 hour or 1 day before.
+  - Timed to-dos get a default alert (5 minutes before; change it in Settings → Planner).
+  - Tap **Send to Calendar** on a to-do, or **Send N alerts** on the timeline to send the whole day in one file. Open it and tap **Add All**.
+  - The app remembers what it sent. A bell turns green once a to-do is in Calendar, and "Changed since sent" tells you to send again.
+  - While Clarity is open, alerts also appear in the app.
+
 ## Super Productivity features
 
 Ported from [Super Productivity](https://github.com/super-productivity/super-productivity) (MIT) after a feature-by-feature reverse-engineering analysis. The full mapping, including what was left out and why, is in [`docs/super-productivity-rea.md`](docs/super-productivity-rea.md). Nothing was copied: each feature was rebuilt on Clarity's own data model and UI.
@@ -225,7 +247,7 @@ Two rules the animation code lives by, both learned the hard way and guarded in 
 The day planner ships in phases (see [`docs/obsidian-planners-rea.md`](docs/obsidian-planners-rea.md)):
 
 1. **Times, timeline, undo.** Shipped.
-2. Reminders through calendar alerts, and natural-language capture with times and repeats ("gym tue thu 7am 1h").
+2. **Alerts through iOS Calendar, and plain-words capture.** Shipped.
 3. Week, day and year calendar views; calendar-event fixes (cancelled and moved instances, colours) and turning an event into a to-do; skipping one occurrence of a repeat.
 4. Kanban of to-dos with In progress / Waiting statuses, dependencies with a Can do now list, Daily Note and Weekly Review, saved views, templates.
 

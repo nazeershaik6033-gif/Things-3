@@ -1,6 +1,9 @@
 import { createSignal, For, Show, type JSX } from 'solid-js';
-import type { DateStr, Task } from '../db/models';
-import { setTaskTime } from '../db/mutations';
+import type { DateStr, Task, TaskAlert } from '../db/models';
+import { setTaskAlerts, setTaskTime } from '../db/mutations';
+import { defaultAlert } from '../app/planner';
+import { sendAlerts } from '../app/taskAlerts';
+import { alertState, describeBefore, effectiveAlerts, hasAlert, toggleAlert } from '../domain/taskAlerts';
 import { setRepeatSeriesTime } from '../db/superMutations';
 import { currentDate } from '../app/currentDate';
 import { undoable } from '../app/undo';
@@ -147,4 +150,79 @@ function nextQuarter(): number {
   const d = new Date();
   const m = d.getHours() * 60 + d.getMinutes();
   return Math.min(1425, Math.ceil((m + 1) / 15) * 15);
+}
+
+// ---------------------------------------------------------------- alerts --
+
+const START_CHOICES = [0, 5, 15, 30, 60];
+const DUE_CHOICES = [0, 60, 1440];
+
+/** Calendar alerts for one to-do: before its start, before its deadline,
+ *  and a button that hands them to iOS Calendar. */
+export function AlertsPanel(props: { task: Task }): JSX.Element {
+  const def = () => defaultAlert();
+  const list = () => effectiveAlerts(props.task, def());
+  const timed = () => parseHHMM(props.task.startTime) !== null && !!props.task.startDate;
+  const state = () => alertState(props.task, def());
+  const toggle = (a: TaskAlert) => {
+    haptic('tick');
+    void setTaskAlerts(props.task.id, toggleAlert(list(), a));
+  };
+  const chip = (a: TaskAlert) => (
+    <button
+      data-testid={`alert-${a.anchor}-${a.beforeMin}`}
+      aria-pressed={hasAlert(list(), a)}
+      onClick={() => toggle(a)}
+      style={{
+        padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+        background: hasAlert(list(), a) ? 'var(--blue)' : 'var(--bg-inset)',
+        color: hasAlert(list(), a) ? 'var(--text-invert)' : 'var(--text)',
+      }}
+    >
+      {describeBefore(a.beforeMin, a.anchor)}
+    </button>
+  );
+  return (
+    <div data-testid="alerts-panel" style={{ display: 'flex', 'flex-direction': 'column', gap: '8px', 'padding-bottom': '10px', 'border-bottom': '1px solid var(--separator)' }}>
+      <Show
+        when={timed() || props.task.deadline}
+        fallback={<div style={{ 'font-size': '13px', color: 'var(--text-secondary)' }}>Give it a time (the Time chip) or a deadline to set alerts that follow it.</div>}
+      >
+        <Show when={timed()}>
+          <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+            Before it starts{props.task.alerts === null && def() !== null ? ' · default' : ''}
+          </div>
+          <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>
+            <For each={START_CHOICES}>{(m) => chip({ anchor: 'start', beforeMin: m })}</For>
+          </div>
+        </Show>
+        <Show when={props.task.deadline}>
+          <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+            Before the deadline{props.task.deadlineTime ? '' : ' (9 AM that day)'}
+          </div>
+          <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>
+            <For each={DUE_CHOICES}>{(m) => chip({ anchor: 'deadline', beforeMin: m })}</For>
+          </div>
+        </Show>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', 'padding-top': '2px' }}>
+          <button
+            data-testid="alerts-send"
+            disabled={list().length === 0}
+            onClick={() => void sendAlerts([props.task], 'clarity-alert.ics')}
+            style={{
+              display: 'inline-flex', 'align-items': 'center', gap: '6px', padding: '8px 14px', 'border-radius': '10px',
+              background: list().length === 0 ? 'var(--bg-inset)' : 'var(--blue)',
+              color: list().length === 0 ? 'var(--text-tertiary)' : '#fff', 'font-size': '14px', 'font-weight': '600',
+            }}
+          >
+            <Icon name="bell" size={15} />
+            {state() === 'changed' ? 'Send again to Calendar' : 'Send to Calendar'}
+          </button>
+          <span data-testid="alerts-state" style={{ 'font-size': '12px', color: state() === 'sent' ? 'var(--green)' : state() === 'changed' ? 'var(--orange, var(--red))' : 'var(--text-tertiary)' }}>
+            {state() === 'sent' ? '✓ In Calendar' : state() === 'changed' ? 'Changed since sent' : ''}
+          </span>
+        </div>
+      </Show>
+    </div>
+  );
 }

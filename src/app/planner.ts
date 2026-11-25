@@ -72,3 +72,19 @@ export async function setSnapStep(min: number): Promise<void> {
   setSnapSignal(min);
   await setSetting('plannerSnapMin', min);
 }
+
+/** Default alert for timed to-dos without their own: minutes before the
+ *  start, or null for none. A real setting (in backups). */
+export const DEFAULT_ALERT_CHOICES = [null, 0, 5, 10, 15, 30] as const;
+const [defaultAlert, setDefaultAlertSignal] = createSignal<number | null>(5);
+export { defaultAlert };
+
+export async function startAlertSettings(): Promise<void> {
+  const v = await getSetting<number | null>('defaultAlertMin', 5);
+  setDefaultAlertSignal(v === null || (DEFAULT_ALERT_CHOICES as readonly (number | null)[]).includes(v) ? v : 5);
+}
+
+export async function setDefaultAlert(v: number | null): Promise<void> {
+  setDefaultAlertSignal(v);
+  await setSetting('defaultAlertMin', v);
+}

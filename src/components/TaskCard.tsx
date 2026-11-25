@@ -29,7 +29,7 @@ import { stopTracking, trackingTaskId } from '../app/timeTracking';
 import { describeRule } from '../domain/repeat';
 import { createReactiveLiveQuery } from '../db/liveQuery';
 import { undoable } from '../app/undo';
-import { TimeChip, TimePicker } from './PlannerControls';
+import { AlertsPanel, TimeChip, TimePicker } from './PlannerControls';
 import { formatClock, parseHHMM } from '../domain/timeline';
 
 type PickerKind = 'when' | 'deadline' | 'tags' | 'move' | 'remind' | 'estimate' | 'repeat' | 'time' | null;
@@ -98,6 +98,8 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
         'margin-top': '6px',
       }}
     >
+      <AlertsPanel task={props.task} />
+      <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>Or remind me at another time</div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <input
           type="date"

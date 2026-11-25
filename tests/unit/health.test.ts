@@ -246,7 +246,7 @@ describe('health + sprint mutations', () => {
     await saveHealth('2026-11-21', { sleep: manualNight({ asleepMin: 400, onset: '23:00' }) }, 'manual');
     await logEnergy(3);
     const file = await exportData();
-    expect(file.schemaVersion).toBe(10);
+    expect(file.schemaVersion).toBe(11);
     await db.healthDays.clear();
     await importData(validateExport(JSON.parse(JSON.stringify(file))));
     expect(await db.healthDays.count()).toBe(1);

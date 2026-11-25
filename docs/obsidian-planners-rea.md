@@ -164,3 +164,35 @@ what made morning planning and mid-day replanning hard.
 - `tests/e2e/planner.spec.ts`: in the production build on the iPhone profile,
   place from the tray, hold-drag, undo, push the rest, the task sheet, Planner
   day counts, and setting a time from the card.
+
+## Phase 2 as built
+
+### Alerts (schema v11)
+
+- **Model.** `Task.alerts` is a list of `{ anchor: 'start' | 'deadline', beforeMin }` (TaskNotes' relative reminders). `null` means "use the default", which is 5 minutes before the start of a timed to-do (Settings → Planner).
+- **No push server, as decided.** Alerts go to iOS Calendar as `.ics` events with `VALARM`s, delivered through the share sheet:
+  - per to-do from the card's bell;
+  - or a whole day from the timeline, in one file.
+- **Events.** Each event has a stable UID per to-do (`clarity-task-<id>-start` / `-due`). A deadline without a time is anchored at 9 AM.
+- **Knowing what's in Calendar.** `alertsSentSig` stores a signature (title, day, time, length, deadline, alerts) of what was sent, so the app can show *in Calendar* or *changed since*.
+- **A known limit.** Whether iOS updates or duplicates an event re-sent with the same UID isn't something a web app can control. The UI says to delete the old one if it shows twice.
+- **While the app is open,** alerts also appear as an in-app toast, not a second system notification. Only moments that pass while it runs count; nothing replays on launch.
+
+### Plain-words capture (`src/domain/naturalLanguage.ts`)
+
+- **Order.** It runs after the sigil short syntax, which wins where both speak.
+- **Days:** today/tonight/tomorrow, weekday names (`next`/`on`/`this` + day), "next week", "in N days/weeks/months", "dec 24" / "24th of december".
+- **Times:** "7am", "7:30pm", "14:00", "noon", "at 3" (1–7 read as PM), and ranges "9-10:30", "11-1pm", "from 2 to 4pm".
+- **Lengths:** "1h", "1h30m", "45 min", "for 15m". Next to a time a length sets the block; on its own it's an estimate.
+- **Repeats:** "every [other|N] day/week/month/year", "every weekday/weekend", "every mon, wed and fri", daily/weekly/monthly/yearly/weekdays, and a run of two or more weekdays ("tue thu"). The first occurrence is the first matching day from today.
+- **Conservative by design.** Bare numbers and "sat"/"sun" alone stay text. Quick Entry shows what was recognised and has **Keep as text**.
+- **Autocomplete.** Typing `#` or `+` suggests existing tags and projects.
+
+### Tests
+
+- **`tests/unit/naturalLanguage.test.ts`**:
+  - clock, range and length words;
+  - every example above;
+  - ordinary words left alone ("Read 1984", "Sat down with Sam");
+  - alert defaults, ordering, the calendar events, sent state, day selection and in-app moments.
+- **`tests/e2e/capture.spec.ts`:** the full capture flow including the repeat, Keep as text, tag suggestions, and the alerts panel and timeline button.

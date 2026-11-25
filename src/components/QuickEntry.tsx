@@ -6,6 +6,9 @@ import { AutoTextarea, SyncedInput } from '../ui/TextField';
 import { haptic } from '../app/motion';
 import { quickEntry, setQuickEntry, type QuickEntryState } from '../app/uiState';
 import { DEFAULT_BLOCK_MIN, formatRange, parseHHMM } from '../domain/timeline';
+import { parseNatural } from '../domain/naturalLanguage';
+import { makeRepeating } from '../db/superMutations';
+import { TokenSuggestions } from './TokenSuggestions';
 import { createTask, createTag, updateTask, type TaskDestination, type When } from '../db/mutations';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
@@ -49,6 +52,8 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
   const [deadline, setDeadline] = createSignal<DateStr | null>(null);
   const [dest, setDest] = createSignal<TaskDestination>(init.destination);
   const [sub, setSub] = createSignal<SubSheet>(null);
+  /** Natural-language parsing for this entry; "Keep as text" turns it off. */
+  const [natural, setNatural] = createSignal(true);
 
   let notesEl: HTMLTextAreaElement | undefined;
 
@@ -104,8 +109,22 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
       d = { projectId: parsed.projectId, headingId: null, areaId: null };
       if (bk === 'inbox') bk = 'anytime';
     }
-    await createTask({
-      title: parsed.title || title().trim(),
+    // Plain words next (TaskNotes-style): "tomorrow 3pm", "tue thu 7am 1h".
+    // Sigil tokens above win where both speak.
+    const nat = natural() ? parseNatural(parsed.title || title().trim(), currentDate()) : null;
+    let slotTime = init.startTime && sd && !ev && sd === (init.startDate ?? null) ? init.startTime : null;
+    let slotLen = slotTime ? (init.durationMin ?? null) : null;
+    if (nat) {
+      if (nat.date && !w) { sd = nat.date; ev = nat.evening; bk = 'anytime'; }
+      if (nat.startTime) {
+        if (!sd) { sd = currentDate(); bk = 'anytime'; }
+        slotTime = nat.startTime;
+        slotLen = nat.durationMin;
+        ev = false;
+      }
+    }
+    const id = await createTask({
+      title: (nat?.title || parsed.title) || title().trim(),
       notes: notes(),
       checklist: checklist().filter((c) => c.title.trim() !== ''),
       tagIds: finalTags,
@@ -116,12 +135,13 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
       projectId: d.projectId ?? null,
       headingId: d.headingId ?? null,
       areaId: d.areaId ?? null,
-      timeEstimateMin: parsed.estimateMin,
+      timeEstimateMin: parsed.estimateMin ?? nat?.estimateMin ?? null,
       // A slot from the timeline holds while the to-do keeps that day
-      startTime: init.startTime && sd && !ev && sd === (init.startDate ?? null) ? init.startTime : null,
-      durationMin: init.startTime && sd && !ev && sd === (init.startDate ?? null) ? (init.durationMin ?? null) : null,
+      startTime: slotTime,
+      durationMin: slotLen,
       ...(init.orderKey ? { orderKey: init.orderKey } : {}),
     });
+    if (nat?.repeat) await makeRepeating(id, nat.repeat, currentDate());
     close();
   };
 
@@ -275,9 +295,16 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
             }}
           />
 
-          <Show when={hasShortSyntax(title())}>
+          <TokenSuggestions
+            title={title()}
+            tags={tags()}
+            projects={projects()}
+            onPick={setTitle}
+          />
+          <Show when={hasShortSyntax(title()) || parseNatural(parseShortSyntax(title(), projects(), currentDate()).title, currentDate()).recognised.length > 0}>
             {(() => {
               const p = () => parseShortSyntax(title(), projects(), currentDate());
+              const nat = () => parseNatural(p().title, currentDate());
               const bits = () => {
                 const out: string[] = [];
                 const x = p();
@@ -288,10 +315,24 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
                 if (x.estimateMin) out.push(`⌛ ${formatDuration(x.estimateMin * 60)}`);
                 return out;
               };
+              const natBits = () => (natural() ? nat().recognised : []);
               return (
-                <Show when={bits().length > 0}>
-                  <div data-testid="short-syntax-preview" style={{ 'font-size': '13px', color: 'var(--blue)', padding: '0 0 8px', 'font-weight': '500' }}>
-                    {bits().join('  ·  ')}
+                <Show when={bits().length + nat().recognised.length > 0}>
+                  <div style={{ display: 'flex', 'align-items': 'baseline', gap: '10px', padding: '0 0 8px', 'flex-wrap': 'wrap' }}>
+                    <div data-testid="short-syntax-preview" style={{ 'font-size': '13px', color: 'var(--blue)', 'font-weight': '500', flex: '1', 'min-width': '0' }}>
+                      {[...bits(), ...natBits()].join('  ·  ') || 'Kept as text'}
+                    </div>
+                    <Show when={nat().recognised.length > 0}>
+                      <button
+                        data-testid="nl-toggle"
+                        aria-pressed={!natural()}
+                        onPointerDown={(e) => e.preventDefault()}
+                        onClick={() => setNatural(!natural())}
+                        style={{ 'font-size': '12px', 'font-weight': '600', color: 'var(--text-secondary)', padding: '2px 0' }}
+                      >
+                        {natural() ? 'Keep as text' : 'Read the words'}
+                      </button>
+                    </Show>
                   </div>
                 </Show>
               );

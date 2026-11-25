@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import { db } from './db';
 import type {
   Task, Project, Heading, Area, Tag, Bucket, DateStr, RoutineItem, RoutineLog,
-  DailyTarget, TargetOutcome, Sprint, EnergyLog, HealthDay, SleepNight, ActivityDay,
+  DailyTarget, TargetOutcome, Sprint, EnergyLog, HealthDay, SleepNight, ActivityDay, TaskAlert,
 } from './models';
 import { keyAtEnd, keyBetween, sortByOrderKey, needsRebalance, rebalancedKeys } from './ordering';
 import { fromDateStr, todayStr, toDateStr } from '../domain/dates';
@@ -93,6 +93,8 @@ export function newTask(partial: Partial<Task> = {}): Task {
     startTime: null,
     durationMin: null,
     deadlineTime: null,
+    alerts: null,
+    alertsSentSig: null,
     ...partial,
   };
 }
@@ -176,6 +178,23 @@ export async function setTaskTime(
     if (t.reminderTime === 'morning' || t.reminderTime === 'afternoon') patch.reminderTime = null;
   }
   await updateTask(id, patch);
+}
+
+/** A to-do's own calendar alerts; null goes back to the default. */
+export async function setTaskAlerts(id: string, alerts: TaskAlert[] | null): Promise<void> {
+  await updateTask(id, { alerts });
+}
+
+/** Remember what was sent to the Calendar, per to-do (signature → state). */
+export async function markAlertsSent(sigs: { id: string; sig: string }[]): Promise<void> {
+  const ops: Op[] = [];
+  for (const { id, sig } of sigs) {
+    const before = await db.tasks.get(id);
+    if (!before || before.alertsSentSig === sig) continue;
+    // modifiedAt stays: being sent to Calendar isn't an edit of the to-do
+    ops.push({ table: 'tasks', key: id, before, after: { ...before, alertsSentSig: sig } });
+  }
+  await applyOps(ops);
 }
 
 /** Several timeline changes as one write (a push or a shift moves many). */

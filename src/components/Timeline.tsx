@@ -9,7 +9,9 @@ import { haptic } from '../app/motion';
 import { showToast } from '../app/focusState';
 import { setQuickEntry } from '../app/uiState';
 import { toggleComplete } from '../app/completion';
-import { pushMode, setPushMode, snapStep } from '../app/planner';
+import { defaultAlert, pushMode, setPushMode, snapStep } from '../app/planner';
+import { sendAlerts } from '../app/taskAlerts';
+import { alertState, effectiveAlerts, tasksWithAlertsOn } from '../domain/taskAlerts';
 import { release, tryClaim } from '../gestures/arbiter';
 import { dayOfMonth, weekdayName } from '../domain/dates';
 import { isMit } from '../domain/focus';
@@ -523,6 +525,13 @@ export function Timeline(props: {
     if (pending) clearTimeout(pending.timer);
   });
 
+  // --------------------------------------------------------------- alerts --
+  const dayAlerts = createMemo(() => {
+    const all = tasksWithAlertsOn(props.tasks, props.dates, defaultAlert());
+    const pending = all.filter((t) => alertState(t, defaultAlert()) !== 'sent').length;
+    return { all, pending };
+  });
+
   // ------------------------------------------------------- running late --
   const lateTargets = createMemo(() => {
     if (!props.dates.includes(today())) return [];
@@ -568,6 +577,17 @@ export function Timeline(props: {
           <Icon name="layers" size={12} color={pushMode() ? 'currentColor' : 'var(--text-secondary)'} />
           Push rest
         </button>
+        <Show when={dayAlerts().all.length > 0}>
+          <button
+            data-testid="tl-alerts"
+            onClick={() => void sendAlerts(dayAlerts().all, props.dates.length === 1 ? `clarity-${props.dates[0]}.ics` : 'clarity-alerts.ics')}
+            title="Send these to-dos' alerts to iOS Calendar in one file"
+            style={pill(dayAlerts().pending > 0)}
+          >
+            <Icon name="bell" size={12} color={dayAlerts().pending > 0 ? 'currentColor' : 'var(--green)'} />
+            {dayAlerts().pending > 0 ? `Send ${dayAlerts().pending} alert${dayAlerts().pending === 1 ? '' : 's'}` : 'Alerts in Calendar'}
+          </button>
+        </Show>
         <Show when={lateTargets().length > 0}>
           <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>Running late</span>
           <button data-testid="tl-late-15" onClick={() => runLate(15)} style={pill(false)}>+15m</button>
@@ -871,8 +891,13 @@ function BlockView(props: {
           {b().title || 'New To-Do'}
         </div>
         <Show when={roomy() && !props.narrow}>
-          <div style={{ 'font-size': '11px', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums' }}>
+          <div style={{ 'font-size': '11px', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums', display: 'flex', 'align-items': 'center', gap: '4px' }}>
             {formatRange(b().startMin, b().endMin)}{b().running ? ' · now' : ''}
+            <Show when={props.task && !b().done && effectiveAlerts(props.task, defaultAlert()).some((a) => a.anchor === 'start')}>
+              <span data-testid="tl-bell" style={{ display: 'inline-flex', color: alertState(props.task!, defaultAlert()) === 'sent' ? 'var(--green)' : 'var(--text-tertiary)' }}>
+                <Icon name="bell" size={10} />
+              </span>
+            </Show>
           </div>
         </Show>
       </div>

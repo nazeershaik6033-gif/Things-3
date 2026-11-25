@@ -59,7 +59,7 @@ export interface ExportFile {
   };
 }
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 const TABLES = [
   'tasks', 'projects', 'headings', 'areas', 'tags', 'settings',
@@ -189,7 +189,7 @@ function withCompletionStamp<T extends { status: string; completedAt: number | n
 }
 
 /** Older backups lack later task fields (focus in v7, time tracking and
- *  issue links in v9, planner times in v10); default them. */
+ *  issue links in v9, planner times in v10, alerts in v11); default them. */
 function withFocusFields(t: Task): Task {
   return {
     ...t,
@@ -201,6 +201,8 @@ function withFocusFields(t: Task): Task {
     startTime: t.startTime ?? null,
     durationMin: t.durationMin ?? null,
     deadlineTime: t.deadlineTime ?? null,
+    alerts: t.alerts ?? null,
+    alertsSentSig: t.alertsSentSig ?? null,
   };
 }
 

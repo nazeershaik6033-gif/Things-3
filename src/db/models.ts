@@ -64,6 +64,19 @@ export interface Task {
   durationMin: number | null;
   /** "HH:mm" local time on `deadline`. null = due any time that day. */
   deadlineTime: string | null;
+  // ---- Alerts (schema v11) ----
+  /** Calendar alerts: minutes before the start time or the deadline.
+   *  null = use the default from Settings (for timed to-dos). */
+  alerts: TaskAlert[] | null;
+  /** Signature of what was last sent to the Calendar, so the app can tell
+   *  "in Calendar" from "changed since — send again". */
+  alertsSentSig: string | null;
+}
+
+export interface TaskAlert {
+  anchor: 'start' | 'deadline';
+  /** Minutes before the anchor; 0 = at that moment. */
+  beforeMin: number;
 }
 
 export interface Project {

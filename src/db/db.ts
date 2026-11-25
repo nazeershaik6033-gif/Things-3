@@ -143,6 +143,13 @@ export class ClarityDB extends Dexie {
         if (t.deadlineTime === undefined) t.deadlineTime = null;
       });
     });
+    // v11: calendar alerts on to-dos. Additive; backfills two fields.
+    this.version(11).stores({}).upgrade(async (tx) => {
+      await tx.table('tasks').toCollection().modify((t: Partial<Task>) => {
+        if (t.alerts === undefined) t.alerts = null;
+        if (t.alertsSentSig === undefined) t.alertsSentSig = null;
+      });
+    });
   }
 }
 

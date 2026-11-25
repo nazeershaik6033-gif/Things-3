@@ -5,7 +5,7 @@ import { exportData, importData, validateExport } from '../db/exportImport';
 import { DEFAULT_PROXY, importIcsText, refreshCalendar } from '../app/calendar';
 import { setThemePref, themePref, resolvedTheme, PALETTES, type ThemePref, type Palette } from '../app/theme';
 import { aiConfig, askCompletionDate, setAskCompletionDate, updateAiConfig } from '../app/settings';
-import { SNAP_CHOICES, setSnapStep, snapStep } from '../app/planner';
+import { DEFAULT_ALERT_CHOICES, SNAP_CHOICES, defaultAlert, setDefaultAlert, setSnapStep, snapStep } from '../app/planner';
 import { GEMINI_MODELS, OPENROUTER_MODELS, type AiProvider } from '../net/ai';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
@@ -231,6 +231,30 @@ export function SettingsScreen(): JSX.Element {
               {m}m
             </button>
           ))}
+        </div>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0', 'flex-wrap': 'wrap' }}>
+          <span style={{ flex: '1', 'font-size': '15px', 'min-width': '140px' }}>Default alert</span>
+          {DEFAULT_ALERT_CHOICES.map((m) => (
+            <button
+              data-testid={`default-alert-${m ?? 'none'}`}
+              aria-pressed={defaultAlert() === m}
+              onClick={() => void setDefaultAlert(m)}
+              style={{
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                background: defaultAlert() === m ? 'var(--blue)' : 'var(--bg-inset)',
+                color: defaultAlert() === m ? 'var(--text-invert)' : 'var(--text)',
+              }}
+            >
+              {m === null ? 'None' : m === 0 ? 'At start' : `${m}m`}
+            </button>
+          ))}
+        </div>
+        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 6px', 'line-height': '1.5' }}>
+          Timed to-dos get this alert unless you set their own (the bell on a
+          to-do). Alerts reach your phone through iOS Calendar: tap Send alerts
+          on the timeline, open the file and tap Add All. If you change a time,
+          send again; if the old alert still shows in Calendar, delete it there.
+          While Clarity is open, alerts also show here.
         </div>
         <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
           On the timeline, press and hold a to-do to drag it; it stays selected
