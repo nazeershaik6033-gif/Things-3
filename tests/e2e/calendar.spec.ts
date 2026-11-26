@@ -188,7 +188,8 @@ test('Add event opens Google Calendar pre-filled for the selected day', async ({
   const popupPromise = context.waitForEvent('page');
   await page.getByTestId('cal-add-event').click();
   const popup = await popupPromise;
-  expect(popup.url()).toContain('calendar.google.com/calendar/render');
+  // The popup can exist a moment before its address is set
+  await expect.poll(() => popup.url()).toContain('calendar.google.com/calendar/render');
   expect(popup.url()).toContain('action=TEMPLATE');
   await popup.close();
 });

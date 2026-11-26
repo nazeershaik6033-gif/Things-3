@@ -315,17 +315,20 @@ html[data-motion='rich'] .tabbar-tab[aria-selected='true'] .tabbar-icon {
   border-radius: 24px;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: var(--blue);
-  box-shadow: 0 0 0 4px rgba(47, 124, 246, 0.16), var(--shadow-fab);
-  transition: transform 560ms cubic-bezier(0.2, 1.7, 0.4, 1), box-shadow 300ms;
+  /* A quiet tint, not a solid blue: easy to find, never shouting */
+  color: var(--tabbar-plus-fg);
+  background: var(--tabbar-plus-bg);
+  transition: transform 560ms cubic-bezier(0.2, 1.7, 0.4, 1), background-color 200ms;
+}
+.tabbar-plus[aria-expanded='true'] {
+  background: var(--tabbar-plus-bg-open);
 }
 .tabbar-plus:active {
   transform: scale(0.84);
   transition-duration: 120ms;
 }
 html[data-motion='subtle'] .tabbar-plus {
-  transition: transform 200ms ease, box-shadow 200ms;
+  transition: transform 200ms ease, background-color 200ms;
 }
 .tabbar-plus-glyph {
   display: flex;
