@@ -270,7 +270,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
               label="Save as Template"
               onClick={() => {
                 setMenuOpen(false);
-                void saveProjectAsTemplate(props.id).then(() => showToast('Saved — start a copy from Home → New List → Project from Template'));
+                void saveProjectAsTemplate(props.id).then(() => showToast('Saved — start a copy from Home → + → Project from Template'));
               }}
             />
             <MenuRow

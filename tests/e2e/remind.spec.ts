@@ -39,7 +39,8 @@ test('Remind via Google Calendar opens a pre-filled template', async ({ page, co
   const popupPromise = context.waitForEvent('page');
   await page.getByTestId('remind-google').click();
   const popup = await popupPromise;
-  expect(popup.url()).toContain('calendar.google.com/calendar/render');
+  // The popup can exist a moment before its address is set
+  await expect.poll(() => popup.url()).toContain('calendar.google.com/calendar/render');
   expect(popup.url()).toContain('text=Buy+groceries');
   expect(popup.url()).toContain('T183000');
   await popup.close();

@@ -111,6 +111,8 @@ test('a project saved as a template starts a new project', async ({ page }) => {
   await quickAdd(page, 'Publish');
   await page.getByTestId('project-menu').click();
   await page.getByText('Save as Template').click();
+  // Wait for the save to land before reloading
+  await expect(page.getByText(/^Saved — start a copy/)).toBeVisible();
   await page.goto('./');
   await page.getByTestId('home-add').click();
   await page.getByText('Project from Template').click();

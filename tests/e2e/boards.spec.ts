@@ -50,7 +50,7 @@ test('seeded board: browse columns, edit a card, move it, calendar view', async 
 test('create a board, add a list and a card; it persists across reload', async ({ page }) => {
   await loadEmpty(page);
 
-  // New Board from the Home "New List" sheet.
+  // New Board from the + menu on Home.
   await page.getByTestId('home-add').click();
   await page.getByRole('button', { name: 'New Board' }).click();
   await page.getByTestId('board-title').fill('Trip planning');
