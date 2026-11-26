@@ -232,12 +232,15 @@ function MagicPlusInner(props: {
           width: '56px',
           height: '56px',
           'border-radius': '50%',
-          background: 'var(--blue)',
-          color: '#fff',
+          // The same quiet tint as the tab bar's +, laid over the card colour
+          // so it stays opaque above the rows it floats over
+          background: 'linear-gradient(var(--tabbar-plus-bg), var(--tabbar-plus-bg)), var(--bg-elevated)',
+          color: 'var(--tabbar-plus-fg)',
+          border: '1px solid var(--separator)',
           display: 'flex',
           'align-items': 'center',
           'justify-content': 'center',
-          'box-shadow': 'var(--shadow-fab)',
+          'box-shadow': 'var(--shadow-fab-quiet)',
           'z-index': '50',
           'touch-action': 'none',
           'will-change': 'transform',
