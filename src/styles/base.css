@@ -13,6 +13,7 @@ body {
 body {
   font-family: var(--font);
   font-size: var(--fs-body);
+  font-weight: var(--fw-400);
   color: var(--text);
   background: var(--bg);
   overscroll-behavior: none;
@@ -47,8 +48,8 @@ textarea {
   background: none;
   border: none;
   outline: none;
-  /* ≥16px prevents iOS zoom-on-focus */
-  font-size: 16px;
+  /* ≥16px prevents iOS zoom-on-focus, even when text is set smaller */
+  font-size: max(16px, calc(16px * var(--ts)));
 }
 
 textarea {
@@ -251,8 +252,9 @@ html[data-motion='subtle'] .page-in {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  font-size: 10px;
-  font-weight: 600;
+  /* Grows with text size, but only a little: the tabs are fixed-width */
+  font-size: min(calc(10px * var(--ts)), 12px);
+  font-weight: var(--fw-600);
   letter-spacing: 0.01em;
   color: var(--text-secondary);
   transition: color 260ms ease;
@@ -385,4 +387,25 @@ html[data-motion='subtle'] .add-menu {
   z-index: 9999;
   pointer-events: none;
   animation: confetti-fall linear forwards;
+}
+
+/* ── Text settings ──────────────────────────────────────────────────────
+   Bold Text moves every weight up one step, like the iOS switch. */
+html[data-bold='true'] {
+  --fw-400: 500;
+  --fw-500: 600;
+  --fw-600: 700;
+  --fw-700: 800;
+  --fw-800: 900;
+}
+/* Text that sets no line height of its own follows the spacing too. */
+html[data-lines='tight'] body { line-height: 1.1; }
+html[data-lines='roomy'] body { line-height: 1.42; }
+
+/* Notes (rendered markdown and the note editors) read in their own font and
+   size: redefining --ts here makes every calc(Npx * var(--ts)) inside use
+   the notes size instead of the app's. */
+.notes-type {
+  --ts: var(--notes-ts);
+  font-family: var(--notes-font);
 }

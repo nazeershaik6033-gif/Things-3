@@ -5,7 +5,7 @@ import type { IconName } from '../ui/Icon';
  *  section by its title or by the words of the settings inside it. */
 
 export type SettingsSectionId =
-  | 'appearance' | 'completing'
+  | 'appearance' | 'text' | 'completing'
   | 'planner' | 'focus-timer' | 'time-tracking' | 'short-syntax'
   | 'google-calendar' | 'github' | 'my-routine' | 'boards'
   | 'ai'
@@ -25,7 +25,7 @@ export interface SettingsGroup {
 }
 
 export const SETTINGS_GROUPS: SettingsGroup[] = [
-  { id: 'general', title: 'General', icon: 'settings', tint: '#8e8e93', sections: ['appearance', 'completing'] },
+  { id: 'general', title: 'General', icon: 'settings', tint: '#8e8e93', sections: ['appearance', 'text', 'completing'] },
   { id: 'planning', title: 'Planner & Time', icon: 'clock', tint: '#2f7cf6', sections: ['planner', 'focus-timer', 'time-tracking', 'short-syntax'] },
   { id: 'integrations', title: 'Integrations', icon: 'link', tint: '#53b855', sections: ['google-calendar', 'github', 'my-routine', 'boards'] },
   { id: 'ai', title: 'AI', icon: 'sparkle', tint: '#b678e0', sections: ['ai'], blurb: 'Provider, key and model for summaries' },
@@ -34,6 +34,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
 
 export const SECTION_TITLE: Record<SettingsSectionId, string> = {
   appearance: 'Appearance',
+  text: 'Text',
   completing: 'Completing to-dos',
   planner: 'Planner',
   'focus-timer': 'Focus Timer',
@@ -51,6 +52,7 @@ export const SECTION_TITLE: Record<SettingsSectionId, string> = {
 /** Words people might type for what's inside each section. */
 const SECTION_KEYWORDS: Record<SettingsSectionId, string> = {
   appearance: 'theme dark light mode colour color palette snow parchment slate midnight motion animation reduce transitions confetti',
+  text: 'font typeface style text size bigger larger smaller bold weight line spacing notes reading serif rounded mono accessibility',
   completing: 'complete completion date ask finished done logbook',
   planner: 'timeline snap minutes week start week numbers alerts reminder default alert calendar view',
   'focus-timer': 'pomodoro timer focus sprint minutes',

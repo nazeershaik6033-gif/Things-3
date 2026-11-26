@@ -82,7 +82,7 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
     'border-radius': '10px',
     background: 'var(--bg-inset)',
     color: 'var(--text)',
-    'font-size': '16px',
+    'font-size': 'calc(16px * var(--ts))',
     border: 'none',
     'color-scheme': 'inherit',
   } as const;
@@ -100,7 +100,7 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
       }}
     >
       <AlertsPanel task={props.task} />
-      <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>Or remind me at another time</div>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)' }}>Or remind me at another time</div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <input
           type="date"
@@ -130,8 +130,8 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
             'border-radius': '10px',
             background: 'var(--blue)',
             color: '#fff',
-            'font-size': '15px',
-            'font-weight': '600',
+            'font-size': 'calc(15px * var(--ts))',
+            'font-weight': 'var(--fw-600)',
           }}
         >
           <Icon name="bell" size={16} />
@@ -148,17 +148,17 @@ function RemindPicker(props: { task: Task; onClose: () => void }): JSX.Element {
             'border-radius': '10px',
             background: 'var(--bg-inset)',
             color: 'var(--text)',
-            'font-size': '15px',
-            'font-weight': '600',
+            'font-size': 'calc(15px * var(--ts))',
+            'font-weight': 'var(--fw-600)',
           }}
         >
           Google Calendar
         </button>
-        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>
+        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))' }}>
           Cancel
         </button>
       </div>
-      <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
         Apple: downloads an event file — open it and tap Add for an iPhone
         alert. Google: opens Google Calendar pre-filled — save there and set
         its reminder; the event also shows in this app's Calendar.
@@ -246,8 +246,8 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
         gap: '4px',
         padding: '4px 10px',
         'border-radius': '999px',
-        'font-size': '13px',
-        'font-weight': '600',
+        'font-size': 'calc(13px * var(--ts))',
+        'font-weight': 'var(--fw-600)',
         background: active ? 'var(--blue)' : 'var(--bg-inset)',
         color: active ? 'var(--text-invert)' : 'var(--text)',
       }}
@@ -314,9 +314,9 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
           style={{
             flex: '1',
             'min-width': '0',
-            'font-size': '17px',
-            'font-weight': '500',
-            'line-height': '1.35',
+            'font-size': 'calc(17px * var(--ts))',
+            'font-weight': 'var(--fw-500)',
+            'line-height': 'calc(1.35 * var(--lh))',
           }}
         />
       </div>
@@ -340,7 +340,7 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
             >
               <Show
                 when={t().notes}
-                fallback={<span style={{ color: 'var(--text-tertiary)', 'font-size': '15px' }}>Notes</span>}
+                fallback={<span class="notes-type" style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(15px * var(--ts))' }}>Notes</span>}
               >
                 <MarkdownView source={t().notes} />
               </Show>
@@ -349,6 +349,7 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
         >
           <AutoTextarea
             ref={(el) => (notesEl = el)}
+            class="notes-type"
             value={t().notes}
             placeholder="Notes"
             rows={2}
@@ -358,8 +359,8 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
               setEditingNotes(false);
             }}
             style={{
-              'font-size': '15px',
-              'line-height': '1.45',
+              'font-size': 'calc(15px * var(--ts))',
+              'line-height': 'calc(1.45 * var(--lh))',
               padding: '4px 0',
             }}
           />
@@ -388,8 +389,8 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
                 'border-radius': '999px',
                 background: 'var(--bg-inset)',
                 color: 'var(--text)',
-                'font-size': '13px',
-                'font-weight': '500',
+                'font-size': 'calc(13px * var(--ts))',
+                'font-weight': 'var(--fw-500)',
               }}
             >
               <Show when={whenLabel() === 'Tonight'} fallback={
@@ -420,8 +421,8 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
                 'border-radius': '999px',
                 background: 'var(--bg-inset)',
                 color: t().deadline! < currentDate() ? 'var(--red)' : 'var(--text)',
-                'font-size': '13px',
-                'font-weight': '500',
+                'font-size': 'calc(13px * var(--ts))',
+                'font-weight': 'var(--fw-500)',
               }}
             >
               <Icon name="flag" size={13} color="var(--red)" />
@@ -482,7 +483,7 @@ export function TaskCard(props: { task: Task; onCollapse?: () => void; inSheet?:
             onClick={() => setPicker('repeat')}
             style={{
               display: 'inline-flex', 'align-items': 'center', gap: '4px', padding: '4px 10px',
-              'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+              'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
               background: 'var(--bg-inset)', color: repeatCfg()!.paused ? 'var(--text-tertiary)' : 'var(--text)',
             }}
           >

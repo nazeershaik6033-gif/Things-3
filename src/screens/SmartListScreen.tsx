@@ -261,7 +261,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               aria-label="Focus timer"
               data-testid="pomo-open"
               onClick={() => setOverlayOpen(true)}
-              style={{ padding: '8px 12px', 'font-size': '20px', 'line-height': '1' }}
+              style={{ padding: '8px 12px', 'font-size': 'calc(20px * var(--ts))', 'line-height': 'calc(1 * var(--lh))' }}
             >
               🎯
             </button>
@@ -289,7 +289,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                 aria-pressed={todayView() === v}
                 onClick={() => setTodayView(v)}
                 style={{
-                  padding: '5px 14px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+                  padding: '5px 14px', 'border-radius': '8px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                   background: todayView() === v ? 'var(--bg-card)' : 'transparent',
                   color: todayView() === v ? 'var(--text)' : 'var(--text-secondary)',
                   'box-shadow': todayView() === v ? 'var(--shadow-card)' : 'none',
@@ -337,7 +337,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                     label="Everything Else"
                     color="var(--text-secondary)"
                     small
-                    trailing={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>batch in low-energy gaps</span>}
+                    trailing={<span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>batch in low-energy gaps</span>}
                   />
                 </Show>
               </Show>
@@ -377,10 +377,10 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               {(group) => (
                 <Show when={group().tasks.length > 0 || group().kind === 'day'}>
                   <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '16px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
-                    <span style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text)', 'min-width': '24px' }}>
+                    <span style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text)', 'min-width': '24px' }}>
                       {group().kind === 'day' ? group().sublabel : ''}
                     </span>
-                    <span style={{ 'font-size': '15px', 'font-weight': group().kind === 'month' ? '700' : '500', color: 'var(--text-secondary)' }}>
+                    <span style={{ 'font-size': 'calc(15px * var(--ts))', 'font-weight': group().kind === 'month' ? 'var(--fw-700)' : 'var(--fw-500)', color: 'var(--text-secondary)' }}>
                       {group().label} {group().kind === 'month' ? group().sublabel : ''}
                     </span>
                   </div>
@@ -405,10 +405,10 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
               {(group: PriorGroup) => (
                 <div>
                   <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '16px 16px 2px', 'border-bottom': '1px solid var(--separator)' }}>
-                    <span style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)', 'min-width': '24px' }}>
+                    <span style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'min-width': '24px' }}>
                       {group.kind === 'day' ? group.sublabel : ''}
                     </span>
-                    <span style={{ 'font-size': '15px', 'font-weight': '500', color: 'var(--text-secondary)' }}>
+                    <span style={{ 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)', color: 'var(--text-secondary)' }}>
                       {group.label}
                     </span>
                   </div>
@@ -421,7 +421,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                     {(task) => (
                       <div style={{ position: 'relative' }}>
                         <div style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', 'z-index': '1', 'pointer-events': 'none' }}>
-                          <span style={{ 'font-size': '11px', 'font-weight': '600', color: 'var(--red)', background: 'color-mix(in srgb, var(--red) 12%, transparent)', padding: '2px 6px', 'border-radius': '4px' }}>
+                          <span style={{ 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--red)', background: 'color-mix(in srgb, var(--red) 12%, transparent)', padding: '2px 6px', 'border-radius': '4px' }}>
                             overdue
                           </span>
                         </div>
@@ -449,7 +449,7 @@ export function SmartListScreen(props: { list: BuiltinList }): JSX.Element {
                           {task.title || '—'}
                         </span>
                         <Show when={task.status === 'canceled'}>
-                          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>canceled</span>
+                          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>canceled</span>
                         </Show>
                       </div>
                     )}

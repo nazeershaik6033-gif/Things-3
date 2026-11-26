@@ -24,14 +24,14 @@ export function CalendarBlock(props: { events: CalendarEvent[]; compact?: boolea
                 'align-items': 'baseline',
                 gap: '8px',
                 padding: '3px 0',
-                'font-size': '14px',
+                'font-size': 'calc(14px * var(--ts))',
               }}
             >
               <span
                 style={{
                   color: 'var(--text-secondary)',
-                  'font-size': '12px',
-                  'font-weight': '600',
+                  'font-size': 'calc(12px * var(--ts))',
+                  'font-weight': 'var(--fw-600)',
                   'min-width': '52px',
                   'font-variant-numeric': 'tabular-nums',
                 }}

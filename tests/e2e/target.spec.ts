@@ -31,7 +31,7 @@ test('set a target in the morning, judge it at night', async ({ page }) => {
   // Home reflects the verdict, and it survives a reload
   await page.getByTestId('back-button').last().click();
   await expect((await homeRow(page, 'home-target-state'))).toHaveText('Hit');
-  await expect(page.getByTestId('widget-target-text')).toHaveText('Finish the migration plan');
+  await expect(await homeRow(page, 'widget-target-text')).toHaveText('Finish the migration plan');
 
   await page.reload();
   await expect((await homeRow(page, 'home-target-state'))).toHaveText('Hit');

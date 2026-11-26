@@ -71,7 +71,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
             placeholder="Card title"
             data-testid="card-title"
             onInput={(e) => void updateCard(props.id, { title: e.currentTarget.value })}
-            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': '700' }}
+            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': 'var(--fw-700)' }}
           />
         }
         subtitle={`in ${listName()}`}
@@ -115,8 +115,8 @@ export function CardScreen(props: { id: string }): JSX.Element {
                         'border-radius': '7px',
                         background: label.color,
                         color: '#fff',
-                        'font-size': '13px',
-                        'font-weight': '600',
+                        'font-size': 'calc(13px * var(--ts))',
+                        'font-weight': 'var(--fw-600)',
                         opacity: on() ? '1' : '0.4',
                         'box-shadow': on() ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
                       }}
@@ -133,6 +133,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
         {/* Description */}
         <Section title="Description" index={2}>
           <textarea
+            class="notes-type"
             value={card()!.description}
             placeholder="Add a more detailed description…"
             data-testid="card-description"
@@ -142,7 +143,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
               e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
               void updateCard(props.id, { description: e.currentTarget.value });
             }}
-            style={{ width: '100%', 'font-size': '15px', color: 'var(--text)', overflow: 'hidden', 'min-height': '44px' }}
+            style={{ width: '100%', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', overflow: 'hidden', 'min-height': '44px' }}
           />
         </Section>
 
@@ -162,14 +163,14 @@ export function CardScreen(props: { id: string }): JSX.Element {
               data-testid="comment-input"
               style={{ flex: '1', padding: '9px 12px', 'border-radius': '9px', background: 'var(--bg-inset)' }}
             />
-            <button onClick={postComment} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>Post</button>
+            <button onClick={postComment} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>Post</button>
           </div>
           <For each={comments()}>
             {(c) => (
               <div style={{ display: 'flex', 'align-items': 'flex-start', gap: '8px', padding: '6px 0', 'border-top': '1px solid var(--separator)' }}>
                 <div style={{ flex: '1' }}>
-                  <div style={{ 'font-size': '15px', 'white-space': 'pre-wrap', 'word-break': 'break-word' }}>{c.text}</div>
-                  <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-top': '2px' }}>{formatTime(c.createdAt)}</div>
+                  <div style={{ 'font-size': 'calc(15px * var(--ts))', 'white-space': 'pre-wrap', 'word-break': 'break-word' }}>{c.text}</div>
+                  <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'margin-top': '2px' }}>{formatTime(c.createdAt)}</div>
                 </div>
                 <button aria-label="Delete comment" onClick={() => void deleteComment(props.id, c.id)} style={{ color: 'var(--text-tertiary)', padding: '4px', display: 'flex' }}>
                   <Icon name="close" size={15} />
@@ -191,7 +192,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
               type="time"
               value={card()!.dueTime ?? ''}
               onInput={(e) => void updateCard(props.id, { dueTime: e.currentTarget.value || null })}
-              style={{ flex: '1', 'font-size': '16px' }}
+              style={{ flex: '1', 'font-size': 'calc(16px * var(--ts))' }}
             />
           </div>
           <Show when={card()!.due}>
@@ -263,7 +264,7 @@ export function CardScreen(props: { id: string }): JSX.Element {
 function Section(props: { title: string; children: JSX.Element; index?: number }): JSX.Element {
   return (
     <div class="rise" style={{ padding: '10px 16px', 'animation-delay': staggerDelay(props.index ?? 0) }}>
-      <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.03em', 'margin-bottom': '6px' }}>
+      <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.03em', 'margin-bottom': '6px' }}>
         {props.title}
       </div>
       {props.children}
@@ -288,8 +289,8 @@ function ActionChip(props: { icon: 'clock' | 'board' | 'check'; label: string; a
         'border-radius': '9px',
         background: props.active ? 'var(--blue)' : 'var(--bg-inset)',
         color: props.active ? '#fff' : 'var(--text)',
-        'font-size': '14px',
-        'font-weight': '500',
+        'font-size': 'calc(14px * var(--ts))',
+        'font-weight': 'var(--fw-500)',
       }}
     >
       <Icon name={props.icon} size={15} />

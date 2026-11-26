@@ -55,10 +55,10 @@ export function BoardCard(props: {
         </Show>
         <div
           style={{
-            'font-size': '15px',
+            'font-size': 'calc(15px * var(--ts))',
             color: 'var(--text)',
             'text-decoration': props.card.completed ? 'line-through' : 'none',
-            'line-height': '1.3',
+            'line-height': 'calc(1.3 * var(--lh))',
             'white-space': 'pre-wrap',
             'word-break': 'break-word',
           }}
@@ -81,7 +81,7 @@ export function BoardCard(props: {
               gap: '10px',
               'margin-top': '8px',
               color: 'var(--text-secondary)',
-              'font-size': '12px',
+              'font-size': 'calc(12px * var(--ts))',
             }}
           >
             <Show when={props.card.due}>

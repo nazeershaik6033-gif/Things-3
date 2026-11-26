@@ -113,13 +113,13 @@ function SearchInner(): JSX.Element {
               value={query()}
               onInput={(e) => setQuery(e.currentTarget.value)}
               placeholder="Quick Find"
-              style={{ flex: '1', 'font-size': '16px' }}
+              style={{ flex: '1', 'font-size': 'calc(16px * var(--ts))' }}
               data-testid="search-input"
             />
           </div>
           <button
             onClick={() => setSearchOpen(false)}
-            style={{ color: 'var(--blue)', 'font-size': '16px', 'font-weight': '500' }}
+            style={{ color: 'var(--blue)', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
           >
             Cancel
           </button>
@@ -139,7 +139,7 @@ function SearchInner(): JSX.Element {
                       setSearchOpen(false);
                       push(q.route);
                     }}
-                    style={{ display: 'flex', 'align-items': 'center', gap: '12px', width: '100%', padding: '11px 16px', 'font-size': '16px', color: 'var(--text)', 'text-align': 'left' }}
+                    style={{ display: 'flex', 'align-items': 'center', gap: '12px', width: '100%', padding: '11px 16px', 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)', 'text-align': 'left' }}
                   >
                     <ListIcon list={q.list} size={20} />
                     {q.label}
@@ -159,11 +159,11 @@ function SearchInner(): JSX.Element {
                   >
                     {iconFor(r)}
                     <span style={{ flex: '1', 'min-width': '0' }}>
-                      <span style={{ display: 'block', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap', 'font-size': '16px' }}>
+                      <span style={{ display: 'block', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap', 'font-size': 'calc(16px * var(--ts))' }}>
                         {r.title || '—'}
                       </span>
                       <Show when={'subtitle' in r && r.subtitle}>
-                        <span style={{ display: 'block', 'font-size': '13px', color: 'var(--text-secondary)' }}>
+                        <span style={{ display: 'block', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>
                           {(r as { subtitle: string }).subtitle}
                         </span>
                       </Show>

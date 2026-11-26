@@ -35,8 +35,8 @@ const panelStyle = {
 const pill = (active: boolean) => ({
   padding: '6px 12px',
   'border-radius': '999px',
-  'font-size': '14px',
-  'font-weight': '600',
+  'font-size': 'calc(14px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
   background: active ? 'var(--blue)' : 'var(--bg-inset)',
   color: active ? 'var(--text-invert)' : 'var(--text)',
 }) as const;
@@ -46,7 +46,7 @@ const inputStyle = {
   'border-radius': '10px',
   background: 'var(--bg-inset)',
   color: 'var(--text)',
-  'font-size': '16px',
+  'font-size': 'calc(16px * var(--ts))',
   border: 'none',
   'color-scheme': 'inherit',
 } as const;
@@ -73,8 +73,8 @@ export function TimeChips(props: { task: Task; onEstimate: () => void }): JSX.El
     gap: '5px',
     padding: '4px 10px',
     'border-radius': '999px',
-    'font-size': '13px',
-    'font-weight': '600',
+    'font-size': 'calc(13px * var(--ts))',
+    'font-weight': 'var(--fw-600)',
     'font-variant-numeric': 'tabular-nums',
     background: active ? 'var(--blue)' : 'var(--bg-inset)',
     color: active ? 'var(--text-invert)' : 'var(--text)',
@@ -152,7 +152,7 @@ export function EstimatePicker(props: { task: Task; onClose: () => void }): JSX.
           Set
         </button>
         <Show when={props.task.timeEstimateMin}>
-          <button onClick={() => apply(null)} style={{ color: 'var(--red)', 'font-size': '14px' }}>Clear</button>
+          <button onClick={() => apply(null)} style={{ color: 'var(--red)', 'font-size': 'calc(14px * var(--ts))' }}>Clear</button>
         </Show>
       </div>
     </div>
@@ -215,7 +215,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
         </For>
       </div>
 
-      <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': '15px' }}>
+      <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': 'calc(15px * var(--ts))' }}>
         <span>Every</span>
         <input
           data-testid="repeat-interval"
@@ -255,7 +255,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
                     if (days.length) patch({ weekdays: days });
                   }}
                   style={{
-                    width: '34px', height: '34px', 'border-radius': '50%', 'font-size': '13px', 'font-weight': '700',
+                    width: '34px', height: '34px', 'border-radius': '50%', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)',
                     background: on() ? 'var(--blue)' : 'var(--bg-inset)', color: on() ? 'var(--text-invert)' : 'var(--text)',
                   }}
                 >
@@ -275,7 +275,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
         </div>
       </Show>
 
-      <label style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': '15px' }}>
+      <label style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': 'calc(15px * var(--ts))' }}>
         <span style={{ width: '52px', color: 'var(--text-secondary)' }}>Starts</span>
         <input
           data-testid="repeat-anchor"
@@ -285,7 +285,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
           style={{ ...inputStyle, flex: '1' }}
         />
       </label>
-      <label style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': '15px' }}>
+      <label style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': 'calc(15px * var(--ts))' }}>
         <span style={{ width: '52px', color: 'var(--text-secondary)' }}>Ends</span>
         <button data-testid="repeat-ends-never" onClick={() => setHasEnd(false)} style={pill(!hasEnd())}>Never</button>
         <button onClick={() => { setHasEnd(true); if (!rule().until) patch({ until: rule().anchor }); }} style={pill(hasEnd())}>On</button>
@@ -303,7 +303,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
         data-testid="repeat-after-completion"
         aria-pressed={rule().afterCompletion}
         onClick={() => patch({ afterCompletion: !rule().afterCompletion })}
-        style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': '15px', 'text-align': 'left' }}
+        style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'font-size': 'calc(15px * var(--ts))', 'text-align': 'left' }}
       >
         <span style={{
           width: '20px', height: '20px', 'border-radius': '6px', display: 'grid', 'place-items': 'center',
@@ -314,7 +314,7 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
         Count from when I finish it
       </button>
 
-      <div data-testid="repeat-summary" style={{ 'font-size': '13px', color: 'var(--text-secondary)' }}>
+      <div data-testid="repeat-summary" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>
         {describeRule({ ...rule(), until: hasEnd() ? rule().until : null })}
         <Show when={next()}> · next {next()}</Show>
       </div>
@@ -327,19 +327,19 @@ export function RepeatPicker(props: { task: Task; cfg: RepeatCfg | null; onClose
           <button
             data-testid="repeat-pause"
             onClick={() => { void setRepeatPaused(props.cfg!.id, !props.cfg!.paused); props.onClose(); }}
-            style={{ color: 'var(--text)', 'font-size': '15px' }}
+            style={{ color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))' }}
           >
             {props.cfg!.paused ? 'Resume' : 'Pause'}
           </button>
           <button
             data-testid="repeat-stop"
             onClick={() => { void stopRepeating(props.cfg!.id, today); showToast('No longer repeating'); props.onClose(); }}
-            style={{ color: 'var(--red)', 'font-size': '15px' }}
+            style={{ color: 'var(--red)', 'font-size': 'calc(15px * var(--ts))' }}
           >
             Stop repeating
           </button>
         </Show>
-        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>Cancel</button>
+        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))' }}>Cancel</button>
       </div>
     </div>
   );
@@ -362,7 +362,7 @@ export function RowTimeChip(props: { task: Task }): JSX.Element {
         style={{
           display: 'inline-flex', 'align-items': 'center', gap: '3px',
           'font-size': 'var(--fs-chip)', 'font-variant-numeric': 'tabular-nums',
-          color: tracking() ? 'var(--blue)' : 'var(--text-secondary)', 'font-weight': tracking() ? '700' : '400',
+          color: tracking() ? 'var(--blue)' : 'var(--text-secondary)', 'font-weight': tracking() ? 'var(--fw-700)' : 'var(--fw-400)',
         }}
       >
         <Show when={tracking()} fallback={<Icon name="hourglass" size={11} />}>
@@ -415,8 +415,8 @@ export function TrackerBar(): JSX.Element {
             background: 'var(--bg-elevated)',
             'box-shadow': 'var(--shadow-card)',
             color: 'var(--text)',
-            'font-size': '13px',
-            'font-weight': '600',
+            'font-size': 'calc(13px * var(--ts))',
+            'font-weight': 'var(--fw-600)',
             animation: 'fade-in 160ms ease-out',
           }}
         >
@@ -435,7 +435,7 @@ export function TrackerBar(): JSX.Element {
               data-testid="tracker-break"
               onClick={() => void takeBreak()}
               aria-label="Take a break"
-              style={{ 'font-size': '12px', color: 'var(--green)', padding: '2px 4px' }}
+              style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--green)', padding: '2px 4px' }}
             >
               Break
             </button>
@@ -476,18 +476,18 @@ export function TodayPlanStrip(props: { tasks: Task[]; onFinish: () => void }): 
         data-testid="today-plan-strip"
         style={{
           display: 'flex', 'align-items': 'center', gap: '10px', margin: '0 12px 8px', padding: '8px 12px',
-          'border-radius': '12px', background: 'var(--bg-inset)', 'font-size': '13px', color: 'var(--text-secondary)',
+          'border-radius': '12px', background: 'var(--bg-inset)', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)',
         }}
       >
         <Icon name="hourglass" size={14} color="var(--blue)" />
         <span style={{ flex: '1', 'font-variant-numeric': 'tabular-nums' }}>
           <Show when={left() > 0}>
-            <span data-testid="today-plan-left" style={{ color: 'var(--text)', 'font-weight': '600' }}>{formatDuration(left() * 60)} left</span>
+            <span data-testid="today-plan-left" style={{ color: 'var(--text)', 'font-weight': 'var(--fw-600)' }}>{formatDuration(left() * 60)} left</span>
           </Show>
           <Show when={left() > 0 && tracked() >= 60}> · </Show>
           <Show when={tracked() >= 60}>{formatDuration(tracked())} tracked</Show>
         </span>
-        <button data-testid="today-finish-day" onClick={props.onFinish} style={{ color: 'var(--blue)', 'font-weight': '600' }}>
+        <button data-testid="today-finish-day" onClick={props.onFinish} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)' }}>
           Finish day
         </button>
       </div>

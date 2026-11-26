@@ -26,7 +26,7 @@ export function YearView(props: {
         <button aria-label="Previous year" onClick={() => props.onYear(-1)} style={{ color: 'var(--blue)', padding: '8px 14px' }}>
           <Icon name="chevron-left" size={18} />
         </button>
-        <div data-testid="cal-year-label" style={{ 'font-size': '17px', 'font-weight': '600' }}>{props.year}</div>
+        <div data-testid="cal-year-label" style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>{props.year}</div>
         <button aria-label="Next year" onClick={() => props.onYear(1)} style={{ color: 'var(--blue)', padding: '8px 14px' }}>
           <Icon name="chevron-right" size={18} />
         </button>
@@ -37,21 +37,21 @@ export function YearView(props: {
             const month = `${props.year}-${String(i() + 1).padStart(2, '0')}`;
             return (
               <button data-testid="cal-year-month" onClick={() => props.onMonth(i())} style={{ 'text-align': 'left' }}>
-                <div style={{ 'font-size': '13px', 'font-weight': '700', color: month === props.today.slice(0, 7) ? 'var(--red)' : 'var(--text)', padding: '0 0 4px 2px' }}>
+                <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: month === props.today.slice(0, 7) ? 'var(--red)' : 'var(--text)', padding: '0 0 4px 2px' }}>
                   {name}
                 </div>
                 <div style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', gap: '1px' }}>
                   <For each={weekdayLabels(props.weekStart)}>
-                    {(w) => <span style={{ 'font-size': '8px', color: 'var(--text-tertiary)', 'text-align': 'center' }}>{w}</span>}
+                    {(w) => <span style={{ 'font-size': 'calc(8px * var(--ts))', color: 'var(--text-tertiary)', 'text-align': 'center' }}>{w}</span>}
                   </For>
                   <For each={monthWeeks(month, props.weekStart).flat()}>
                     {(d) => (
                       <span style={{
-                        'font-size': '9px', 'text-align': 'center', 'line-height': '15px', 'border-radius': '3px',
+                        'font-size': 'calc(9px * var(--ts))', 'text-align': 'center', 'line-height': 'calc(15px * var(--ts) * var(--lh))', 'border-radius': '3px',
                         'font-variant-numeric': 'tabular-nums',
                         background: d ? shade(d) : 'transparent',
                         color: d === props.today ? 'var(--red)' : 'var(--text-secondary)',
-                        'font-weight': d === props.today ? '800' : '400',
+                        'font-weight': d === props.today ? 'var(--fw-800)' : 'var(--fw-400)',
                       }}>
                         {d ? Number(d.slice(8)) : ''}
                       </span>

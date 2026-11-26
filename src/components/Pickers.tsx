@@ -35,7 +35,7 @@ function PickerRow(props: {
         gap: '12px',
         width: '100%',
         padding: '11px 20px',
-        'font-size': '16px',
+        'font-size': 'calc(16px * var(--ts))',
         color: props.dim ? 'var(--text-secondary)' : 'var(--text)',
         background: props.selected ? 'var(--bg-inset)' : 'transparent',
         'text-align': 'left',
@@ -91,7 +91,7 @@ export function MonthGrid(props: {
         <button onClick={() => shiftMonth(-1)} style={{ padding: '6px 10px', color: 'var(--blue)' }} aria-label="Previous month">
           <Icon name="chevron-left" size={17} />
         </button>
-        <span style={{ 'font-weight': '600', 'font-size': '15px' }}>
+        <span style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))' }}>
           {monthName(monthStart())}{' '}
           {yearOf(monthStart()) !== yearOf(currentDate()) ? yearOf(monthStart()) : ''}
         </span>
@@ -101,7 +101,7 @@ export function MonthGrid(props: {
       </div>
       <div style={{ display: 'grid', 'grid-template-columns': 'repeat(7, 1fr)', gap: '2px', 'text-align': 'center' }}>
         <For each={['S', 'M', 'T', 'W', 'T', 'F', 'S']}>
-          {(d) => <span style={{ 'font-size': '11px', color: 'var(--text-tertiary)', 'font-weight': '600' }}>{d}</span>}
+          {(d) => <span style={{ 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-tertiary)', 'font-weight': 'var(--fw-600)' }}>{d}</span>}
         </For>
         <For each={weeks().flat()}>
           {(day) => (
@@ -112,7 +112,7 @@ export function MonthGrid(props: {
                 style={{
                   padding: '7px 0',
                   'border-radius': '50%',
-                  'font-size': '15px',
+                  'font-size': 'calc(15px * var(--ts))',
                   background: props.selected === day ? 'var(--blue)' : 'transparent',
                   opacity: disabled(day!) ? '0.3' : '1',
                   cursor: disabled(day!) ? 'default' : 'pointer',
@@ -121,7 +121,7 @@ export function MonthGrid(props: {
                     : day! < currentDate() ? 'var(--text-tertiary)'
                     : day === currentDate() ? 'var(--blue)'
                     : 'var(--text)',
-                  'font-weight': day === currentDate() ? '700' : '400',
+                  'font-weight': day === currentDate() ? 'var(--fw-700)' : 'var(--fw-400)',
                 }}
               >
                 {Number(day!.slice(8, 10))}
@@ -211,7 +211,7 @@ export function DeadlineSheet(props: {
       <SheetTitle>Deadline</SheetTitle>
       <Show when={props.onTimeChange && props.value}>
         <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '0 20px 6px' }}>
-          <span style={{ flex: '1', 'font-size': '15px', color: 'var(--text-secondary)' }}>Due by</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)' }}>Due by</span>
           <input
             type="time"
             data-testid="deadline-time"
@@ -220,11 +220,11 @@ export function DeadlineSheet(props: {
             onChange={(e) => props.onTimeChange!(e.currentTarget.value || null)}
             style={{
               padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)',
-              'font-size': '16px', border: 'none', 'color-scheme': 'inherit',
+              'font-size': 'calc(16px * var(--ts))', border: 'none', 'color-scheme': 'inherit',
             }}
           />
           <Show when={props.time}>
-            <button data-testid="deadline-time-clear" onClick={() => props.onTimeChange!(null)} style={{ color: 'var(--text-secondary)', 'font-size': '14px' }}>
+            <button data-testid="deadline-time-clear" onClick={() => props.onTimeChange!(null)} style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>
               Any time
             </button>
           </Show>
@@ -283,7 +283,7 @@ export function TagPicker(props: {
           )}
         </For>
         <Show when={props.tags.length === 0}>
-          <span style={{ color: 'var(--text-secondary)', 'font-size': '14px' }}>No tags yet — create one below.</span>
+          <span style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>No tags yet — create one below.</span>
         </Show>
       </div>
       <div style={{ display: 'flex', gap: '8px', padding: '0 20px 16px' }}>
@@ -299,7 +299,7 @@ export function TagPicker(props: {
             background: 'var(--bg-inset)',
           }}
         />
-        <button onClick={() => void addNew()} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>
+        <button onClick={() => void addNew()} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>
           Add
         </button>
       </div>

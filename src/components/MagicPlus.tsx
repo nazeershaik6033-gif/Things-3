@@ -207,8 +207,8 @@ function MagicPlusInner(props: {
           'flex-direction': 'column',
           'align-items': 'center',
           gap: '4px',
-          'font-size': '11px',
-          'font-weight': '600',
+          'font-size': 'calc(11px * var(--ts))',
+          'font-weight': 'var(--fw-600)',
           'box-shadow': 'var(--shadow-fab)',
           scale: 'calc(1 + 0.15 * var(--hint-active, 0))',
         }}

@@ -23,7 +23,7 @@ function InlineView(props: { nodes: Inline[] }): JSX.Element {
 export function MarkdownView(props: { source: string }): JSX.Element {
   const blocks = (): Block[] => parseMarkdown(props.source);
   return (
-    <div style={{ 'font-size': '15px', 'line-height': '1.45', color: 'var(--text)' }}>
+    <div class="notes-type" style={{ 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))', color: 'var(--text)' }}>
       <For each={blocks()}>
         {(block) => (
           <Switch>

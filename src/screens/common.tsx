@@ -35,7 +35,7 @@ export function ScreenChrome(props: {
           onClick={back}
           aria-label="Back"
           data-testid="back-button"
-          style={{ display: 'flex', 'align-items': 'center', color: 'var(--blue)', padding: '8px 10px', 'font-size': '17px' }}
+          style={{ display: 'flex', 'align-items': 'center', color: 'var(--blue)', padding: '8px 10px', 'font-size': 'calc(17px * var(--ts))' }}
         >
           <Icon name="chevron-left" size={20} />
         </button>
@@ -66,7 +66,7 @@ export function ScreenChrome(props: {
                 <h1
                   style={{
                     'font-size': 'var(--fs-title)',
-                    'font-weight': '700',
+                    'font-weight': 'var(--fw-700)',
                     color: props.titleColor ?? 'var(--text)',
                     overflow: 'hidden',
                     'text-overflow': 'ellipsis',
@@ -80,7 +80,7 @@ export function ScreenChrome(props: {
               {props.titleEl}
             </Show>
             <Show when={props.subtitle}>
-              <div style={{ color: 'var(--text-secondary)', 'font-size': '14px' }}>{props.subtitle}</div>
+              <div style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>{props.subtitle}</div>
             </Show>
           </div>
         </div>
@@ -111,8 +111,8 @@ export function SectionHeading(props: {
         style={{
           flex: '1',
           color: props.color ?? 'var(--blue)',
-          'font-weight': '600',
-          'font-size': props.small ? '14px' : '16px',
+          'font-weight': 'var(--fw-600)',
+          'font-size': props.small ? 'calc(14px * var(--ts))' : 'calc(16px * var(--ts))',
         }}
       >
         {props.label}
@@ -136,7 +136,7 @@ export function EmptyState(props: { icon: JSX.Element; text: string }): JSX.Elem
       }}
     >
       {props.icon}
-      <span style={{ 'font-size': '15px' }}>{props.text}</span>
+      <span style={{ 'font-size': 'calc(15px * var(--ts))' }}>{props.text}</span>
     </div>
   );
 }
@@ -176,7 +176,7 @@ export function MenuRow(props: {
         gap: '12px',
         width: '100%',
         padding: '12px 20px',
-        'font-size': '16px',
+        'font-size': 'calc(16px * var(--ts))',
         color: props.danger ? 'var(--red)' : 'var(--text)',
         'text-align': 'left',
       }}

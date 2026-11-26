@@ -63,7 +63,7 @@ function GroupedTasks(props: { tasks: Task[]; groupBy: Grouping; empty: string; 
       <Show
         when={props.tasks.length > 0}
         fallback={props.compact
-          ? <div style={{ padding: '0 16px 4px', 'font-size': '14px', color: 'var(--text-tertiary)' }}>{props.empty}</div>
+          ? <div style={{ padding: '0 16px 4px', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-tertiary)' }}>{props.empty}</div>
           : <EmptyState icon={<Icon name="checklist" size={40} color="var(--text-tertiary)" />} text={props.empty} />}
       >
         <For each={groups().filter((g) => g.tasks.length > 0)}>
@@ -90,7 +90,7 @@ export function CanDoNowScreen(): JSX.Element {
   const tasks = createLiveQuery(() => db.tasks.toArray(), []);
   const list = createMemo(() => canDoNow(tasks(), currentDate()));
   return (
-    <ScreenChrome title="Can Do Now" subtitle={`${list().length} ready · nothing blocked`} icon={<span style={{ 'font-size': '26px' }}>🔓</span>} trailing={<SelectButton />}>
+    <ScreenChrome title="Can Do Now" subtitle={`${list().length} ready · nothing blocked`} icon={<span style={{ 'font-size': 'calc(26px * var(--ts))' }}>🔓</span>} trailing={<SelectButton />}>
       <GroupedTasks tasks={list()} groupBy="home" empty="Nothing is ready — everything open is blocked, waiting or scheduled later." />
     </ScreenChrome>
   );
@@ -125,6 +125,7 @@ function NoteEditor(props: { noteKey: string; template: string; placeholder: str
         }
       >
         <textarea
+          class="notes-type"
           data-testid="note-text"
           value={text()}
           placeholder={props.placeholder}
@@ -145,7 +146,7 @@ function NoteEditor(props: { noteKey: string; template: string; placeholder: str
           }}
           rows={12}
           style={{
-            width: '100%', 'font-size': '15px', 'line-height': '1.5', padding: '10px 12px', 'border-radius': '12px',
+            width: '100%', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', padding: '10px 12px', 'border-radius': '12px',
             background: 'var(--bg-card)', border: '1px solid var(--separator)', color: 'var(--text)', resize: 'vertical',
           }}
         />
@@ -169,10 +170,10 @@ export function DayNoteScreen(props: { date: DateStr }): JSX.Element {
     <ScreenChrome title={title()} subtitle={`Daily Note · ${formatRelative(date(), currentDate())}`} icon={<Icon name="notes" size={26} color="var(--yellow-deep)" />}>
       <div style={{ display: 'flex', gap: '8px', padding: '0 16px 10px', 'align-items': 'center' }}>
         <button data-testid="note-prev" onClick={() => go(-1)} style={{ color: 'var(--blue)', display: 'flex' }}><Icon name="chevron-left" size={18} /></button>
-        <button onClick={() => setDate(currentDate())} style={{ color: 'var(--blue)', 'font-size': '14px', 'font-weight': '600' }}>Today</button>
+        <button onClick={() => setDate(currentDate())} style={{ color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>Today</button>
         <button data-testid="note-next" onClick={() => go(1)} style={{ color: 'var(--blue)', display: 'flex' }}><Icon name="chevron-right" size={18} /></button>
         <div style={{ flex: '1' }} />
-        <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+        <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
           {done().length} done · {dayEvents().length} event{dayEvents().length === 1 ? '' : 's'}
         </span>
       </div>
@@ -183,7 +184,7 @@ export function DayNoteScreen(props: { date: DateStr }): JSX.Element {
       <Show when={done().length > 0}>
         <SectionHeading label="Done this day" small />
         <div style={{ padding: '0 16px 12px' }}>
-          <For each={done()}>{(t) => <div style={{ 'font-size': '14px', color: 'var(--text-secondary)', padding: '3px 0' }}>✓ {t.title}</div>}</For>
+          <For each={done()}>{(t) => <div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', padding: '3px 0' }}>✓ {t.title}</div>}</For>
         </div>
       </Show>
     </ScreenChrome>
@@ -203,9 +204,9 @@ export function WeeklyReviewScreen(): JSX.Element {
   const week = () => weekKey(currentDate());
   const step = (n: number, label: string, count: number | string, color = 'var(--blue)') => (
     <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '18px 16px 6px' }}>
-      <span style={{ width: '22px', height: '22px', 'border-radius': '50%', background: color, color: '#fff', 'font-size': '12px', 'font-weight': '700', display: 'flex', 'align-items': 'center', 'justify-content': 'center' }}>{n}</span>
-      <span style={{ flex: '1', 'font-weight': '700', 'font-size': '16px' }}>{label}</span>
-      <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>{count}</span>
+      <span style={{ width: '22px', height: '22px', 'border-radius': '50%', background: color, color: '#fff', 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', display: 'flex', 'align-items': 'center', 'justify-content': 'center' }}>{n}</span>
+      <span style={{ flex: '1', 'font-weight': 'var(--fw-700)', 'font-size': 'calc(16px * var(--ts))' }}>{label}</span>
+      <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>{count}</span>
     </div>
   );
   const finish = async () => {
@@ -217,16 +218,16 @@ export function WeeklyReviewScreen(): JSX.Element {
     <ScreenChrome title="Weekly Review" subtitle={`Week of ${formatRelative(mondayOf(currentDate()), currentDate())} · ${week()}`} icon={<Icon name="restore" size={26} color="var(--purple)" />}>
       {step(1, 'Celebrate what got done', `${r().done.length} in 7 days`, 'var(--green)')}
       <div style={{ padding: '0 16px' }}>
-        <button onClick={() => setShowDone(!showDone())} style={{ color: 'var(--blue)', 'font-size': '14px' }}>{showDone() ? 'Hide' : 'Show'} the list</button>
+        <button onClick={() => setShowDone(!showDone())} style={{ color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))' }}>{showDone() ? 'Hide' : 'Show'} the list</button>
         <Show when={showDone()}>
-          <For each={r().done}>{(t) => <div style={{ 'font-size': '14px', color: 'var(--text-secondary)', padding: '3px 0' }}>✓ {t.title}</div>}</For>
+          <For each={r().done}>{(t) => <div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', padding: '3px 0' }}>✓ {t.title}</div>}</For>
         </Show>
       </div>
 
       {step(2, 'Empty the Inbox', r().inbox === 0 ? 'clear ✓' : `${r().inbox} to sort`)}
       <Show when={r().inbox > 0}>
         <div style={{ padding: '0 16px' }}>
-          <button data-testid="review-inbox" onClick={() => push({ name: 'list', list: 'inbox' })} style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}>Open the Inbox →</button>
+          <button data-testid="review-inbox" onClick={() => push({ name: 'list', list: 'inbox' })} style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>Open the Inbox →</button>
         </div>
       </Show>
 
@@ -238,10 +239,10 @@ export function WeeklyReviewScreen(): JSX.Element {
 
       {step(5, 'Give stuck projects a next step', r().stuckProjects.length)}
       <div style={{ padding: '0 16px' }}>
-        <Show when={r().stuckProjects.length > 0} fallback={<div style={{ 'font-size': '14px', color: 'var(--text-tertiary)' }}>Every project has something you can do now.</div>}>
+        <Show when={r().stuckProjects.length > 0} fallback={<div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-tertiary)' }}>Every project has something you can do now.</div>}>
           <For each={r().stuckProjects}>
             {(p) => (
-              <button data-testid="review-stuck" onClick={() => push({ name: 'project', id: p.id })} style={{ display: 'block', padding: '6px 0', 'font-size': '15px', color: 'var(--text)', 'text-align': 'left' }}>
+              <button data-testid="review-stuck" onClick={() => push({ name: 'project', id: p.id })} style={{ display: 'block', padding: '6px 0', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', 'text-align': 'left' }}>
                 {p.title || 'New Project'} <span style={{ color: 'var(--blue)' }}>→</span>
               </button>
             )}
@@ -256,7 +257,7 @@ export function WeeklyReviewScreen(): JSX.Element {
       <NoteEditor noteKey={week()} template={WEEK_TEMPLATE} placeholder="Tap to reflect on the week" />
 
       <div style={{ padding: '6px 16px 20px' }}>
-        <button data-testid="review-finish" onClick={() => void finish()} style={{ width: '100%', padding: '13px', 'border-radius': '12px', background: 'var(--blue)', color: '#fff', 'font-size': '16px', 'font-weight': '600' }}>
+        <button data-testid="review-finish" onClick={() => void finish()} style={{ width: '100%', padding: '13px', 'border-radius': '12px', background: 'var(--blue)', color: '#fff', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>
           Finish review
         </button>
       </div>

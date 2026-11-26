@@ -49,8 +49,8 @@ export function LogbookScreen(): JSX.Element {
                   style={{
                     padding: '16px 16px 4px',
                     'border-bottom': '1px solid var(--separator)',
-                    'font-weight': '600',
-                    'font-size': '14px',
+                    'font-weight': 'var(--fw-600)',
+                    'font-size': 'calc(14px * var(--ts))',
                     color: 'var(--green)',
                   }}
                 >
@@ -88,7 +88,7 @@ export function LogbookScreen(): JSX.Element {
                               e.stopPropagation();
                               void reopenProject(entry.item.id);
                             }}
-                            style={{ color: 'var(--green)', 'font-size': '13px', padding: '4px 8px' }}
+                            style={{ color: 'var(--green)', 'font-size': 'calc(13px * var(--ts))', padding: '4px 8px' }}
                           >
                             Reopen
                           </button>
@@ -108,7 +108,7 @@ export function LogbookScreen(): JSX.Element {
           <Show when={shown() < total()}>
             <button
               onClick={() => setLimit(limit() + PAGE)}
-              style={{ color: 'var(--blue)', padding: '14px 16px', 'font-size': '15px', 'font-weight': '500' }}
+              style={{ color: 'var(--blue)', padding: '14px 16px', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
             >
               Show more
             </button>

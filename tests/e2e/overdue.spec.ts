@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, homeRow, openSettings } from './helpers';
+import { loadSeeded, homeRow, openSettings, closeSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -50,7 +50,7 @@ test('a to-do due today completes without asking', async ({ page }) => {
 test('the prompt can be turned off from Settings', async ({ page }) => {
   await openSettings(page, 'general');
   await page.getByTestId('toggle-ask-completion').click();
-  await page.getByTestId('back-button').last().click();
+  await closeSettings(page);
 
   await (await homeRow(page, 'home-today')).click();
   await page

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded, homeRow } from './helpers';
+import { currentScreen, loadSeeded, homeRow, tapPlus } from './helpers';
 
 async function putEvent(page: Page, ev: Record<string, unknown>): Promise<void> {
   await page.evaluate(async (ev) => {
@@ -43,7 +43,7 @@ test('a calendar event becomes a to-do, or a prep to-do before it', async ({ pag
 test('skip one occurrence of a repeating to-do', async ({ page }) => {
   await loadSeeded(page);
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.locator('[data-quick-entry] textarea').first().fill('Stretch every day');
   await page.getByTestId('quick-entry-save').click();
   await page.goto('./#/today');

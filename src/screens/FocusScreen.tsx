@@ -28,7 +28,7 @@ function Card(props: { title?: string; trailing?: JSX.Element; children: JSX.Ele
     <section data-testid={props.testid} style={{ margin: '0 12px 14px', background: 'var(--bg-list)', 'border-radius': '14px', padding: '14px 16px' }}>
       <Show when={props.title}>
         <div style={{ display: 'flex', 'align-items': 'center', 'margin-bottom': '10px' }}>
-          <h2 style={{ flex: '1', 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+          <h2 style={{ flex: '1', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
             {props.title}
           </h2>
           {props.trailing}
@@ -42,8 +42,8 @@ function Card(props: { title?: string; trailing?: JSX.Element; children: JSX.Ele
 const chip = (active: boolean): JSX.CSSProperties => ({
   padding: '6px 12px',
   'border-radius': '999px',
-  'font-size': '14px',
-  'font-weight': '600',
+  'font-size': 'calc(14px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
   'font-variant-numeric': 'tabular-nums',
   background: active ? 'var(--blue)' : 'var(--bg-inset)',
   color: active ? 'var(--text-invert)' : 'var(--text)',
@@ -155,7 +155,7 @@ export function FocusScreen(): JSX.Element {
         <div style={{ display: 'flex', gap: '12px', 'align-items': 'flex-start' }}>
           <Icon name="mountain" size={28} color="var(--teal)" />
           <div style={{ flex: '1', 'min-width': '0' }}>
-            <div style={{ 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+            <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
               Your Everest
             </div>
             <Show
@@ -164,7 +164,7 @@ export function FocusScreen(): JSX.Element {
                 <button
                   data-testid="everest-text"
                   onClick={() => setEditingEverest(true)}
-                  style={{ 'text-align': 'left', 'font-size': '18px', 'font-weight': '600', color: 'var(--text)', 'line-height': '1.35', padding: '4px 0' }}
+                  style={{ 'text-align': 'left', 'font-size': 'calc(18px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text)', 'line-height': 'calc(1.35 * var(--lh))', padding: '4px 0' }}
                 >
                   {everest()}
                 </button>
@@ -179,13 +179,13 @@ export function FocusScreen(): JSX.Element {
                   void setSetting('everest', e.currentTarget.value.trim());
                   setEditingEverest(false);
                 }}
-                style={{ width: '100%', 'font-size': '17px', padding: '6px 0', 'line-height': '1.35' }}
+                style={{ width: '100%', 'font-size': 'calc(17px * var(--ts))', padding: '6px 0', 'line-height': 'calc(1.35 * var(--lh))' }}
               />
-              <ul style={{ 'padding-left': '18px', 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.55' }}>
+              <ul style={{ 'padding-left': '18px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.55 * var(--lh))' }}>
                 <For each={EVEREST_QUESTIONS}>{(q) => <li>{q}</li>}</For>
               </ul>
             </Show>
-            <p style={{ 'font-size': '13px', color: 'var(--text-tertiary)', margin: '6px 0 0', 'line-height': '1.45' }}>
+            <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', margin: '6px 0 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
               Focus is also what you reject. A good opportunity can still be a distraction if it
               takes you away from this.
             </p>
@@ -209,14 +209,14 @@ export function FocusScreen(): JSX.Element {
                   <Show when={step.phase !== prevPhase()}>
                     <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', margin: i() === 0 ? '0 0 6px' : '6px 0 6px', 'padding-left': '50px' }}>
                       <span style={{ width: '8px', height: '8px', 'border-radius': '50%', background: PHASE_COLOR[step.phase] }} />
-                      <span style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.5px' }}>
+                      <span style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.5px' }}>
                         {step.phase}
                       </span>
                     </div>
                   </Show>
                   <div data-testid={`flow-${step.id}`} data-done={done() ? 'true' : 'false'} style={{ display: 'flex', 'align-items': 'stretch', gap: '0' }}>
                     {/* time column */}
-                    <div style={{ width: '44px', flex: 'none', 'font-size': '12px', 'font-weight': '600', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums', 'padding-top': '13px' }}>
+                    <div style={{ width: '44px', flex: 'none', 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums', 'padding-top': '13px' }}>
                       {step.time ?? ''}
                     </div>
                     {/* connector rail + node */}
@@ -243,16 +243,16 @@ export function FocusScreen(): JSX.Element {
                         style={{ display: 'flex', 'align-items': 'baseline', gap: '6px', cursor: isAuto(step.id) ? 'default' : 'pointer' }}
                       >
                         <span style={{
-                          'font-size': '16px', 'font-weight': '600', color: done() ? 'var(--text-secondary)' : 'var(--text)',
+                          'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)', color: done() ? 'var(--text-secondary)' : 'var(--text)',
                           'text-decoration': done() ? 'line-through' : 'none', 'text-decoration-color': 'var(--text-tertiary)',
                         }}>
                           {step.title}
                         </span>
-                        <span style={{ 'font-size': '10px', 'font-weight': '700', color: 'var(--text-tertiary)' }}>{step.level}</span>
+                        <span style={{ 'font-size': 'calc(10px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-tertiary)' }}>{step.level}</span>
                       </div>
-                      <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.4', margin: '2px 0 0' }}>{step.hint}</div>
+                      <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.4 * var(--lh))', margin: '2px 0 0' }}>{step.hint}</div>
                       <Show when={measured(step.id)}>
-                        <div data-testid={`measured-${step.id}`} style={{ 'font-size': '12px', 'font-weight': '600', color: done() ? 'var(--green)' : 'var(--yellow-deep)', margin: '3px 0 0' }}>
+                        <div data-testid={`measured-${step.id}`} style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', color: done() ? 'var(--green)' : 'var(--yellow-deep)', margin: '3px 0 0' }}>
                           ⌚ {measured(step.id)}
                         </div>
                       </Show>
@@ -269,15 +269,15 @@ export function FocusScreen(): JSX.Element {
                           <For each={SPRINT_STEPS}>
                             {(s) => (
                               <>
-                                <span style={{ 'font-size': '12px', 'font-weight': '600', padding: '3px 8px', 'border-radius': '6px', background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                                <span style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', padding: '3px 8px', 'border-radius': '6px', background: 'var(--bg-inset)', color: 'var(--text)' }}>
                                   {s.n} {s.short}
                                 </span>
-                                <Show when={s.n < 5}><span style={{ color: 'var(--text-tertiary)', 'font-size': '12px' }}>→</span></Show>
+                                <Show when={s.n < 5}><span style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(12px * var(--ts))' }}>→</span></Show>
                               </>
                             )}
                           </For>
                         </div>
-                        <div style={{ 'font-size': '12px', color: 'var(--text-secondary)', margin: '6px 0 0', 'border-left': '2px dashed var(--separator)', 'padding-left': '8px' }}>
+                        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)', margin: '6px 0 0', 'border-left': '2px dashed var(--separator)', 'padding-left': '8px' }}>
                           Stuck at 4? <b>Reset</b>: work deliberately → step away → return fresh.
                         </div>
                         <button
@@ -302,7 +302,7 @@ export function FocusScreen(): JSX.Element {
                               </button>
                             )}
                           </For>
-                          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>{todayLogs().length} today</span>
+                          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>{todayLogs().length} today</span>
                         </div>
                       </Show>
                     </div>
@@ -312,7 +312,7 @@ export function FocusScreen(): JSX.Element {
             }}
           </For>
         </div>
-        <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '12px 14px', margin: '6px 0 0', 'font-size': '13px', 'line-height': '1.5', color: 'var(--text-secondary)' }}>
+        <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '12px 14px', margin: '6px 0 0', 'font-size': 'calc(13px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', color: 'var(--text-secondary)' }}>
           <b style={{ color: 'var(--text)' }}>Start here:</b> sufficient sleep · phone away during one important task ·
           one focused session without switching. Repeat until easy, then build the next layer.
         </div>
@@ -325,11 +325,11 @@ export function FocusScreen(): JSX.Element {
             {(s) => (
               <div data-testid="planned-sprint" style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)' }}>
                 <button onClick={() => setEditSprint(s)} style={{ display: 'flex', gap: '10px', flex: '1', 'min-width': '0', 'text-align': 'left', 'align-items': 'baseline' }}>
-                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-weight': '600', color: 'var(--text-secondary)', 'font-size': '14px', 'white-space': 'nowrap' }}>
+                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))', 'white-space': 'nowrap' }}>
                     {new Date(s.plannedAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  <span style={{ flex: '1', 'font-size': '15px', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title}</span>
-                  <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>{s.durationMin}m · Edit</span>
+                  <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title}</span>
+                  <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>{s.durationMin}m · Edit</span>
                 </button>
                 <button onClick={() => openSprint({ sprintId: s.id })} style={chip(true)}>Start</button>
                 <button aria-label="Remove" onClick={() => void deleteSprint(s.id)} style={{ color: 'var(--text-tertiary)', display: 'flex', padding: '4px' }}>
@@ -342,13 +342,13 @@ export function FocusScreen(): JSX.Element {
       </Show>
 
       {/* ------------------------------------------------- sprint log */}
-      <Card title="Sprint log" testid="sprint-log" trailing={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>last 14 days · tap to edit</span>}>
-        <Show when={sprintLog().length > 0} fallback={<div style={{ 'font-size': '14px', color: 'var(--text-secondary)' }}>Finished sprints show up here. Tap one to fix its time, length or note.</div>}>
+      <Card title="Sprint log" testid="sprint-log" trailing={<span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>last 14 days · tap to edit</span>}>
+        <Show when={sprintLog().length > 0} fallback={<div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>Finished sprints show up here. Tap one to fix its time, length or note.</div>}>
           <For each={logExpanded() ? sprintLog() : sprintLog().slice(0, LOG_PREVIEW)}>
             {(s, i) => (
               <>
                 <Show when={i() === 0 || sprintLog()[i() - 1]!.date !== s.date}>
-                  <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)', margin: i() === 0 ? '0 0 2px' : '10px 0 2px' }}>
+                  <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', margin: i() === 0 ? '0 0 2px' : '10px 0 2px' }}>
                     {s.date === today() ? 'Today' : s.date === addDays(today(), -1) ? 'Yesterday' : s.date}
                   </div>
                 </Show>
@@ -357,16 +357,16 @@ export function FocusScreen(): JSX.Element {
                   onClick={() => setEditSprint(s)}
                   style={{ display: 'flex', gap: '10px', width: '100%', 'text-align': 'left', padding: '7px 0', 'border-bottom': '1px solid var(--separator)', 'align-items': 'baseline', opacity: s.status === 'abandoned' ? '0.55' : '1' }}
                 >
-                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': '13px', color: 'var(--text-secondary)', width: '66px', flex: 'none', 'white-space': 'nowrap' }}>
+                  <span style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', width: '66px', flex: 'none', 'white-space': 'nowrap' }}>
                     {new Date(s.startedAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <span style={{ flex: '1', 'min-width': '0' }}>
-                    <span style={{ display: 'block', 'font-size': '15px', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title || 'Deep work'}</span>
+                    <span style={{ display: 'block', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.title || 'Deep work'}</span>
                     <Show when={s.completedNote}>
-                      <span style={{ display: 'block', 'font-size': '12px', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.completedNote}</span>
+                      <span style={{ display: 'block', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{s.completedNote}</span>
                     </Show>
                   </span>
-                  <span data-testid="sprint-log-minutes" style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': '14px', 'font-weight': '600', color: 'var(--text)' }}>
+                  <span data-testid="sprint-log-minutes" style={{ 'font-variant-numeric': 'tabular-nums', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text)' }}>
                     {s.status === 'abandoned' ? 'stopped' : `${Math.round((s.endedAt! - s.startedAt!) / 60_000)} min`}
                   </span>
                 </button>
@@ -377,7 +377,7 @@ export function FocusScreen(): JSX.Element {
             <button
               data-testid="sprint-log-toggle"
               onClick={() => setLogExpanded((v) => !v)}
-              style={{ color: 'var(--blue)', 'font-size': '14px', padding: '10px 0 0' }}
+              style={{ color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))', padding: '10px 0 0' }}
             >
               {logExpanded() ? 'Show less' : `Show all ${sprintLog().length}`}
             </button>
@@ -390,7 +390,7 @@ export function FocusScreen(): JSX.Element {
         <Show
           when={insights().length > 0}
           fallback={
-            <div style={{ 'font-size': '14px', color: 'var(--text-secondary)', 'line-height': '1.45' }}>
+            <div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
               After a few days of synced sleep and sprints (at least 3 nights over and 3 under 7h), you’ll see how sleep and
               exercise line up with your focused minutes and energy.
             </div>
@@ -400,7 +400,7 @@ export function FocusScreen(): JSX.Element {
             {(c) => {
               const max = Math.max(c.good.focusMin, c.poor.focusMin, 1);
               const bar = (g: typeof c.good, strong: boolean) => (
-                <div style={{ display: 'grid', 'grid-template-columns': '128px 1fr 54px', 'align-items': 'center', gap: '8px', margin: '4px 0', 'font-size': '13px' }}>
+                <div style={{ display: 'grid', 'grid-template-columns': '128px 1fr 54px', 'align-items': 'center', gap: '8px', margin: '4px 0', 'font-size': 'calc(13px * var(--ts))' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>{g.label} <span style={{ color: 'var(--text-tertiary)' }}>({g.days}d)</span></span>
                   <div style={{ height: '10px', background: 'var(--bg-inset)', 'border-radius': '5px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${(g.focusMin / max) * 100}%`, background: 'var(--blue)', opacity: strong ? '1' : '0.5', 'border-radius': '5px' }} />
@@ -410,7 +410,7 @@ export function FocusScreen(): JSX.Element {
               );
               return (
                 <div data-testid={`insight-${c.id}`} style={{ margin: '0 0 12px' }}>
-                  <div style={{ 'font-size': '15px', color: 'var(--text)', 'margin-bottom': '4px' }}>
+                  <div style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', 'margin-bottom': '4px' }}>
                     {c.label}: <b>{c.good.focusMin}</b> focused min/day vs <b>{c.poor.focusMin}</b>
                     <Show when={c.good.energy !== null && c.poor.energy !== null}>
                       {' '}· energy {c.good.energy!.toFixed(1)} vs {c.poor.energy!.toFixed(1)}
@@ -422,7 +422,7 @@ export function FocusScreen(): JSX.Element {
               );
             }}
           </For>
-          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>Same-day averages over the last 60 days — a pattern to notice, not proof of cause.</div>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>Same-day averages over the last 60 days — a pattern to notice, not proof of cause.</div>
         </Show>
       </Card>
 
@@ -431,26 +431,26 @@ export function FocusScreen(): JSX.Element {
         title="Energy pattern"
         testid="energy-card"
         trailing={
-          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
             {day() === null ? 'not started' : day()! <= TRACK_DAYS ? `day ${day()} of ${TRACK_DAYS}` : `${analysis().logs} check-ins`}
           </span>
         }
       >
-        <div style={{ 'font-size': '15px', color: 'var(--text)', 'margin-bottom': '8px' }}>How’s your energy right now?</div>
+        <div style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', 'margin-bottom': '8px' }}>How’s your energy right now?</div>
         <div style={{ display: 'flex', gap: '6px' }}>
           <For each={[1, 2, 3, 4, 5]}>
             {(n) => (
               <button
                 data-testid={`energy-${n}`}
                 onClick={() => { void logEnergy(n); showToast(`Energy ${n}/5 logged`); }}
-                style={{ ...chip(false), flex: '1', padding: '10px 0', 'font-size': '16px' }}
+                style={{ ...chip(false), flex: '1', padding: '10px 0', 'font-size': 'calc(16px * var(--ts))' }}
               >
                 {n}
               </button>
             )}
           </For>
         </div>
-        <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': '11px', color: 'var(--text-tertiary)', margin: '4px 2px 12px' }}>
+        <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-tertiary)', margin: '4px 2px 12px' }}>
           <span>drained</span><span>sharp</span>
         </div>
 
@@ -490,7 +490,7 @@ export function FocusScreen(): JSX.Element {
                     <div style={{
                       position: 'absolute', top: '0', left: `${((hoverHour()! - 5) / 19) * 100}%`, transform: 'translateX(-30%)',
                       background: 'var(--bg-elevated)', 'box-shadow': 'var(--shadow-card)', 'border-radius': '8px',
-                      padding: '4px 8px', 'font-size': '12px', color: 'var(--text)', 'white-space': 'nowrap', 'pointer-events': 'none',
+                      padding: '4px 8px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text)', 'white-space': 'nowrap', 'pointer-events': 'none',
                     }}>
                       {String(hoverHour()).padStart(2, '0')}:00 · avg {d().avg.toFixed(1)} · {d().n} log{d().n === 1 ? '' : 's'}
                     </div>
@@ -498,7 +498,7 @@ export function FocusScreen(): JSX.Element {
                 })()}
               </Show>
             </div>
-            <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': '11px', color: 'var(--text-secondary)', margin: '4px 0 0', 'font-variant-numeric': 'tabular-nums' }}>
+            <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-secondary)', margin: '4px 0 0', 'font-variant-numeric': 'tabular-nums' }}>
               <span>05</span><span>09</span><span>13</span><span>17</span><span>21</span><span>23</span>
             </div>
           </figure>
@@ -506,8 +506,8 @@ export function FocusScreen(): JSX.Element {
             <For each={[['Morning', analysis().morning], ['Afternoon', analysis().afternoon], ['Evening', analysis().evening]] as const}>
               {([label, v]) => (
                 <div style={{ flex: '1', background: 'var(--bg-inset)', 'border-radius': '10px', padding: '8px 10px' }}>
-                  <div style={{ 'font-size': '11px', color: 'var(--text-secondary)' }}>{label}</div>
-                  <div style={{ 'font-size': '20px', 'font-weight': '700', color: 'var(--text)', 'font-variant-numeric': 'tabular-nums' }}>
+                  <div style={{ 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-secondary)' }}>{label}</div>
+                  <div style={{ 'font-size': 'calc(20px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text)', 'font-variant-numeric': 'tabular-nums' }}>
                     {v === null ? '–' : v.toFixed(1)}
                   </div>
                 </div>
@@ -515,7 +515,7 @@ export function FocusScreen(): JSX.Element {
             </For>
           </div>
         </Show>
-        <p data-testid="chronotype" style={{ 'font-size': '14px', color: 'var(--text)', margin: '12px 0 0', 'line-height': '1.45' }}>
+        <p data-testid="chronotype" style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text)', margin: '12px 0 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
           {CHRONOTYPE_TEXT[analysis().kind]}
           <Show when={analysis().peakHour !== null && analysis().kind !== 'insufficient'}>
             {' '}Your best hour so far: <b>{String(analysis().peakHour).padStart(2, '0')}:00</b>.
@@ -525,7 +525,7 @@ export function FocusScreen(): JSX.Element {
 
       {/* ------------------------------------------- routine + alarms */}
       <Card title="Routine & calendar alerts" testid="routine-card">
-        <div style={{ display: 'grid', 'grid-template-columns': '78px 1fr', gap: '10px 8px', 'align-items': 'center', 'font-size': '14px', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'grid', 'grid-template-columns': '78px 1fr', gap: '10px 8px', 'align-items': 'center', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>
           <span>Wake</span>
           <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>
             <For each={WAKE_CHOICES}>{(w) => <button data-testid={`wake-${w}`} onClick={() => setProfile({ wake: w })} style={chip(profile().wake === w)}>{w}</button>}</For>
@@ -546,7 +546,7 @@ export function FocusScreen(): JSX.Element {
                 if (v >= MIN_SPRINT && v <= MAX_SPRINT) setProfile({ sprintMinutes: v });
               }}
               aria-label="Sprint length in minutes"
-              style={{ width: '64px', padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', 'text-align': 'center', color: 'var(--text)' }}
+              style={{ width: '64px', padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': 'calc(14px * var(--ts))', 'text-align': 'center', color: 'var(--text)' }}
             />
             <span>min</span>
           </div>
@@ -557,10 +557,10 @@ export function FocusScreen(): JSX.Element {
               type="time"
               value={morningSprintTime(profile())}
               onChange={(e) => e.currentTarget.value && setProfile({ morningSprintAt: e.currentTarget.value })}
-              style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', color: 'var(--text)' }}
+              style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text)' }}
             />
-            <Show when={profile().morningSprintAt} fallback={<span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>auto from wake time</span>}>
-              <button onClick={() => setProfile({ morningSprintAt: null })} style={{ color: 'var(--blue)', 'font-size': '13px' }}>Auto</button>
+            <Show when={profile().morningSprintAt} fallback={<span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>auto from wake time</span>}>
+              <button onClick={() => setProfile({ morningSprintAt: null })} style={{ color: 'var(--blue)', 'font-size': 'calc(13px * var(--ts))' }}>Auto</button>
             </Show>
           </div>
           <span>Evening</span>
@@ -573,7 +573,7 @@ export function FocusScreen(): JSX.Element {
                 type="time"
                 value={eveningSprintTime(profile())}
                 onChange={(e) => e.currentTarget.value && setProfile({ eveningSprintAt: e.currentTarget.value })}
-                style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': '14px', color: 'var(--text)' }}
+                style={{ padding: '6px 8px', 'border-radius': '9px', background: 'var(--bg-inset)', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text)' }}
               />
             </Show>
           </div>
@@ -582,10 +582,10 @@ export function FocusScreen(): JSX.Element {
         <div style={{ margin: '14px 0 0', 'border-top': '1px solid var(--separator)' }}>
           <For each={routineItems(profile())}>
             {(item) => (
-              <div data-testid={`routine-${item.id}`} style={{ display: 'flex', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)', 'font-size': '14px' }}>
-                <span style={{ width: '44px', 'font-weight': '600', 'font-variant-numeric': 'tabular-nums', color: 'var(--text)' }}>{item.time}</span>
+              <div data-testid={`routine-${item.id}`} style={{ display: 'flex', gap: '10px', padding: '8px 0', 'border-bottom': '1px solid var(--separator)', 'font-size': 'calc(14px * var(--ts))' }}>
+                <span style={{ width: '44px', 'font-weight': 'var(--fw-600)', 'font-variant-numeric': 'tabular-nums', color: 'var(--text)' }}>{item.time}</span>
                 <span style={{ flex: '1', color: 'var(--text)' }}>{item.title}</span>
-                <span style={{ color: 'var(--text-tertiary)', 'font-size': '12px' }}>
+                <span style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(12px * var(--ts))' }}>
                   {item.alarms.length > 1 ? 'prep + end' : 'alert'}
                 </span>
               </div>
@@ -603,12 +603,12 @@ export function FocusScreen(): JSX.Element {
                 style={{
                   display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '8px', width: '100%',
                   margin: '14px 0 0', padding: '13px', 'border-radius': '12px', background: 'var(--blue)',
-                  color: 'var(--text-invert)', 'font-weight': '600', 'font-size': '16px',
+                  color: 'var(--text-invert)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(16px * var(--ts))',
                 }}
               >
                 <Icon name="calendar" size={18} /> Add routine to Calendar
               </button>
-              <p data-testid="custom-routine-note" style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '8px 0 0', 'line-height': '1.5' }}>
+              <p data-testid="custom-routine-note" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '8px 0 0', 'line-height': 'calc(1.5 * var(--lh))' }}>
                 Custom times use the share sheet: choose <b>Mail</b> (send it to yourself) or <b>Save to Files</b>, then tap the
                 file and <b>Add All</b>.
               </p>
@@ -623,20 +623,20 @@ export function FocusScreen(): JSX.Element {
           style={{
             display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '8px',
             margin: '14px 0 0', padding: '13px', 'border-radius': '12px', background: 'var(--blue)',
-            color: 'var(--text-invert)', 'font-weight': '600', 'font-size': '16px', 'text-decoration': 'none',
+            color: 'var(--text-invert)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(16px * var(--ts))', 'text-decoration': 'none',
           }}
         >
           <Icon name="calendar" size={18} /> Add routine to Calendar
         </a>
         </Show>
-        <ol style={{ 'padding-left': '20px', 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.55', margin: '10px 0 0' }}>
+        <ol style={{ 'padding-left': '20px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.55 * var(--lh))', margin: '10px 0 0' }}>
           <li>Opens in Safari → tap <b>Add All</b> → pick a calendar (create one named “Focus Routine” so it’s easy to replace).</li>
           <li>iOS Calendar sends the alerts — they work while Clarity is closed and respect your Focus modes.</li>
           <li>Changed a time? Delete the “Focus Routine” calendar and add again.</li>
         </ol>
         <button
           onClick={() => void deliverFile('focus-routine.ics', routineCalendar(profile()), 'text/calendar')}
-          style={{ color: 'var(--blue)', 'font-size': '13px', margin: '6px 0 0' }}
+          style={{ color: 'var(--blue)', 'font-size': 'calc(13px * var(--ts))', margin: '6px 0 0' }}
         >
           Didn’t open? Share the file instead (Mail / Files → tap it → Add All)
         </button>
@@ -654,12 +654,12 @@ export function FocusScreen(): JSX.Element {
                 style={{ flex: '1', display: 'block', 'border-radius': '12px', overflow: 'hidden', background: bg, 'text-decoration': 'none', border: '1px solid var(--separator)' }}
               >
                 <img src={appAssetUrl(`wallpapers/focus-flow-${mode}-thumb.png`)} alt={`Daily focus flow wallpaper, ${mode}`} style={{ width: '100%', display: 'block' }} loading="lazy" />
-                <div style={{ 'text-align': 'center', 'font-size': '13px', padding: '6px', color: mode === 'dark' ? '#f2f2f4' : '#1d1d1f' }}>{mode === 'dark' ? 'Dark' : 'Light'}</div>
+                <div style={{ 'text-align': 'center', 'font-size': 'calc(13px * var(--ts))', padding: '6px', color: mode === 'dark' ? '#f2f2f4' : '#1d1d1f' }}>{mode === 'dark' ? 'Dark' : 'Light'}</div>
               </a>
             )}
           </For>
         </div>
-        <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '10px 0 0', 'line-height': '1.5' }}>
+        <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '10px 0 0', 'line-height': 'calc(1.5 * var(--lh))' }}>
           Open one → long-press → <b>Save to Photos</b> → Photos → Share → <b>Use as Wallpaper</b>. The flow sits below
           the clock so you see it every time you pick up your phone.
         </p>

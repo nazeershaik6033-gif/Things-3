@@ -62,7 +62,7 @@ export function AreaScreen(props: { id: string }): JSX.Element {
             placeholder="New Area"
             data-testid="area-title"
             onInput={(e) => void updateArea(props.id, { title: e.currentTarget.value })}
-            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': '700' }}
+            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': 'var(--fw-700)' }}
           />
         }
         icon={<Icon name="hexagon" size={26} color="var(--teal)" />}
@@ -88,7 +88,7 @@ export function AreaScreen(props: { id: string }): JSX.Element {
                   gap: '12px',
                   width: '100%',
                   padding: '11px 16px',
-                  'font-size': '17px',
+                  'font-size': 'calc(17px * var(--ts))',
                   color: 'var(--text)',
                   'text-align': 'left',
                 }}

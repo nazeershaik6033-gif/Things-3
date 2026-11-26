@@ -201,8 +201,8 @@ export function SheetTitle(props: { children: JSX.Element }): JSX.Element {
     <div
       style={{
         'text-align': 'center',
-        'font-weight': '600',
-        'font-size': '15px',
+        'font-weight': 'var(--fw-600)',
+        'font-size': 'calc(15px * var(--ts))',
         padding: '6px 16px 10px',
         color: 'var(--text)',
       }}

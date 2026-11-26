@@ -80,19 +80,19 @@ export function BoardCalendarScreen(props: { id: string }): JSX.Element {
                   >
                     <span
                       style={{
-                        'font-weight': '700',
-                        'font-size': '15px',
+                        'font-weight': 'var(--fw-700)',
+                        'font-size': 'calc(15px * var(--ts))',
                         color: overdue() ? 'var(--red)' : 'var(--text)',
                       }}
                     >
                       {weekdayName(date).slice(0, 3)} {Number(date.slice(8))}
                     </span>
-                    <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+                    <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
                       {formatRelative(date, currentDate())}
                     </span>
                     <span style={{ flex: '1' }} />
                     <Show when={overdue()}>
-                      <span style={{ 'font-size': '11px', 'font-weight': '700', color: 'var(--red)', 'letter-spacing': '0.05em' }}>
+                      <span style={{ 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--red)', 'letter-spacing': '0.05em' }}>
                         OVERDUE
                       </span>
                     </Show>
@@ -114,7 +114,7 @@ export function BoardCalendarScreen(props: { id: string }): JSX.Element {
                         <span style={{ width: '10px', height: '10px', 'border-radius': '3px', background: card.cover ?? board()!.color, flex: 'none' }} />
                         <span
                           style={{
-                            flex: '1', 'font-size': '16px',
+                            flex: '1', 'font-size': 'calc(16px * var(--ts))',
                             color: card.completed ? 'var(--text-secondary)' : 'var(--text)',
                             'text-decoration': card.completed ? 'line-through' : 'none',
                             overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
@@ -123,7 +123,7 @@ export function BoardCalendarScreen(props: { id: string }): JSX.Element {
                           {card.title || 'Untitled'}
                         </span>
                         <Show when={card.dueTime}>
-                          <span style={{ color: 'var(--text-tertiary)', 'font-size': '13px', 'font-variant-numeric': 'tabular-nums' }}>
+                          <span style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(13px * var(--ts))', 'font-variant-numeric': 'tabular-nums' }}>
                             {card.dueTime}
                           </span>
                         </Show>

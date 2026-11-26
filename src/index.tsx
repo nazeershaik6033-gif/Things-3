@@ -3,9 +3,12 @@ import { registerSW } from 'virtual:pwa-register';
 import './styles/tokens.css';
 import './styles/base.css';
 import { App } from './app/App';
+import { applyCachedTextPrefs } from './app/textPrefs';
 import { hasExistingData, seedDemoData } from './app/seed';
 
 registerSW({ immediate: true });
+// Right font and size from the first frame (see app/textPrefs.ts)
+applyCachedTextPrefs();
 
 /** iOS only applies `:active` styles to non-anchor elements once the document
  *  carries a touch listener. Without this, every button and row in a standalone

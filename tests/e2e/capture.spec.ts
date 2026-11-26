@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { currentScreen, loadSeeded, homeRow } from './helpers';
+import { currentScreen, loadSeeded, homeRow, tapPlus } from './helpers';
 
 test('Quick Entry reads plain words: time, length and a weekly repeat', async ({ page }) => {
   await loadSeeded(page);
   await (await homeRow(page, 'home-today')).click();
   await page.click('[data-testid="today-view-list"]');
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   const title = page.locator('[data-quick-entry] textarea').first();
   await title.fill('Gym tue thu 7am 1h');
   await expect(page.getByTestId('short-syntax-preview')).toHaveText('7 AM – 8 AM  ·  ↻ every Tue, Thu');
@@ -22,7 +22,7 @@ test('Quick Entry reads plain words: time, length and a weekly repeat', async ({
 test('"Keep as text" saves the words as typed', async ({ page }) => {
   await loadSeeded(page);
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.locator('[data-quick-entry] textarea').first().fill('Read Monday notes');
   await expect(page.getByTestId('short-syntax-preview')).toHaveText('Mon');
   await page.getByTestId('nl-toggle').click();
@@ -33,7 +33,7 @@ test('"Keep as text" saves the words as typed', async ({ page }) => {
 test('# suggests existing tags', async ({ page }) => {
   await loadSeeded(page);
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   const tagTitle = await page.evaluate(async () => {
     const req = indexedDB.open('clarity');
     const db: IDBDatabase = await new Promise((r) => { req.onsuccess = () => r(req.result); });

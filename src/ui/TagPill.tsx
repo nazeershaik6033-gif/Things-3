@@ -13,8 +13,8 @@ export function TagPill(props: { title: string; selected?: boolean; onClick?: ()
         color: props.selected ? '#fff' : 'var(--tag-text)',
         border: `1px solid ${props.selected ? 'var(--green)' : 'var(--tag-border)'}`,
         'font-size': 'var(--fs-chip)',
-        'font-weight': '500',
-        'line-height': '1.5',
+        'font-weight': 'var(--fw-500)',
+        'line-height': 'calc(1.5 * var(--lh))',
         'white-space': 'nowrap',
       }}
     >
@@ -32,7 +32,7 @@ export function DeadlineFlag(props: { text: string; overdue?: boolean }): JSX.El
         gap: '3px',
         color: props.overdue ? 'var(--red)' : 'var(--text-secondary)',
         'font-size': 'var(--fs-chip)',
-        'font-weight': '600',
+        'font-weight': 'var(--fw-600)',
         'white-space': 'nowrap',
       }}
     >

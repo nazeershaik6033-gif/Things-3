@@ -58,7 +58,7 @@ export function EventSheet(props: { event: CalendarEvent; onClose: () => void })
 
   const btn = (primary: boolean) => ({
     display: 'flex', 'align-items': 'center', gap: '8px', width: '100%', padding: '12px 14px',
-    'border-radius': '12px', 'font-size': '15px', 'font-weight': '600',
+    'border-radius': '12px', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)',
     background: primary ? 'var(--blue)' : 'var(--bg-inset)', color: primary ? '#fff' : 'var(--text)',
   }) as const;
 
@@ -69,8 +69,8 @@ export function EventSheet(props: { event: CalendarEvent; onClose: () => void })
         <div style={{ display: 'flex', gap: '10px', 'align-items': 'flex-start' }}>
           <span style={{ width: '4px', 'align-self': 'stretch', 'border-radius': '2px', background: calendarColor(e().calendarUrl) }} />
           <div>
-            <div style={{ 'font-size': '18px', 'font-weight': '600' }}>{e().title}</div>
-            <div style={{ 'font-size': '14px', color: 'var(--text-secondary)', 'margin-top': '2px' }}>
+            <div style={{ 'font-size': 'calc(18px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>{e().title}</div>
+            <div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', 'margin-top': '2px' }}>
               {formatRelative(e().date, currentDate())} · {span() ? formatRange(span()!.s, span()!.end) : 'all day'} · {calName()}
             </div>
           </div>
@@ -82,7 +82,7 @@ export function EventSheet(props: { event: CalendarEvent; onClose: () => void })
           <Icon name="clock" size={17} />
           <Show when={span()} fallback={<>Add a prep to-do</>}>Add a prep to-do before it ({PREP_MIN}m)</Show>
         </button>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
           Events are read-only here — edit them in your calendar app.
         </div>
       </div>

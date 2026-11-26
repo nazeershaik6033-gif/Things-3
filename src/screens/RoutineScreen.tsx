@@ -64,7 +64,7 @@ export function RoutineScreen(): JSX.Element {
         <button
           data-testid="routine-edit"
           onClick={() => setEditing(!editing())}
-          style={{ color: 'var(--blue)', padding: '8px 10px', 'font-size': '16px', 'font-weight': editing() ? '600' : '400' }}
+          style={{ color: 'var(--blue)', padding: '8px 10px', 'font-size': 'calc(16px * var(--ts))', 'font-weight': editing() ? 'var(--fw-600)' : 'var(--fw-400)' }}
         >
           {editing() ? 'Done' : 'Edit'}
         </button>
@@ -90,13 +90,13 @@ export function RoutineScreen(): JSX.Element {
             thickness={7}
             color={progress().complete ? 'var(--green)' : 'var(--purple)'}
           >
-            <span style={{ 'font-size': '17px', 'font-weight': '700', 'font-variant-numeric': 'tabular-nums' }}>
+            <span style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-700)', 'font-variant-numeric': 'tabular-nums' }}>
               {progress().done}
-              <span style={{ color: 'var(--text-tertiary)', 'font-weight': '600' }}>/{progress().total}</span>
+              <span style={{ color: 'var(--text-tertiary)', 'font-weight': 'var(--fw-600)' }}>/{progress().total}</span>
             </span>
           </ProgressRing>
           <div style={{ flex: '1', 'min-width': '0' }}>
-            <div style={{ 'font-size': '17px', 'font-weight': '600' }}>
+            <div style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>
               {progress().complete
                 ? 'Routine complete'
                 : progress().done === 0
@@ -105,7 +105,7 @@ export function RoutineScreen(): JSX.Element {
             </div>
             <div
               data-testid="routine-streak"
-              style={{ display: 'flex', 'align-items': 'center', gap: '5px', 'margin-top': '4px', color: 'var(--text-secondary)', 'font-size': '14px' }}
+              style={{ display: 'flex', 'align-items': 'center', gap: '5px', 'margin-top': '4px', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}
             >
               <Icon name="flame" size={15} color={streak() > 0 ? 'var(--red)' : 'var(--text-tertiary)'} />
               {streak() === 0 ? 'No streak yet' : `${streak()}-day streak`}
@@ -151,8 +151,8 @@ export function RoutineScreen(): JSX.Element {
                   'border-radius': '12px',
                   background: 'var(--blue)',
                   color: 'var(--text-invert)',
-                  'font-weight': '600',
-                  'font-size': '15px',
+                  'font-weight': 'var(--fw-600)',
+                  'font-size': 'calc(15px * var(--ts))',
                 }}
               >
                 Start with a suggested routine
@@ -239,11 +239,11 @@ export function RoutineScreen(): JSX.Element {
             placeholder="Add a daily check…"
             style={{ flex: '1', padding: '10px 12px', 'border-radius': '11px', background: 'var(--bg-inset)' }}
           />
-          <button onClick={addItem} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>
+          <button onClick={addItem} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>
             Add
           </button>
         </div>
-        <p style={{ padding: '12px 18px 0', color: 'var(--text-secondary)', 'font-size': '13px', 'line-height': '1.45' }}>
+        <p style={{ padding: '12px 18px 0', color: 'var(--text-secondary)', 'font-size': 'calc(13px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))' }}>
           Retiring a check hides it from today onward but keeps its history, so
           past streaks stay accurate. Deleting removes every tick it recorded.
         </p>

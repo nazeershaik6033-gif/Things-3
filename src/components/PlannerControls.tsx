@@ -42,7 +42,7 @@ export function TimeChip(props: { task: Task; active: boolean; onClick: () => vo
       onClick={props.onClick}
       style={{
         display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '4px 10px',
-        'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+        'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
         'font-variant-numeric': 'tabular-nums',
         background: label() ? 'color-mix(in srgb, var(--blue) 14%, transparent)' : 'var(--bg-inset)',
         color: label() ? 'var(--blue)' : 'var(--text)',
@@ -80,7 +80,7 @@ export function TimePicker(props: { task: Task; onClose: () => void }): JSX.Elem
 
   const inputStyle = {
     padding: '10px 12px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)',
-    'font-size': '16px', border: 'none', 'color-scheme': 'inherit',
+    'font-size': 'calc(16px * var(--ts))', border: 'none', 'color-scheme': 'inherit',
   } as const;
 
   return (
@@ -111,7 +111,7 @@ export function TimePicker(props: { task: Task; onClose: () => void }): JSX.Elem
               aria-pressed={length() === m}
               onClick={() => setLength(m)}
               style={{
-                padding: '5px 11px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                padding: '5px 11px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: length() === m ? 'var(--blue)' : 'var(--bg-inset)',
                 color: length() === m ? 'var(--text-invert)' : 'var(--text)',
               }}
@@ -127,20 +127,20 @@ export function TimePicker(props: { task: Task; onClose: () => void }): JSX.Elem
           onClick={() => void apply(time())}
           style={{
             padding: '9px 16px', 'border-radius': '10px', background: 'var(--blue)', color: '#fff',
-            'font-size': '15px', 'font-weight': '600',
+            'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)',
           }}
         >
           Set {formatRange(parseHHMM(time()) ?? 0, Math.min(1440, (parseHHMM(time()) ?? 0) + length()))}
         </button>
         <Show when={props.task.startTime}>
-          <button data-testid="time-clear" onClick={() => void apply(null)} style={{ color: 'var(--red)', 'font-size': '15px' }}>
+          <button data-testid="time-clear" onClick={() => void apply(null)} style={{ color: 'var(--red)', 'font-size': 'calc(15px * var(--ts))' }}>
             Remove
           </button>
         </Show>
-        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': '15px' }}>Cancel</button>
+        <button onClick={props.onClose} style={{ color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))' }}>Cancel</button>
       </div>
       <Show when={repeating()}>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
           Applies to the coming repeats too. To move just one day, drag it on the timeline.
         </div>
       </Show>
@@ -177,7 +177,7 @@ export function AlertsPanel(props: { task: Task }): JSX.Element {
       aria-pressed={hasAlert(list(), a)}
       onClick={() => toggle(a)}
       style={{
-        padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+        padding: '5px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
         background: hasAlert(list(), a) ? 'var(--blue)' : 'var(--bg-inset)',
         color: hasAlert(list(), a) ? 'var(--text-invert)' : 'var(--text)',
       }}
@@ -189,10 +189,10 @@ export function AlertsPanel(props: { task: Task }): JSX.Element {
     <div data-testid="alerts-panel" style={{ display: 'flex', 'flex-direction': 'column', gap: '8px', 'padding-bottom': '10px', 'border-bottom': '1px solid var(--separator)' }}>
       <Show
         when={timed() || props.task.deadline}
-        fallback={<div style={{ 'font-size': '13px', color: 'var(--text-secondary)' }}>Give it a time (the Time chip) or a deadline to set alerts that follow it.</div>}
+        fallback={<div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>Give it a time (the Time chip) or a deadline to set alerts that follow it.</div>}
       >
         <Show when={timed()}>
-          <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)' }}>
             Before it starts{props.task.alerts === null && def() !== null ? ' · default' : ''}
           </div>
           <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>
@@ -200,7 +200,7 @@ export function AlertsPanel(props: { task: Task }): JSX.Element {
           </div>
         </Show>
         <Show when={props.task.deadline}>
-          <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)' }}>
             Before the deadline{props.task.deadlineTime ? '' : ' (9 AM that day)'}
           </div>
           <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>
@@ -215,13 +215,13 @@ export function AlertsPanel(props: { task: Task }): JSX.Element {
             style={{
               display: 'inline-flex', 'align-items': 'center', gap: '6px', padding: '8px 14px', 'border-radius': '10px',
               background: list().length === 0 ? 'var(--bg-inset)' : 'var(--blue)',
-              color: list().length === 0 ? 'var(--text-tertiary)' : '#fff', 'font-size': '14px', 'font-weight': '600',
+              color: list().length === 0 ? 'var(--text-tertiary)' : '#fff', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)',
             }}
           >
             <Icon name="bell" size={15} />
             {state() === 'changed' ? 'Send again to Calendar' : 'Send to Calendar'}
           </button>
-          <span data-testid="alerts-state" style={{ 'font-size': '12px', color: state() === 'sent' ? 'var(--green)' : state() === 'changed' ? 'var(--orange, var(--red))' : 'var(--text-tertiary)' }}>
+          <span data-testid="alerts-state" style={{ 'font-size': 'calc(12px * var(--ts))', color: state() === 'sent' ? 'var(--green)' : state() === 'changed' ? 'var(--orange, var(--red))' : 'var(--text-tertiary)' }}>
             {state() === 'sent' ? '✓ In Calendar' : state() === 'changed' ? 'Changed since sent' : ''}
           </span>
         </div>
@@ -263,7 +263,7 @@ export function RepeatExtras(props: { task: Task; onSkipped?: () => void }): JSX
           }}
           style={{
             display: 'inline-flex', 'align-items': 'center', gap: '4px', padding: '4px 10px', 'border-radius': '999px',
-            'font-size': '13px', 'font-weight': '600', background: 'var(--bg-inset)', color: 'var(--text)',
+            'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', background: 'var(--bg-inset)', color: 'var(--text)',
           }}
         >
           <Icon name="chevron-right" size={12} color="var(--purple)" /> Skip this one
@@ -284,7 +284,7 @@ export function RepeatExtras(props: { task: Task; onSkipped?: () => void }): JSX
             )}
           </For>
           <Show when={past() > 0}>
-            <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>{done()}/{past()}</span>
+            <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>{done()}/{past()}</span>
           </Show>
         </div>
       </Show>

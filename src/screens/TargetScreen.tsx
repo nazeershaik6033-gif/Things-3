@@ -85,10 +85,10 @@ export function TargetScreen(): JSX.Element {
         background: 'var(--bg-inset)',
       }}
     >
-      <div style={{ 'font-size': '15px', 'font-weight': '600', 'margin-bottom': '4px' }}>
+      <div style={{ 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)', 'margin-bottom': '4px' }}>
         What would make today count?
       </div>
-      <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.45', 'margin-bottom': '12px' }}>
+      <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.45 * var(--lh))', 'margin-bottom': '12px' }}>
         One thing. If you did only this, the day would still be a good one.
       </div>
       <textarea
@@ -112,8 +112,8 @@ export function TargetScreen(): JSX.Element {
           background: 'var(--bg-list)',
           'border-radius': '11px',
           padding: '11px 13px',
-          'font-size': '16px',
-          'line-height': '1.4',
+          'font-size': 'calc(16px * var(--ts))',
+          'line-height': 'calc(1.4 * var(--lh))',
           overflow: 'hidden',
         }}
       />
@@ -124,7 +124,7 @@ export function TargetScreen(): JSX.Element {
           onClick={save}
           style={{
             background: 'var(--blue)', color: 'var(--text-invert)', padding: '9px 18px',
-            'border-radius': '10px', 'font-weight': '600', 'font-size': '15px',
+            'border-radius': '10px', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))',
           }}
         >
           Set target
@@ -172,8 +172,8 @@ export function TargetScreen(): JSX.Element {
         >
           <div
             style={{
-              'font-size': '12px',
-              'font-weight': '700',
+              'font-size': 'calc(12px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'letter-spacing': '0.05em',
               'text-transform': 'uppercase',
               color: OUTCOME_COLOR[todays()!.outcome],
@@ -184,7 +184,7 @@ export function TargetScreen(): JSX.Element {
           </div>
           <div
             data-testid="target-text"
-            style={{ 'font-size': '21px', 'font-weight': '600', 'line-height': '1.3', 'white-space': 'pre-wrap' }}
+            style={{ 'font-size': 'calc(21px * var(--ts))', 'font-weight': 'var(--fw-600)', 'line-height': 'calc(1.3 * var(--lh))', 'white-space': 'pre-wrap' }}
           >
             {todays()!.text}
           </div>
@@ -197,7 +197,7 @@ export function TargetScreen(): JSX.Element {
               style={{
                 display: 'flex', 'align-items': 'center', gap: '7px', 'margin-top': '12px',
                 padding: '6px 10px', 'border-radius': '9px', background: 'var(--bg-list)',
-                'font-size': '13px', color: 'var(--text-secondary)', 'max-width': '100%',
+                'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'max-width': '100%',
               }}
             >
               <Icon
@@ -211,7 +211,7 @@ export function TargetScreen(): JSX.Element {
             </button>
           </Show>
 
-          <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', 'margin-top': '12px', color: 'var(--text-secondary)', 'font-size': '14px' }}>
+          <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', 'margin-top': '12px', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>
             <Icon name="flame" size={15} color={streak() > 0 ? 'var(--red)' : 'var(--text-tertiary)'} />
             <span data-testid="target-streak">
               {streak() === 0 ? 'No streak yet' : `${streak()}-day streak`}
@@ -221,7 +221,7 @@ export function TargetScreen(): JSX.Element {
 
         {/* The night half: judge it */}
         <div class="rise" style={{ margin: '0 16px 6px', 'animation-delay': staggerDelay(1) }}>
-          <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em', 'margin-bottom': '8px' }}>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em', 'margin-bottom': '8px' }}>
             {todays()!.outcome === 'pending' ? 'How did it go?' : 'How it went'}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -243,8 +243,8 @@ export function TargetScreen(): JSX.Element {
                       'border-radius': '12px',
                       background: on() ? OUTCOME_COLOR[v.outcome] : 'var(--bg-inset)',
                       color: on() ? 'var(--text-invert)' : 'var(--text)',
-                      'font-size': '14px',
-                      'font-weight': '600',
+                      'font-size': 'calc(14px * var(--ts))',
+                      'font-weight': 'var(--fw-600)',
                     }}
                   >
                     <Icon name={v.icon} size={18} />
@@ -276,12 +276,12 @@ export function TargetScreen(): JSX.Element {
               background: 'var(--bg-inset)',
               'border-radius': '11px',
               padding: '10px 12px',
-              'font-size': '15px',
+              'font-size': 'calc(15px * var(--ts))',
               overflow: 'hidden',
             }}
           />
           <Show when={!isReviewed(stored()!)}>
-            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '6px 2px 0', 'line-height': '1.45' }}>
+            <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '6px 2px 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
               The note saves with your verdict — pick one above when the day is done.
             </div>
           </Show>
@@ -291,12 +291,12 @@ export function TargetScreen(): JSX.Element {
       {/* Fourteen-day history */}
       <div class="rise" style={{ margin: '16px 16px 4px', 'animation-delay': staggerDelay(2) }}>
         <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', 'margin-bottom': '8px' }}>
-          <span style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' }}>
+          <span style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' }}>
             Last 14 days
           </span>
           <span style={{ flex: '1' }} />
           <Show when={stats().set > 0}>
-            <span data-testid="target-hitrate" style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+            <span data-testid="target-hitrate" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
               {Math.round(stats().hitRate * 100)}% hit · 30 days
             </span>
           </Show>
@@ -321,7 +321,7 @@ export function TargetScreen(): JSX.Element {
 
       {/* Past targets */}
       <Show when={past().length > 0}>
-        <div style={{ padding: '18px 16px 4px', 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' }}>
+        <div style={{ padding: '18px 16px 4px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.04em' }}>
           Earlier
         </div>
         <For each={past().slice(0, 60)}>
@@ -340,17 +340,17 @@ export function TargetScreen(): JSX.Element {
               }}
             >
               <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px' }}>
-                <span style={{ 'font-size': '12px', 'font-weight': '700', color: OUTCOME_COLOR[t.outcome] }}>
+                <span style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: OUTCOME_COLOR[t.outcome] }}>
                   {OUTCOME_LABEL[t.outcome]}
                 </span>
                 <span style={{ flex: '1' }} />
-                <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
                   {formatRelative(t.date, today())}
                 </span>
               </div>
-              <div style={{ 'font-size': '15px', 'margin-top': '3px', 'white-space': 'pre-wrap' }}>{t.text}</div>
+              <div style={{ 'font-size': 'calc(15px * var(--ts))', 'margin-top': '3px', 'white-space': 'pre-wrap' }}>{t.text}</div>
               <Show when={t.reflection}>
-                <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'margin-top': '4px', 'font-style': 'italic' }}>
+                <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'margin-top': '4px', 'font-style': 'italic' }}>
                   {t.reflection}
                 </div>
               </Show>
@@ -405,7 +405,7 @@ export function TargetScreen(): JSX.Element {
             <Show
               when={todaysTasks().length > 0}
               fallback={
-                <div style={{ padding: '10px 20px 18px', color: 'var(--text-secondary)', 'font-size': '15px' }}>
+                <div style={{ padding: '10px 20px 18px', color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))' }}>
                   Nothing is scheduled for today yet.
                 </div>
               }
@@ -422,7 +422,7 @@ export function TargetScreen(): JSX.Element {
               </For>
             </Show>
           </div>
-          <div style={{ padding: '4px 20px 16px', 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+          <div style={{ padding: '4px 20px 16px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
             Finishing the linked to-do counts the target as hit. Your own verdict
             always wins over it.
           </div>

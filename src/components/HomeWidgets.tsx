@@ -59,8 +59,8 @@ function WidgetLabel(props: { icon: JSX.Element; text: string }): JSX.Element {
         display: 'flex',
         'align-items': 'center',
         gap: '6px',
-        'font-size': '12px',
-        'font-weight': '700',
+        'font-size': 'calc(12px * var(--ts))',
+        'font-weight': 'var(--fw-700)',
         'letter-spacing': '0.05em',
         'text-transform': 'uppercase',
         color: 'var(--text-secondary)',
@@ -98,10 +98,10 @@ function UpNextWidget(props: { events: CalendarEvent[]; today: DateStr; delay: s
         when={event()}
         fallback={
           <div style={{ 'margin-top': '8px' }}>
-            <div style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)' }}>
+            <div style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)' }}>
               Nothing scheduled
             </div>
-            <div style={{ 'margin-top': '3px', 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+            <div style={{ 'margin-top': '3px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
               Open the calendar to add one
             </div>
           </div>
@@ -110,8 +110,8 @@ function UpNextWidget(props: { events: CalendarEvent[]; today: DateStr; delay: s
         <div style={{ 'margin-top': '8px' }}>
           <div
             style={{
-              'font-size': '17px',
-              'font-weight': '600',
+              'font-size': 'calc(17px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
               overflow: 'hidden',
               'text-overflow': 'ellipsis',
               'white-space': 'nowrap',
@@ -121,12 +121,12 @@ function UpNextWidget(props: { events: CalendarEvent[]; today: DateStr; delay: s
           </div>
           <div
             data-testid="widget-up-next-when"
-            style={{ 'margin-top': '3px', 'font-size': '13px', 'font-weight': '600', color: 'var(--blue)' }}
+            style={{ 'margin-top': '3px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--blue)' }}
           >
             {when()}
           </div>
           <Show when={!event()!.allDay && event()!.start !== null}>
-            <div style={{ 'margin-top': '1px', 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+            <div style={{ 'margin-top': '1px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
               {weekdayName(event()!.date).slice(0, 3)} · {formatTime(event()!.start!)}
             </div>
           </Show>
@@ -160,23 +160,23 @@ function OverdueWidget(props: { tasks: Task[]; today: DateStr; delay: string }):
         <span
           data-testid="widget-overdue-count"
           style={{
-            'font-size': '30px',
-            'font-weight': '700',
-            'line-height': '1',
+            'font-size': 'calc(30px * var(--ts))',
+            'font-weight': 'var(--fw-700)',
+            'line-height': 'calc(1 * var(--lh))',
             'font-variant-numeric': 'tabular-nums',
             color: clear() ? 'var(--green)' : 'var(--red)',
           }}
         >
           {late().length}
         </span>
-        <span style={{ 'font-size': '15px', color: 'var(--text-secondary)' }}>
+        <span style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)' }}>
           {clear() ? 'nothing late' : late().length === 1 ? 'past its deadline' : 'past their deadlines'}
         </span>
       </div>
       <div
         style={{
           'margin-top': '4px',
-          'font-size': '13px',
+          'font-size': 'calc(13px * var(--ts))',
           color: 'var(--text-tertiary)',
           overflow: 'hidden',
           'text-overflow': 'ellipsis',
@@ -227,10 +227,10 @@ function TargetWidget(props: {
         when={todays()}
         fallback={
           <div style={{ 'margin-top': '8px' }}>
-            <div style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text-secondary)' }}>
+            <div style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)' }}>
               Not set yet
             </div>
-            <div style={{ 'margin-top': '3px', 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+            <div style={{ 'margin-top': '3px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
               Name the one thing that would make today count
             </div>
           </div>
@@ -240,9 +240,9 @@ function TargetWidget(props: {
           <div
             data-testid="widget-target-text"
             style={{
-              'font-size': '17px',
-              'font-weight': '600',
-              'line-height': '1.3',
+              'font-size': 'calc(17px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
+              'line-height': 'calc(1.3 * var(--lh))',
               display: '-webkit-box',
               '-webkit-line-clamp': '2',
               '-webkit-box-orient': 'vertical',
@@ -254,8 +254,8 @@ function TargetWidget(props: {
           <div
             style={{
               'margin-top': '5px',
-              'font-size': '13px',
-              'font-weight': '600',
+              'font-size': 'calc(13px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
               color: judged() ? OUTCOME_COLOR[todays()!.outcome] : 'var(--text-tertiary)',
             }}
           >
@@ -323,8 +323,8 @@ export function WidgetDeck(props: {
         </span>
         <span
           style={{
-            'font-size': '12px',
-            'font-weight': '700',
+            'font-size': 'calc(12px * var(--ts))',
+            'font-weight': 'var(--fw-700)',
             'letter-spacing': '0.05em',
             'text-transform': 'uppercase',
             color: 'var(--text-tertiary)',
@@ -339,7 +339,7 @@ export function WidgetDeck(props: {
             style={{
               flex: '1',
               'min-width': '0',
-              'font-size': '13px',
+              'font-size': 'calc(13px * var(--ts))',
               color: 'var(--text-secondary)',
               overflow: 'hidden',
               'text-overflow': 'ellipsis',
@@ -415,11 +415,11 @@ export function CalendarStrip(props: {
     >
       <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '0 4px 10px' }}>
         <Icon name="calendar" size={16} color="var(--red)" />
-        <span style={{ 'font-weight': '700', 'font-size': '15px' }}>
+        <span style={{ 'font-weight': 'var(--fw-700)', 'font-size': 'calc(15px * var(--ts))' }}>
           {monthLabel(monthOf(props.today))}
         </span>
         <span style={{ flex: '1' }} />
-        <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+        <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
           {monthCount()} {monthCount() === 1 ? 'day' : 'days'} booked
         </span>
         <Icon name="chevron-right" size={14} color="var(--text-tertiary)" />
@@ -428,7 +428,7 @@ export function CalendarStrip(props: {
         <For each={days()}>
           {(day) => (
             <div style={{ display: 'flex', 'flex-direction': 'column', 'align-items': 'center', gap: '3px' }}>
-              <span style={{ 'font-size': '11px', 'font-weight': '600', color: 'var(--text-tertiary)' }}>
+              <span style={{ 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-tertiary)' }}>
                 {weekdayName(day).slice(0, 1)}
               </span>
               <span
@@ -438,11 +438,11 @@ export function CalendarStrip(props: {
                   display: 'grid',
                   'place-items': 'center',
                   'border-radius': '10px',
-                  'font-size': '15px',
+                  'font-size': 'calc(15px * var(--ts))',
                   'font-variant-numeric': 'tabular-nums',
                   background: day === props.today ? 'var(--blue)' : 'transparent',
                   color: day === props.today ? 'var(--text-invert)' : 'var(--text)',
-                  'font-weight': day === props.today ? '700' : '400',
+                  'font-weight': day === props.today ? 'var(--fw-700)' : 'var(--fw-400)',
                 }}
               >
                 {Number(day.slice(8, 10))}

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, currentScreen, homeRow } from './helpers';
+import { loadSeeded, currentScreen, homeRow, tapPlus } from './helpers';
 
 test('app works fully offline after first load (service worker)', async ({ page, context }) => {
   await loadSeeded(page);
@@ -19,7 +19,7 @@ test('app works fully offline after first load (service worker)', async ({ page,
   await expect(currentScreen(page).getByText('Buy groceries')).toBeVisible();
 
   // Writes work offline too
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Created offline');
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByTestId('quick-entry-save')).toBeHidden();
@@ -36,7 +36,7 @@ test('app works fully offline after first load (service worker)', async ({ page,
 test('data persists across full reload (fresh page, same storage)', async ({ page }) => {
   await loadSeeded(page);
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Persistence check');
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByTestId('quick-entry-save')).toBeHidden();

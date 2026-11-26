@@ -103,8 +103,8 @@ function HomeRow(props: {
         gap: '12px',
         width: '100%',
         padding: '9px 14px',
-        'font-size': '17px',
-        'font-weight': props.bold ? '600' : '400',
+        'font-size': 'calc(17px * var(--ts))',
+        'font-weight': props.bold ? 'var(--fw-600)' : 'var(--fw-400)',
         color: 'var(--text)',
         'text-align': 'left',
       }}
@@ -124,8 +124,8 @@ function HomeRow(props: {
             'border-radius': '999px',
             background: 'var(--bg-inset)',
             color: 'var(--text-secondary)',
-            'font-size': '13px',
-            'font-weight': '600',
+            'font-size': 'calc(13px * var(--ts))',
+            'font-weight': 'var(--fw-600)',
             'text-align': 'center',
             'font-variant-numeric': 'tabular-nums',
           }}
@@ -160,10 +160,10 @@ function TodayBanner(props: { count: number; next: string | null }): JSX.Element
       >
         <Icon name="star" size={14} color="var(--yellow)" />
         <span style={{
-          flex: '1', 'font-size': '13px', color: 'var(--text-secondary)',
+          flex: '1', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)',
           overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
         }}>
-          <span style={{ color: 'var(--text)', 'font-weight': '600' }}>
+          <span style={{ color: 'var(--text)', 'font-weight': 'var(--fw-600)' }}>
             {props.count} {props.count === 1 ? 'thing' : 'things'} today
           </span>
           <Show when={props.next}> · Next: {props.next}</Show>
@@ -181,8 +181,8 @@ function Board(props: { title?: string; index: number; children: JSX.Element }):
         <div
           style={{
             padding: '2px 8px 6px',
-            'font-size': '12px',
-            'font-weight': '700',
+            'font-size': 'calc(12px * var(--ts))',
+            'font-weight': 'var(--fw-700)',
             'letter-spacing': '0.05em',
             'text-transform': 'uppercase',
             color: 'var(--text-tertiary)',
@@ -235,7 +235,7 @@ function AddMenuRow(props: { icon: JSX.Element; label: string; testid: string; o
       }}
       style={{
         display: 'flex', 'align-items': 'center', gap: '12px', width: '100%', padding: '11px 12px',
-        'border-radius': '12px', 'font-size': '16px', color: 'var(--text)', 'text-align': 'left',
+        'border-radius': '12px', 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)', 'text-align': 'left',
       }}
     >
       <span style={{ width: '24px', display: 'grid', 'place-items': 'center' }}>{props.icon}</span>
@@ -372,7 +372,7 @@ export function HomeScreen(): JSX.Element {
   const progressBadge = (testid: string | undefined, done: number, total: number, ratio: number, complete: boolean, color: string) => (
     <span
       data-testid={testid}
-      style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-tertiary)', 'font-size': '13px' }}
+      style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-tertiary)', 'font-size': 'calc(13px * var(--ts))' }}
     >
       {done}/{total}
       <ProgressRing progress={ratio} size={20} thickness={12} color={complete ? 'var(--green)' : color} />
@@ -395,9 +395,9 @@ export function HomeScreen(): JSX.Element {
         <HomeRow
           testid="home-cando"
           tint="rgba(83, 184, 85, 0.14)"
-          icon={<span style={{ 'font-size': '16px' }}>🔓</span>}
+          icon={<span style={{ 'font-size': 'calc(16px * var(--ts))' }}>🔓</span>}
           label="Can Do Now"
-          badge={<span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>{canDoCount() || ''}</span>}
+          badge={<span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>{canDoCount() || ''}</span>}
           onClick={() => push({ name: 'cando' })}
           onLongPress={lp}
         />
@@ -448,7 +448,7 @@ export function HomeScreen(): JSX.Element {
           tint="rgba(182, 120, 224, 0.14)"
           icon={<Icon name="restore" size={18} color="var(--purple)" />}
           label="Weekly Review"
-          badge={<Show when={reviewIsDue()}><span data-testid="home-review-due" style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--purple)' }}>Due</span></Show>}
+          badge={<Show when={reviewIsDue()}><span data-testid="home-review-due" style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--purple)' }}>Due</span></Show>}
           onClick={() => push({ name: 'review' })}
           onLongPress={lp}
         />
@@ -473,8 +473,8 @@ export function HomeScreen(): JSX.Element {
             <span
               data-testid="home-target-state"
               style={{
-                'font-size': '13px',
-                'font-weight': '600',
+                'font-size': 'calc(13px * var(--ts))',
+                'font-weight': 'var(--fw-600)',
                 color: target() ? OUTCOME_COLOR[target()!.outcome] : 'var(--text-tertiary)',
               }}
             >
@@ -533,8 +533,8 @@ export function HomeScreen(): JSX.Element {
               <span
                 data-testid="home-myroutine-new"
                 style={{
-                  'font-size': '11px',
-                  'font-weight': '700',
+                  'font-size': 'calc(11px * var(--ts))',
+                  'font-weight': 'var(--fw-700)',
                   color: '#fff',
                   background: 'var(--red)',
                   'border-radius': '999px',
@@ -557,7 +557,7 @@ export function HomeScreen(): JSX.Element {
           label="Worklog"
           badge={
             <Show when={trackedToday() >= 60}>
-              <span data-testid="home-worklog-today" style={{ 'font-size': '13px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums' }}>
+              <span data-testid="home-worklog-today" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums' }}>
                 {formatDuration(trackedToday())} today
               </span>
             </Show>
@@ -589,7 +589,7 @@ export function HomeScreen(): JSX.Element {
           icon={<Icon name="moon" size={18} color="var(--purple)" />}
           label="Finish Day"
           badge={
-            <span data-testid="home-finish-day-state" style={{ 'font-size': '13px', 'font-weight': '600', color: dayFinished() ? 'var(--green)' : 'var(--text-tertiary)' }}>
+            <span data-testid="home-finish-day-state" style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: dayFinished() ? 'var(--green)' : 'var(--text-tertiary)' }}>
               {dayFinished() ? 'Done' : ''}
             </span>
           }
@@ -683,8 +683,8 @@ export function HomeScreen(): JSX.Element {
     'border-radius': '999px',
     background: 'var(--bg-inset)',
     color: 'var(--text-secondary)',
-    'font-size': '15px',
-    'font-weight': '600',
+    'font-size': 'calc(15px * var(--ts))',
+    'font-weight': 'var(--fw-600)',
   };
 
   return (
@@ -695,7 +695,7 @@ export function HomeScreen(): JSX.Element {
             <h1
               data-testid="home-title"
               style={{
-                flex: '1', 'font-size': 'var(--fs-title)', 'font-weight': '700', 'letter-spacing': '-0.02em',
+                flex: '1', 'font-size': 'var(--fs-title)', 'font-weight': 'var(--fw-700)', 'letter-spacing': '-0.02em',
                 overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
               }}
             >
@@ -740,7 +740,7 @@ export function HomeScreen(): JSX.Element {
                 'border-radius': '12px',
                 background: 'var(--bg-inset)',
                 color: 'var(--text-secondary)',
-                'font-size': '16px',
+                'font-size': 'calc(16px * var(--ts))',
               }}
             >
               <Icon name="search" size={16} />
@@ -766,7 +766,7 @@ export function HomeScreen(): JSX.Element {
                   <Show
                     when={segments().length > 0}
                     fallback={
-                      <div data-testid="home-empty-tab" style={{ padding: '40px 32px', 'text-align': 'center', color: 'var(--text-secondary)', 'font-size': '15px', 'line-height': '1.5' }}>
+                      <div data-testid="home-empty-tab" style={{ padding: '40px 32px', 'text-align': 'center', color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))' }}>
                         Nothing in this tab yet.
                         <br />
                         Tap <b>Edit</b> to bring items here, or long-press a row on another tab and choose this one.

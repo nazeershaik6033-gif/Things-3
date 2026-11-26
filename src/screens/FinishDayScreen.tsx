@@ -69,16 +69,16 @@ export function FinishDayScreen(): JSX.Element {
       <Panel testid="fd-done-list">
         <Show
           when={summary().completed.length > 0}
-          fallback={<div style={{ padding: '12px 14px', color: 'var(--text-tertiary)', 'font-size': '14px' }}>Nothing ticked off yet today.</div>}
+          fallback={<div style={{ padding: '12px 14px', color: 'var(--text-tertiary)', 'font-size': 'calc(14px * var(--ts))' }}>Nothing ticked off yet today.</div>}
         >
           <For each={summary().completed}>
             {(t) => (
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '9px 14px', 'font-size': '15px' }}>
+              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '9px 14px', 'font-size': 'calc(15px * var(--ts))' }}>
                 <Icon name="check" size={15} color="var(--green)" strokeWidth={2.6} />
                 <span style={{ flex: '1', 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
                   {t.title || 'Untitled'}
                 </span>
-                <span style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums' }}>
+                <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums' }}>
                   {summary().secByTask.get(t.id) ? formatDuration(summary().secByTask.get(t.id)!) : ''}
                 </span>
               </div>
@@ -96,7 +96,7 @@ export function FinishDayScreen(): JSX.Element {
                 const ids = summary().unfinished.map((t) => t.id);
                 void moveToTomorrow(ids, currentDate()).then(() => showToast(`${ids.length} moved to tomorrow`));
               }}
-              style={{ color: 'var(--blue)', 'text-transform': 'none', 'letter-spacing': '0', 'font-size': '13px', 'font-weight': '600' }}
+              style={{ color: 'var(--blue)', 'text-transform': 'none', 'letter-spacing': '0', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
             >
               Move all to tomorrow
             </button>
@@ -107,7 +107,7 @@ export function FinishDayScreen(): JSX.Element {
         <Panel testid="fd-open-list">
           <For each={summary().unfinished}>
             {(t) => (
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '7px 10px 7px 14px', 'font-size': '15px' }}>
+              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '7px 10px 7px 14px', 'font-size': 'calc(15px * var(--ts))' }}>
                 <span style={{ width: '15px', height: '15px', 'border-radius': '50%', border: '1.5px solid var(--check-border)', flex: 'none' }} />
                 <span style={{ flex: '1', 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
                   {t.title || 'Untitled'}
@@ -115,7 +115,7 @@ export function FinishDayScreen(): JSX.Element {
                 <button
                   data-testid="fd-tomorrow"
                   onClick={() => void moveToTomorrow([t.id], currentDate())}
-                  style={{ ...softButton, padding: '4px 10px', 'font-size': '13px' }}
+                  style={{ ...softButton, padding: '4px 10px', 'font-size': 'calc(13px * var(--ts))' }}
                 >
                   Tomorrow
                 </button>
@@ -137,8 +137,8 @@ export function FinishDayScreen(): JSX.Element {
                 flex: '1',
                 padding: '10px 4px',
                 'border-radius': '12px',
-                'font-size': '13px',
-                'font-weight': '600',
+                'font-size': 'calc(13px * var(--ts))',
+                'font-weight': 'var(--fw-600)',
                 background: impact() === i() + 1 ? 'var(--purple)' : 'var(--bg-list)',
                 color: impact() === i() + 1 ? '#fff' : 'var(--text)',
                 border: '1px solid var(--separator)',
@@ -155,7 +155,7 @@ export function FinishDayScreen(): JSX.Element {
           placeholder="One line about today — what worked, what to change tomorrow"
           rows={2}
           onInput={(v) => setNote(v)}
-          style={{ padding: '10px 14px', 'font-size': '15px', 'line-height': '1.45', width: '100%' }}
+          style={{ padding: '10px 14px', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))', width: '100%' }}
         />
       </Panel>
 
@@ -164,7 +164,7 @@ export function FinishDayScreen(): JSX.Element {
           {existing() ? 'Update review' : 'Finish day'}
         </button>
         <Show when={existing()}>
-          <div data-testid="fd-finished-at" style={{ 'text-align': 'center', 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+          <div data-testid="fd-finished-at" style={{ 'text-align': 'center', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
             Finished at {formatTime(existing()!.finishedAt)}
           </div>
         </Show>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, homeRow, openSettings } from './helpers';
+import { loadSeeded, homeRow, openSettings, closeSettings } from './helpers';
 
 function icsFixture(todayCompact: string): string {
   return [
@@ -39,7 +39,7 @@ test('ICS subscription shows events in Today', async ({ page }) => {
   await page.getByTestId('save-calendar').click();
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
 
-  await page.getByTestId('back-button').last().click();
+  await closeSettings(page);
   await (await homeRow(page, 'home-today')).click();
   const block = page.getByTestId('calendar-block');
   await expect(block).toBeVisible();
@@ -66,7 +66,7 @@ test('Calendar screen shows month grid with events from home row', async ({ page
   await page.getByTestId('ics-url').fill('https://calendar.example.com/feed.ics');
   await page.getByTestId('save-calendar').click();
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
-  await page.getByTestId('back-button').last().click();
+  await closeSettings(page);
 
   // Open the new Calendar screen from the home row above Logbook
   await (await homeRow(page, 'home-calendar')).click();

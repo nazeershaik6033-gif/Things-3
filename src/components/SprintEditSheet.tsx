@@ -24,13 +24,13 @@ export function modeFor(s: Sprint): SprintEditMode {
   return s.status === 'running' ? 'running' : s.status === 'planned' ? 'planned' : 'done';
 }
 
-const label: JSX.CSSProperties = { 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', margin: '12px 0 6px' };
+const label: JSX.CSSProperties = { 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', margin: '12px 0 6px' };
 const field: JSX.CSSProperties = {
   width: '100%', padding: '11px 12px', 'border-radius': '11px', background: 'var(--bg-inset)',
-  'font-size': '16px', color: 'var(--text)',
+  'font-size': 'calc(16px * var(--ts))', color: 'var(--text)',
 };
 const chip = (active: boolean): JSX.CSSProperties => ({
-  padding: '7px 12px', 'border-radius': '999px', 'font-size': '14px', 'font-weight': '600',
+  padding: '7px 12px', 'border-radius': '999px', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)',
   background: active ? 'var(--blue)' : 'var(--bg-inset)', color: active ? 'var(--text-invert)' : 'var(--text)',
   'font-variant-numeric': 'tabular-nums',
 });
@@ -127,7 +127,7 @@ export function SprintEditSheet(props: { sprint: Sprint; onClose: () => void }):
                 data-testid="edit-task-option"
                 onClick={() => setTaskId(t.id)}
                 style={{
-                  display: 'block', width: '100%', 'text-align': 'left', padding: '10px 12px', 'font-size': '15px',
+                  display: 'block', width: '100%', 'text-align': 'left', padding: '10px 12px', 'font-size': 'calc(15px * var(--ts))',
                   color: 'var(--text)', 'border-bottom': '1px solid var(--separator)',
                   background: taskId() === t.id ? 'color-mix(in srgb, var(--blue) 14%, transparent)' : 'transparent',
                 }}
@@ -163,7 +163,7 @@ export function SprintEditSheet(props: { sprint: Sprint; onClose: () => void }):
               style={{ ...field, width: '84px', 'text-align': 'center' }}
             />
             <button style={chip(false)} onClick={() => setRemaining((r) => Math.min(MAX_SPRINT, r + 5))}>+5</button>
-            <span style={{ color: 'var(--text-secondary)', 'font-size': '14px' }}>min</span>
+            <span style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>min</span>
           </div>
         </Show>
 
@@ -199,17 +199,17 @@ export function SprintEditSheet(props: { sprint: Sprint; onClose: () => void }):
         <button
           data-testid="edit-save"
           onClick={() => void save()}
-          style={{ width: '100%', padding: '14px', 'border-radius': '13px', background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': '16px', 'font-weight': '600', margin: '18px 0 8px' }}
+          style={{ width: '100%', padding: '14px', 'border-radius': '13px', background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)', margin: '18px 0 8px' }}
         >
           Save
         </button>
         <Show when={mode === 'planned'}>
-          <button onClick={() => void refreshAlert()} style={{ width: '100%', padding: '10px', color: 'var(--blue)', 'font-size': '14px' }}>
+          <button onClick={() => void refreshAlert()} style={{ width: '100%', padding: '10px', color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))' }}>
             Save &amp; send an updated calendar alert
           </button>
         </Show>
         <Show when={mode !== 'running'}>
-          <button data-testid="edit-delete" onClick={() => void remove()} style={{ width: '100%', padding: '10px', color: 'var(--red)', 'font-size': '15px' }}>
+          <button data-testid="edit-delete" onClick={() => void remove()} style={{ width: '100%', padding: '10px', color: 'var(--red)', 'font-size': 'calc(15px * var(--ts))' }}>
             {mode === 'planned' ? 'Cancel this sprint' : 'Delete from log'}
           </button>
         </Show>

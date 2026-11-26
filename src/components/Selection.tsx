@@ -14,7 +14,7 @@ export function SelectButton(): JSX.Element {
     <button
       data-testid="select-start"
       onClick={() => (selection() ? endSelecting() : startSelecting())}
-      style={{ color: 'var(--blue)', padding: '8px 10px', 'font-size': '15px', 'font-weight': '600' }}
+      style={{ color: 'var(--blue)', padding: '8px 10px', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
     >
       {selection() ? 'Done' : 'Select'}
     </button>
@@ -34,7 +34,7 @@ export function SelectionBar(): JSX.Element {
   const when = (w: When, label: string) => () => act('Reschedule', `Moved to ${label}`, (l) => bulkWhen(l, w));
   const btn = (label: string, onClick: () => void, testid: string, color = 'var(--text)') => (
     <button data-testid={testid} onClick={onClick} disabled={ids().length === 0} style={{
-      padding: '8px 10px', 'border-radius': '10px', 'font-size': '13px', 'font-weight': '600', color,
+      padding: '8px 10px', 'border-radius': '10px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color,
       background: 'var(--bg-inset)', opacity: ids().length === 0 ? '0.4' : '1', 'white-space': 'nowrap',
     }}>
       {label}
@@ -49,8 +49,8 @@ export function SelectionBar(): JSX.Element {
           'max-width': '640px', margin: '0 auto',
         }}>
           <div style={{ display: 'flex', 'align-items': 'center', 'padding-bottom': '8px' }}>
-            <span data-testid="selection-count" style={{ flex: '1', 'font-weight': '700', 'font-size': '14px' }}>{ids().length} selected</span>
-            <button onClick={endSelecting} style={{ color: 'var(--blue)', 'font-size': '14px', 'font-weight': '600' }}>Cancel</button>
+            <span data-testid="selection-count" style={{ flex: '1', 'font-weight': 'var(--fw-700)', 'font-size': 'calc(14px * var(--ts))' }}>{ids().length} selected</span>
+            <button onClick={endSelecting} style={{ color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>Cancel</button>
           </div>
           <div style={{ display: 'flex', gap: '6px', 'overflow-x': 'auto' }}>
             {btn('Today', when({ type: 'today' }, 'Today'), 'sel-today')}

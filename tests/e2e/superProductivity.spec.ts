@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded, homeRow, openSettings } from './helpers';
+import { currentScreen, loadSeeded, homeRow, openSettings, tapPlus } from './helpers';
 
 /** Features ported from Super Productivity, end to end on the iPhone profile. */
 
@@ -11,14 +11,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function quickAdd(page: Page, text: string): Promise<void> {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill(text);
   await page.getByTestId('quick-entry-save').click();
 }
 
 test('short syntax files tags, project, date and estimate', async ({ page }) => {
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Plan sprint #planning @today ~45m');
   await expect(page.getByTestId('short-syntax-preview')).toContainText('#planning');
   await expect(page.getByTestId('short-syntax-preview')).toContainText('45m');

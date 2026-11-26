@@ -28,8 +28,8 @@ export function SectionLabel(props: { children: JSX.Element; trailing?: JSX.Elem
         display: 'flex',
         'align-items': 'center',
         padding: '10px 22px 6px',
-        'font-size': '12px',
-        'font-weight': '700',
+        'font-size': 'calc(12px * var(--ts))',
+        'font-weight': 'var(--fw-700)',
         'letter-spacing': '0.05em',
         'text-transform': 'uppercase',
         color: 'var(--text-tertiary)',
@@ -54,12 +54,12 @@ export function StatTile(props: { label: string; value: string; testid?: string;
         border: '1px solid var(--separator)',
       }}
     >
-      <div style={{ 'font-size': '12px', color: 'var(--text-secondary)', 'font-weight': '600' }}>{props.label}</div>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)', 'font-weight': 'var(--fw-600)' }}>{props.label}</div>
       <div
         data-testid={props.testid ? `${props.testid}-value` : undefined}
         style={{
-          'font-size': '22px',
-          'font-weight': '700',
+          'font-size': 'calc(22px * var(--ts))',
+          'font-weight': 'var(--fw-700)',
           'font-variant-numeric': 'tabular-nums',
           color: props.tone ?? 'var(--text)',
           'margin-top': '2px',
@@ -71,7 +71,7 @@ export function StatTile(props: { label: string; value: string; testid?: string;
         {props.value}
       </div>
       <Show when={props.hint}>
-        <div style={{ 'font-size': '11px', color: 'var(--text-tertiary)', 'margin-top': '2px' }}>{props.hint}</div>
+        <div style={{ 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-tertiary)', 'margin-top': '2px' }}>{props.hint}</div>
       </Show>
     </div>
   );
@@ -86,8 +86,8 @@ export const primaryButton = {
   'border-radius': '12px',
   background: 'var(--blue)',
   color: 'var(--text-invert)',
-  'font-size': '16px',
-  'font-weight': '600',
+  'font-size': 'calc(16px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
 } as const;
 
 export const softButton = {
@@ -95,8 +95,8 @@ export const softButton = {
   'border-radius': '10px',
   background: 'var(--bg-inset)',
   color: 'var(--text)',
-  'font-size': '14px',
-  'font-weight': '600',
+  'font-size': 'calc(14px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
 } as const;
 
 export const fieldStyle = {
@@ -104,7 +104,7 @@ export const fieldStyle = {
   'border-radius': '10px',
   background: 'var(--bg-inset)',
   color: 'var(--text)',
-  'font-size': '16px',
+  'font-size': 'calc(16px * var(--ts))',
   border: 'none',
   'color-scheme': 'inherit',
 } as const;

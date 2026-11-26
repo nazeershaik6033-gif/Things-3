@@ -40,7 +40,7 @@ export function TokenSuggestions(props: {
               onPointerDown={(e) => e.preventDefault()}
               onClick={() => pick(name)}
               style={{
-                padding: '4px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                padding: '4px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: 'color-mix(in srgb, var(--blue) 12%, transparent)', color: 'var(--blue)',
               }}
             >

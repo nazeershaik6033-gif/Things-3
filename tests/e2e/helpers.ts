@@ -122,6 +122,7 @@ const HOME_TAB: Record<string, string> = {
   'home-quote': 'focus', 'home-quote-text': 'focus', 'home-focus': 'focus', 'home-target': 'focus',
   'home-target-state': 'focus', 'home-routine': 'focus', 'home-routine-progress': 'focus',
   'home-beliefs': 'focus', 'home-beliefs-state': 'focus', 'home-myroutine': 'focus', 'home-myroutine-new': 'focus',
+  'widget-deck': 'tasks', 'widget-target-text': 'tasks',
   'home-worklog': 'track', 'home-worklog-today': 'track', 'home-counters': 'track',
   'home-finish-day': 'track', 'home-finish-day-state': 'track',
 };
@@ -145,4 +146,24 @@ export async function openSettings(
 ): Promise<void> {
   await page.getByTestId('settings-button').click();
   await page.getByTestId(`settings-group-${group}`).click();
+}
+
+/** Back from a settings group page to Home (group → landing → Home). */
+export async function closeSettings(page: Page): Promise<void> {
+  await page.getByTestId('back-button').last().click();
+  await page.getByTestId('settings-search').waitFor();
+  await page.getByTestId('back-button').last().click();
+  await page.waitForFunction(() => document.querySelectorAll('.screen').length === 1);
+}
+
+/** Start a new to-do the way a person would: on Home through the tab bar's
+ *  + menu, inside a list with Magic Plus. */
+export async function tapPlus(page: Page): Promise<void> {
+  const top = await page.locator('.screen').last().getAttribute('data-route');
+  if (top === 'home') {
+    await page.getByTestId('home-add').click();
+    await page.getByTestId('add-todo').click();
+  } else {
+    await page.getByTestId('magic-plus').click();
+  }
 }

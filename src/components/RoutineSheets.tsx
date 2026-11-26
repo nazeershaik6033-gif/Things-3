@@ -19,14 +19,14 @@ const fieldStyle: JSX.CSSProperties = {
   border: '1px solid var(--separator)',
   background: 'var(--bg-inset)',
   color: 'var(--text)',
-  'font-size': '16px', // 16px or iOS zooms the page on focus
+  'font-size': 'calc(16px * var(--ts))', // 16px or iOS zooms the page on focus
   outline: 'none',
 };
 
 const labelStyle: JSX.CSSProperties = {
   display: 'block',
-  'font-size': '12px',
-  'font-weight': '600',
+  'font-size': 'calc(12px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
   'letter-spacing': '0.04em',
   'text-transform': 'uppercase',
   color: 'var(--text-secondary)',
@@ -52,8 +52,8 @@ function PrimaryButton(props: {
         'border-radius': 'var(--radius-row)',
         background: 'var(--blue)',
         color: '#fff',
-        'font-size': '16px',
-        'font-weight': '600',
+        'font-size': 'calc(16px * var(--ts))',
+        'font-weight': 'var(--fw-600)',
         opacity: props.disabled ? '0.45' : '1',
       }}
     >
@@ -116,8 +116,8 @@ export function SourceSheet(props: {
                   border: `1px solid ${kind() === k ? 'var(--blue)' : 'var(--separator)'}`,
                   background: kind() === k ? 'rgba(47, 124, 246, 0.1)' : 'transparent',
                   color: kind() === k ? 'var(--blue)' : 'var(--text-secondary)',
-                  'font-size': '12px',
-                  'font-weight': '600',
+                  'font-size': 'calc(12px * var(--ts))',
+                  'font-weight': 'var(--fw-600)',
                 }}
               >
                 <Icon name={kindIcon(k)} size={17} />
@@ -165,8 +165,8 @@ export function SourceSheet(props: {
                     style={{
                       padding: '7px 13px',
                       'border-radius': '16px',
-                      'font-size': '13px',
-                      'font-weight': '600',
+                      'font-size': 'calc(13px * var(--ts))',
+                      'font-weight': 'var(--fw-600)',
                       border: `1px solid ${groupId() === id ? 'var(--text)' : 'var(--separator)'}`,
                       background: groupId() === id ? 'var(--text)' : 'transparent',
                       color: groupId() === id ? 'var(--bg-list)' : 'var(--text-secondary)',
@@ -188,7 +188,7 @@ export function SourceSheet(props: {
             props.onSave({ id: props.draft.id, kind: kind(), raw: raw(), name: name(), groupId: groupId() })
           }
         />
-        <p style={{ 'font-size': '12.5px', color: 'var(--text-secondary)', 'line-height': '1.5', margin: '10px 2px 0' }}>
+        <p style={{ 'font-size': 'calc(12.5px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))', margin: '10px 2px 0' }}>
           YouTube, Telegram and RSS sources are checked for new posts. A plain
           link is just something to tick off.
         </p>
@@ -262,7 +262,7 @@ export function WindowsSheet(props: {
     <Sheet onClose={props.onClose}>
       <SheetTitle>Routine windows</SheetTitle>
       <div style={{ padding: '0 20px 20px' }}>
-        <p style={{ 'font-size': '12.5px', color: 'var(--text-secondary)', 'line-height': '1.5', margin: '0 2px 12px' }}>
+        <p style={{ 'font-size': 'calc(12.5px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))', margin: '0 2px 12px' }}>
           Each window stays open until the next one begins. Updates that land
           inside a window are what "new" means there.
         </p>
@@ -308,8 +308,8 @@ export function WindowsSheet(props: {
             'border-radius': 'var(--radius-row)',
             border: '1px dashed var(--separator)',
             color: 'var(--text)',
-            'font-size': '15px',
-            'font-weight': '500',
+            'font-size': 'calc(15px * var(--ts))',
+            'font-weight': 'var(--fw-500)',
             width: '100%',
           }}
         >
@@ -339,7 +339,7 @@ export function StatsSheet(props: {
           <StatTile value={`${last7()}/7`} label="This week" accent="var(--green)" />
         </div>
         <StreakGrid days={props.grid} />
-        <p style={{ 'font-size': '12.5px', color: 'var(--text-secondary)', 'margin-top': '16px', 'line-height': '1.55' }}>
+        <p style={{ 'font-size': 'calc(12.5px * var(--ts))', color: 'var(--text-secondary)', 'margin-top': '16px', 'line-height': 'calc(1.55 * var(--lh))' }}>
           A square fills in on each day you clear a whole routine window. You
           have cleared {props.windowsCleared} in the last five weeks.
         </p>
@@ -411,19 +411,19 @@ export function DigestSheet(props: {
       <SheetTitle>What's new</SheetTitle>
       <div style={{ padding: '0 20px 24px', 'max-height': '60vh', 'overflow-y': 'auto' }}>
         <Show when={props.busy}>
-          <p style={{ 'font-size': '14px', color: 'var(--text-secondary)' }}>
+          <p style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>
             {props.status || `Asking ${props.providerLabel}…`}
           </p>
         </Show>
         <Show when={props.error}>
-          <p data-testid="routine-digest-error" style={{ 'font-size': '14px', color: 'var(--red)', 'line-height': '1.5' }}>
+          <p data-testid="routine-digest-error" style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--red)', 'line-height': 'calc(1.5 * var(--lh))' }}>
             {props.error}
           </p>
         </Show>
         <Show when={props.text}>
           <p
             data-testid="routine-digest-text"
-            style={{ 'font-size': '15px', 'line-height': '1.6', color: 'var(--text)', 'white-space': 'pre-wrap' }}
+            style={{ 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.6 * var(--lh))', color: 'var(--text)', 'white-space': 'pre-wrap' }}
           >
             {props.text}
           </p>

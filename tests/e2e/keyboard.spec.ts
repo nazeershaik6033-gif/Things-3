@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { loadSeeded, homeRow } from './helpers';
+import { loadSeeded, homeRow, tapPlus } from './helpers';
 
 /** Regression suite for focus loss while typing.
  *
@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('quick entry keeps focus in the title while the DB echoes back', async ({ page }) => {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').click();
   await typeSlowly(page, 'Groceries');
 
@@ -47,7 +47,7 @@ test('quick entry keeps focus in the title while the DB echoes back', async ({ p
 });
 
 test('quick entry toolbar taps never steal focus from the field', async ({ page }) => {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').click();
   await page.keyboard.type('Plan the trip');
 
@@ -63,7 +63,7 @@ test('quick entry toolbar taps never steal focus from the field', async ({ page 
 });
 
 test('quick entry shows title, notes and checklist at once', async ({ page }) => {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
 
   // Notes no longer hides behind a toolbar toggle.
   await expect(page.getByPlaceholder('Notes')).toBeVisible();

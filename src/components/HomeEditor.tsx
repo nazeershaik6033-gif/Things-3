@@ -15,7 +15,7 @@ const rowStyle: JSX.CSSProperties = {
   gap: '10px',
   width: '100%',
   padding: '10px 14px',
-  'font-size': '16px',
+  'font-size': 'calc(16px * var(--ts))',
   color: 'var(--text)',
   'text-align': 'left',
   'border-bottom': '1px solid var(--separator)',
@@ -32,7 +32,7 @@ const cardStyle: JSX.CSSProperties = {
 function Heading(props: { children: JSX.Element }): JSX.Element {
   return (
     <div style={{
-      padding: '8px 22px 6px', 'font-size': '12px', 'font-weight': '700', 'letter-spacing': '0.05em',
+      padding: '8px 22px 6px', 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '0.05em',
       'text-transform': 'uppercase', color: 'var(--text-tertiary)',
     }}>
       {props.children}
@@ -149,13 +149,13 @@ export function MoveSheet(props: {
               maxLength={MAX_TITLE}
               placeholder="Category name"
               onInput={(e) => setName(e.currentTarget.value)}
-              style={{ flex: '1', 'font-size': '16px', padding: '6px 0', background: 'transparent', color: 'var(--text)' }}
+              style={{ flex: '1', 'font-size': 'calc(16px * var(--ts))', padding: '6px 0', background: 'transparent', color: 'var(--text)' }}
             />
             <button
               type="submit"
               data-testid="move-new-category-create"
               disabled={!name().trim()}
-              style={{ color: 'var(--blue)', 'font-weight': '600', opacity: name().trim() ? '1' : '0.4' }}
+              style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', opacity: name().trim() ? '1' : '0.4' }}
             >
               Create
             </button>
@@ -220,7 +220,7 @@ export function HomeEditor(props: {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
           style={{
-            width: '100%', padding: '10px 0', 'font-size': '18px', 'font-weight': '600', background: 'transparent',
+            width: '100%', padding: '10px 0', 'font-size': 'calc(18px * var(--ts))', 'font-weight': 'var(--fw-600)', background: 'transparent',
             color: 'var(--text)', 'border-bottom': '1px solid var(--separator)',
           }}
         />
@@ -249,7 +249,7 @@ export function HomeEditor(props: {
       <div style={cardStyle}>
         <Show
           when={category().items.length > 0}
-          fallback={<div style={{ padding: '14px', color: 'var(--text-secondary)', 'font-size': '14px' }}>Empty. Bring items here with Move on another tab, or from Hidden below.</div>}
+          fallback={<div style={{ padding: '14px', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>Empty. Bring items here with Move on another tab, or from Hidden below.</div>}
         >
           <For each={category().items}>
             {(item, i) => (
@@ -280,7 +280,7 @@ export function HomeEditor(props: {
                   data-testid={`edit-show-${item}`}
                   class="pressable"
                   onClick={() => saveHomeLayout(showItem(layout(), item, category().id))}
-                  style={{ color: 'var(--blue)', 'font-weight': '600', 'font-size': '15px' }}
+                  style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))' }}
                 >
                   Show here
                 </button>
@@ -301,7 +301,7 @@ export function HomeEditor(props: {
         </div>
         <Show
           when={canAdd()}
-          fallback={<div style={{ ...rowStyle, color: 'var(--text-secondary)', 'font-size': '14px' }}>The bar holds {MAX_CATEGORIES} tabs. Remove one to add another.</div>}
+          fallback={<div style={{ ...rowStyle, color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>The bar holds {MAX_CATEGORIES} tabs. Remove one to add another.</div>}
         >
           <form
             style={{ ...rowStyle, gap: '8px' }}
@@ -317,10 +317,10 @@ export function HomeEditor(props: {
               maxLength={MAX_TITLE}
               placeholder="New tab"
               onInput={(e) => setNewTabName(e.currentTarget.value)}
-              style={{ flex: '1', 'font-size': '16px', padding: '2px 0', background: 'transparent', color: 'var(--text)' }}
+              style={{ flex: '1', 'font-size': 'calc(16px * var(--ts))', padding: '2px 0', background: 'transparent', color: 'var(--text)' }}
             />
             <button type="submit" data-testid="new-tab-create" disabled={!newTabName().trim()}
-              style={{ color: 'var(--blue)', 'font-weight': '600', opacity: newTabName().trim() ? '1' : '0.4' }}>
+              style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', opacity: newTabName().trim() ? '1' : '0.4' }}>
               Add
             </button>
           </form>
@@ -365,7 +365,7 @@ export function HomeEditor(props: {
           data-testid="home-edit-done"
           class="pressable"
           onClick={props.onDone}
-          style={{ padding: '10px 28px', 'border-radius': '999px', background: 'var(--blue)', color: '#fff', 'font-weight': '600', 'font-size': '16px' }}
+          style={{ padding: '10px 28px', 'border-radius': '999px', background: 'var(--blue)', color: '#fff', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(16px * var(--ts))' }}
         >
           Done
         </button>

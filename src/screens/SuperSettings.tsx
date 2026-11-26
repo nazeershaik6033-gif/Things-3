@@ -16,10 +16,10 @@ import { fieldStyle, softButton } from './superCommon';
  *  the Settings screen's own <Section> cards. */
 
 const note = {
-  'font-size': '12px',
+  'font-size': 'calc(12px * var(--ts))',
   color: 'var(--text-tertiary)',
   padding: '0 0 10px',
-  'line-height': '1.5',
+  'line-height': 'calc(1.5 * var(--lh))',
 } as const;
 
 function Switch(props: { on: boolean; onToggle: () => void; label: string; testid?: string }): JSX.Element {
@@ -30,7 +30,7 @@ function Switch(props: { on: boolean; onToggle: () => void; label: string; testi
       onClick={props.onToggle}
       style={{ display: 'flex', 'align-items': 'center', gap: '12px', width: '100%', padding: '11px 0', 'text-align': 'left' }}
     >
-      <span style={{ flex: '1', 'font-size': '15px' }}>{props.label}</span>
+      <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}>{props.label}</span>
       <span style={{
         width: '46px', height: '28px', 'border-radius': '999px', position: 'relative', flex: 'none',
         background: props.on ? 'var(--green)' : 'var(--check-border)', transition: 'background 160ms ease',
@@ -60,7 +60,7 @@ export function TimeTrackingSettings(): JSX.Element {
         }}
       />
       <Show when={breakSettings().enabled}>
-        <label style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '0 0 10px', 'font-size': '15px' }}>
+        <label style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '0 0 10px', 'font-size': 'calc(15px * var(--ts))' }}>
           <span style={{ flex: '1' }}>After this many minutes of tracked work</span>
           <input
             data-testid="break-minutes"
@@ -81,7 +81,7 @@ export function TimeTrackingSettings(): JSX.Element {
       <button
         data-testid="open-worklog"
         onClick={() => push({ name: 'worklog' })}
-        style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600', padding: '0 0 12px' }}
+        style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)', padding: '0 0 12px' }}
       >
         Open Worklog
       </button>
@@ -100,13 +100,13 @@ const SYNTAX: [string, string][] = [
 export function ShortSyntaxHelp(): JSX.Element {
   return (
     <div style={{ padding: '8px 0 10px' }}>
-      <div style={{ 'font-size': '14px', padding: '0 0 8px' }}>
+      <div style={{ 'font-size': 'calc(14px * var(--ts))', padding: '0 0 8px' }}>
         Type it all in Quick Entry: <code style={{ color: 'var(--blue)' }}>Call Anna #work +clarity @tomorrow ~30m</code>
       </div>
       <For each={SYNTAX}>
         {([tok, desc]) => (
-          <div style={{ display: 'flex', gap: '10px', 'font-size': '13px', padding: '2px 0' }}>
-            <code style={{ width: '82px', flex: 'none', color: 'var(--blue)', 'font-weight': '600' }}>{tok}</code>
+          <div style={{ display: 'flex', gap: '10px', 'font-size': 'calc(13px * var(--ts))', padding: '2px 0' }}>
+            <code style={{ width: '82px', flex: 'none', color: 'var(--blue)', 'font-weight': 'var(--fw-600)' }}>{tok}</code>
             <span style={{ color: 'var(--text-secondary)' }}>{desc}</span>
           </div>
         )}
@@ -202,11 +202,11 @@ export function GitHubSettings(): JSX.Element {
           {busy() ? 'Syncing…' : 'Import & sync issues'}
         </button>
         <Show when={cfg().lastSyncAt}>
-          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>Last sync {formatTime(cfg().lastSyncAt!)}</span>
+          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>Last sync {formatTime(cfg().lastSyncAt!)}</span>
         </Show>
       </div>
       <Show when={error()}>
-        <div data-testid="github-error" style={{ 'font-size': '13px', color: 'var(--red)' }}>{error()}</div>
+        <div data-testid="github-error" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--red)' }}>{error()}</div>
       </Show>
       <div style={note}>
         Open issues become to-dos (labels become tags); syncing again adds new ones, ticks off

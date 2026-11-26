@@ -497,7 +497,7 @@ export function MyRoutineScreen(): JSX.Element {
                 overflow: 'hidden',
                 'text-overflow': 'ellipsis',
                 'white-space': 'nowrap',
-                'font-size': '15px',
+                'font-size': 'calc(15px * var(--ts))',
                 color: isDone() ? 'var(--text-tertiary)' : 'var(--text)',
                 'text-decoration': isDone() ? 'line-through' : 'none',
               }}
@@ -534,7 +534,7 @@ export function MyRoutineScreen(): JSX.Element {
           </button>
         </div>
         <Show when={feed()?.error && !entries().length}>
-          <div style={{ 'font-size': '11.5px', color: 'var(--text-tertiary)', padding: '2px 0 0 30px' }}>
+          <div style={{ 'font-size': 'calc(11.5px * var(--ts))', color: 'var(--text-tertiary)', padding: '2px 0 0 30px' }}>
             Couldn’t read this feed
           </div>
         </Show>
@@ -589,8 +589,8 @@ export function MyRoutineScreen(): JSX.Element {
           <GroupDot color={group ? groupColor(group) : 'var(--text-tertiary)'} />
           <span
             style={{
-              'font-size': '12.5px',
-              'font-weight': '700',
+              'font-size': 'calc(12.5px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'letter-spacing': '0.05em',
               'text-transform': 'uppercase',
               color: 'var(--text-secondary)',
@@ -693,8 +693,8 @@ export function MyRoutineScreen(): JSX.Element {
             <span
               style={{
                 flex: '1',
-                'font-size': '12px',
-                'font-weight': '700',
+                'font-size': 'calc(12px * var(--ts))',
+                'font-weight': 'var(--fw-700)',
                 'letter-spacing': '0.05em',
                 'text-transform': 'uppercase',
               }}
@@ -720,8 +720,8 @@ export function MyRoutineScreen(): JSX.Element {
           <div data-testid="routine-history">
             <div
               style={{
-                'font-size': '11px',
-                'font-weight': '700',
+                'font-size': 'calc(11px * var(--ts))',
+                'font-weight': 'var(--fw-700)',
                 'letter-spacing': '0.05em',
                 'text-transform': 'uppercase',
                 color: 'var(--text-tertiary)',
@@ -744,8 +744,8 @@ export function MyRoutineScreen(): JSX.Element {
                         display: 'flex',
                         'align-items': 'center',
                         'justify-content': 'center',
-                        'font-size': '12px',
-                        'font-weight': '600',
+                        'font-size': 'calc(12px * var(--ts))',
+                        'font-weight': 'var(--fw-600)',
                         'font-variant-numeric': 'tabular-nums',
                         background: day.banked ? 'var(--green)' : day.done ? 'var(--bg-inset)' : 'transparent',
                         border: day.banked ? 'none' : '1px solid var(--separator)',
@@ -754,7 +754,7 @@ export function MyRoutineScreen(): JSX.Element {
                     >
                       {day.done || ''}
                     </div>
-                    <div style={{ 'font-size': '9.5px', color: 'var(--text-tertiary)', 'margin-top': '3px' }}>
+                    <div style={{ 'font-size': 'calc(9.5px * var(--ts))', color: 'var(--text-tertiary)', 'margin-top': '3px' }}>
                       {day.date.slice(8)}
                     </div>
                   </div>
@@ -765,7 +765,7 @@ export function MyRoutineScreen(): JSX.Element {
             <Show
               when={misses().length > 0}
               fallback={
-                <div style={{ 'font-size': '12.5px', color: 'var(--text-secondary)', padding: '6px 0 10px', 'line-height': '1.5' }}>
+                <div style={{ 'font-size': 'calc(12.5px * var(--ts))', color: 'var(--text-secondary)', padding: '6px 0 10px', 'line-height': 'calc(1.5 * var(--lh))' }}>
                   Updates you miss are saved here automatically for 14 days, so you can catch up later.
                 </div>
               }
@@ -775,7 +775,7 @@ export function MyRoutineScreen(): JSX.Element {
                   {(miss) => (
                     <RoutineBlock accent={colorForGroupId(miss.id)} testid="routine-miss">
                       <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'margin-bottom': '6px' }}>
-                        <span style={{ flex: '1', 'font-size': '13.5px', 'font-weight': '700', color: 'var(--text)' }}>
+                        <span style={{ flex: '1', 'font-size': 'calc(13.5px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text)' }}>
                           {miss.windowName} · {formatMissDate(miss.snapshotAt, currentDate())}
                         </span>
                         <CountPill
@@ -801,8 +801,8 @@ export function MyRoutineScreen(): JSX.Element {
                             >
                               <div
                                 style={{
-                                  'font-size': '11px',
-                                  'font-weight': '700',
+                                  'font-size': 'calc(11px * var(--ts))',
+                                  'font-weight': 'var(--fw-700)',
                                   'letter-spacing': '0.04em',
                                   'text-transform': 'uppercase',
                                   color: 'var(--text-tertiary)',
@@ -829,8 +829,8 @@ export function MyRoutineScreen(): JSX.Element {
                                   onClick={() => toggleMissExpand(key)}
                                   style={{
                                     'align-self': 'flex-start',
-                                    'font-size': '12px',
-                                    'font-weight': '600',
+                                    'font-size': 'calc(12px * var(--ts))',
+                                    'font-weight': 'var(--fw-600)',
                                     color: 'var(--blue)',
                                     padding: '5px 2px',
                                   }}
@@ -950,8 +950,8 @@ export function MyRoutineScreen(): JSX.Element {
                 flex: 'none',
                 padding: '8px 18px',
                 'border-radius': '20px',
-                'font-size': '15px',
-                'font-weight': '600',
+                'font-size': 'calc(15px * var(--ts))',
+                'font-weight': 'var(--fw-600)',
                 background: w.id === span()?.selectedId ? 'var(--text)' : 'transparent',
                 color: w.id === span()?.selectedId ? 'var(--bg-list)' : 'var(--text-secondary)',
               }}
@@ -989,15 +989,15 @@ export function MyRoutineScreen(): JSX.Element {
                   gap: '6px',
                   padding: '6px 13px',
                   'border-radius': '16px',
-                  'font-size': '12.5px',
-                  'font-weight': '600',
+                  'font-size': 'calc(12.5px * var(--ts))',
+                  'font-weight': 'var(--fw-600)',
                   border: `1px solid ${focus() === value ? 'var(--text)' : 'var(--separator)'}`,
                   background: focus() === value ? 'var(--text)' : 'transparent',
                   color: focus() === value ? 'var(--bg-list)' : 'var(--text-secondary)',
                 }}
               >
                 {label}
-                <span style={{ 'font-size': '11px', 'font-weight': '700', opacity: '0.75' }}>
+                <span style={{ 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', opacity: '0.75' }}>
                   {focusCount(value)}
                 </span>
               </button>
@@ -1034,7 +1034,7 @@ export function MyRoutineScreen(): JSX.Element {
                 border: 'none',
                 background: 'transparent',
                 color: 'var(--text)',
-                'font-size': '16px',
+                'font-size': 'calc(16px * var(--ts))',
                 outline: 'none',
               }}
             />
@@ -1043,7 +1043,7 @@ export function MyRoutineScreen(): JSX.Element {
       </Show>
 
       <Show when={upcoming()}>
-        <div style={{ padding: '14px 20px', 'font-size': '13.5px', color: 'var(--text-secondary)', 'line-height': '1.5' }}>
+        <div style={{ padding: '14px 20px', 'font-size': 'calc(13.5px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))' }}>
           This window begins at {formatClock(currentWindow()?.time ?? '')}. New content since your last
           check will appear here then.
         </div>
@@ -1086,7 +1086,7 @@ export function MyRoutineScreen(): JSX.Element {
                       <Show
                         when={filtered().length > 0}
                         fallback={
-                          <div style={{ 'font-size': '13px', color: 'var(--text-tertiary)', padding: '8px 4px 12px' }}>
+                          <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', padding: '8px 4px 12px' }}>
                             {focus() === 'all' && !query().trim()
                               ? 'Nothing here yet — tap + to add.'
                               : 'Nothing matches this filter.'}
@@ -1209,8 +1209,8 @@ export function MyRoutineScreen(): JSX.Element {
             'border-radius': '999px',
             background: 'var(--text)',
             color: 'var(--bg-list)',
-            'font-size': '14px',
-            'font-weight': '500',
+            'font-size': 'calc(14px * var(--ts))',
+            'font-weight': 'var(--fw-500)',
             'z-index': '40',
             'box-shadow': 'var(--shadow-card)',
             'pointer-events': 'none',

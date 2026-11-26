@@ -20,8 +20,8 @@ export function Toast(): JSX.Element {
             'border-radius': '14px',
             background: 'var(--text)',
             color: 'var(--bg)',
-            'font-size': '14px',
-            'font-weight': '500',
+            'font-size': 'calc(14px * var(--ts))',
+            'font-weight': 'var(--fw-500)',
             'text-align': 'center',
             'box-shadow': 'var(--shadow-card)',
             animation: 'fade-in 160ms ease-out',
@@ -47,8 +47,8 @@ export function Toast(): JSX.Element {
                 'border-radius': '10px',
                 background: 'color-mix(in srgb, var(--bg) 16%, transparent)',
                 color: 'var(--yellow)',
-                'font-size': '14px',
-                'font-weight': '700',
+                'font-size': 'calc(14px * var(--ts))',
+                'font-weight': 'var(--fw-700)',
               }}
             >
               {toastAction()!.label}

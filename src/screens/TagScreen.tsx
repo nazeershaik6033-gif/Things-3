@@ -36,7 +36,7 @@ export function TagScreen(props: { id: string }): JSX.Element {
           <input
             value={tag()!.title}
             onInput={(e) => void updateTag(props.id, { title: e.currentTarget.value })}
-            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': '700' }}
+            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': 'var(--fw-700)' }}
           />
         }
         icon={<Icon name="tag" size={26} color="var(--green)" />}

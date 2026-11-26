@@ -113,8 +113,8 @@ export function RoutineEntryCard(props: {
             '-webkit-line-clamp': props.compact ? '2' : '3',
             '-webkit-box-orient': 'vertical',
             overflow: 'hidden',
-            'font-size': props.compact ? '13px' : '14px',
-            'line-height': '1.35',
+            'font-size': props.compact ? 'calc(13px * var(--ts))' : 'calc(14px * var(--ts))',
+            'line-height': 'calc(1.35 * var(--lh))',
             color: 'var(--text)',
           }}
         >
@@ -123,7 +123,7 @@ export function RoutineEntryCard(props: {
         <span
           style={{
             display: 'block',
-            'font-size': '11.5px',
+            'font-size': 'calc(11.5px * var(--ts))',
             color: 'var(--text-tertiary)',
             'margin-top': '2px',
           }}
@@ -141,8 +141,8 @@ export function CountPill(props: { label: string; tone?: 'new' | 'muted' }): JSX
   return (
     <span
       style={{
-        'font-size': isNew() ? '10px' : '11px',
-        'font-weight': isNew() ? '700' : '500',
+        'font-size': isNew() ? 'calc(10px * var(--ts))' : 'calc(11px * var(--ts))',
+        'font-weight': isNew() ? 'var(--fw-700)' : 'var(--fw-500)',
         color: isNew() ? '#fff' : 'var(--text-tertiary)',
         background: isNew() ? 'var(--red)' : 'transparent',
         'border-radius': '999px',
@@ -206,15 +206,15 @@ export function StatTile(props: { value: string; label: string; accent?: string 
     >
       <div
         style={{
-          'font-size': '24px',
-          'font-weight': '700',
+          'font-size': 'calc(24px * var(--ts))',
+          'font-weight': 'var(--fw-700)',
           'font-variant-numeric': 'tabular-nums',
           color: props.accent ?? 'var(--text)',
         }}
       >
         {props.value}
       </div>
-      <div style={{ 'font-size': '12px', color: 'var(--text-secondary)', 'margin-top': '2px' }}>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)', 'margin-top': '2px' }}>
         {props.label}
       </div>
     </div>
@@ -266,8 +266,8 @@ export function ToolbarButton(props: {
             'border-radius': '8px',
             background: 'var(--red)',
             color: '#fff',
-            'font-size': '9.5px',
-            'font-weight': '700',
+            'font-size': 'calc(9.5px * var(--ts))',
+            'font-weight': 'var(--fw-700)',
             display: 'flex',
             'align-items': 'center',
             'justify-content': 'center',

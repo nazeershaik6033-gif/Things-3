@@ -15,7 +15,7 @@ export function TemplatesSheet(props: { onClose: () => void }): JSX.Element {
       <SheetTitle>Project from Template</SheetTitle>
       <div data-testid="templates-sheet" style={{ padding: '0 8px 12px' }}>
         <Show when={templates().length > 0} fallback={
-          <div style={{ padding: '6px 12px 12px', 'font-size': '14px', color: 'var(--text-secondary)', 'line-height': '1.5' }}>
+          <div style={{ padding: '6px 12px 12px', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))' }}>
             No templates yet. Open a project you'd reuse (a build plan, a launch checklist), tap its ••• menu and choose
             <b> Save as Template</b>.
           </div>
@@ -32,8 +32,8 @@ export function TemplatesSheet(props: { onClose: () => void }): JSX.Element {
                   }}
                   style={{ flex: '1', 'text-align': 'left', padding: '8px 0' }}
                 >
-                  <div style={{ 'font-size': '16px', 'font-weight': '600' }}>{t.title || 'Untitled'}</div>
-                  <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                  <div style={{ 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>{t.title || 'Untitled'}</div>
+                  <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
                     {t.tasks.length} to-dos{t.headings.length ? ` · ${t.headings.length} headings` : ''}
                   </div>
                 </button>

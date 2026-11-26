@@ -41,7 +41,7 @@ export function PlannerScreen(): JSX.Element {
       aria-pressed={plannerDays() === n}
       onClick={() => setPlannerDays(n)}
       style={{
-        padding: '5px 12px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+        padding: '5px 12px', 'border-radius': '8px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
         background: plannerDays() === n ? 'var(--bg-card)' : 'transparent',
         color: plannerDays() === n ? 'var(--text)' : 'var(--text-secondary)',
         'box-shadow': plannerDays() === n ? 'var(--shadow-card)' : 'none',
@@ -69,7 +69,7 @@ export function PlannerScreen(): JSX.Element {
         <button
           data-testid="planner-today"
           onClick={() => setAnchor(currentDate())}
-          style={{ padding: '5px 10px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600', color: 'var(--blue)', background: 'var(--bg-inset)' }}
+          style={{ padding: '5px 10px', 'border-radius': '8px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--blue)', background: 'var(--bg-inset)' }}
         >
           Today
         </button>

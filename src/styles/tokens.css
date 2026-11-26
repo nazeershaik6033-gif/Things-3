@@ -48,10 +48,24 @@
   /* type scale */
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
-  --fs-title: 28px;
-  --fs-body: 16px;
-  --fs-sub: 13px;
-  --fs-chip: 12px;
+  /* Text settings (Settings → General → Text; app/textPrefs.ts writes the
+     user's values inline on <html>). Every font size in the app is written
+     as calc(Npx * var(--ts)), every weight as var(--fw-N) and every line
+     height as calc(N * var(--lh)), so these few variables restyle it all. */
+  --ts: 1; /* text size: 0.85–1.4 */
+  --lh: 1; /* line spacing: 0.9 tight, 1 normal, 1.18 roomy */
+  --fw-400: 400; /* Bold Text moves each weight up a step */
+  --fw-500: 500;
+  --fw-600: 600;
+  --fw-700: 700;
+  --fw-800: 800;
+  --notes-ts: 1; /* notes have their own size and font */
+  --notes-font: var(--font);
+
+  --fs-title: calc(28px * var(--ts));
+  --fs-body: calc(16px * var(--ts));
+  --fs-sub: calc(13px * var(--ts));
+  --fs-chip: calc(12px * var(--ts));
 
   --radius-row: 10px;
   --radius-card: 14px;

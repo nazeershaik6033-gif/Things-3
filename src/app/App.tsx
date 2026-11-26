@@ -9,6 +9,7 @@ import { startCalendarSync } from './calendar';
 import { startMotion } from './motion';
 import { startSettings } from './settings';
 import { startHomeLayout } from './homeLayout';
+import { startTextPrefs } from './textPrefs';
 import { startFocusClock } from './pomodoro';
 import { FocusTimerMiniBar, FocusTimerOverlay } from '../components/PomodoroTimer';
 import { startReminders } from './reminders';
@@ -110,6 +111,7 @@ export function App(): JSX.Element {
     startDateTicker();
     void startSettings();
     void startHomeLayout();
+    void startTextPrefs();
     void startPlannerSettings();
     void startAlertSettings();
     void startCalendarViewSettings();

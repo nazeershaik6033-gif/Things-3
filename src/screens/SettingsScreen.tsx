@@ -15,6 +15,8 @@ import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
 import { push } from '../app/navigation';
 import { startHomeLayout } from '../app/homeLayout';
+import { startTextPrefs } from '../app/textPrefs';
+import { TextSettings } from '../components/TextSettings';
 import { motionLevel, motionPref, setMotionPref, type MotionPref } from '../app/motion';
 import {
   SECTION_TITLE, SETTINGS_GROUPS, groupIcon, groupOfSection, groupTitle, searchSettings,
@@ -44,9 +46,9 @@ function MotionPicker(): JSX.Element {
   return (
     <div style={{ 'border-top': '1px solid var(--separator)', padding: '10px 0' }}>
       <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'padding-bottom': '8px' }}>
-        <span style={{ 'font-size': '15px', color: 'var(--text)' }}>Motion</span>
+        <span style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>Motion</span>
         <Show when={motionPref() === 'auto'}>
-          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>Now: {motionLevel() === 'off' ? 'Off' : 'Rich'}</span>
+          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>Now: {motionLevel() === 'off' ? 'Off' : 'Rich'}</span>
         </Show>
       </div>
       <div role="radiogroup" aria-label="Motion" style={{ display: 'flex', gap: '4px', padding: '3px', 'border-radius': '10px', background: 'var(--bg-list)' }}>
@@ -58,8 +60,8 @@ function MotionPicker(): JSX.Element {
               data-testid={`motion-${c.id}`}
               onClick={() => void setMotionPref(c.id)}
               style={{
-                flex: '1', padding: '7px 0', 'border-radius': '8px', 'font-size': '14px',
-                'font-weight': motionPref() === c.id ? '600' : '400',
+                flex: '1', padding: '7px 0', 'border-radius': '8px', 'font-size': 'calc(14px * var(--ts))',
+                'font-weight': motionPref() === c.id ? 'var(--fw-600)' : 'var(--fw-400)',
                 background: motionPref() === c.id ? 'var(--blue)' : 'transparent',
                 color: motionPref() === c.id ? '#fff' : 'var(--text-secondary)',
                 transition: 'background-color 160ms, color 160ms',
@@ -70,7 +72,7 @@ function MotionPicker(): JSX.Element {
           )}
         </For>
       </div>
-      <div data-testid="motion-hint" style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '8px 2px 0', 'line-height': '1.45' }}>
+      <div data-testid="motion-hint" style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '8px 2px 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
         {MOTION_HINT[motionPref()]}
       </div>
     </div>
@@ -87,7 +89,7 @@ function Section(props: { id: SettingsSectionId; title: string; children: JSX.El
   return (
     <Show when={group === groupOfSection(props.id)}>
       <div data-section={props.id} data-testid={`settings-section-${props.id}`} style={{ padding: '14px 16px 4px' }}>
-        <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px', padding: '0 0 8px' }}>
+        <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px', padding: '0 0 8px' }}>
           {props.title}
         </div>
         <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '4px 14px' }}>
@@ -115,7 +117,7 @@ function SettingsLanding(): JSX.Element {
             placeholder="Search settings"
             value={query()}
             onInput={(e) => setQuery(e.currentTarget.value)}
-            style={{ flex: '1', 'font-size': '16px', background: 'transparent', color: 'var(--text)' }}
+            style={{ flex: '1', 'font-size': 'calc(16px * var(--ts))', background: 'transparent', color: 'var(--text)' }}
           />
         </div>
       </div>
@@ -138,8 +140,8 @@ function SettingsLanding(): JSX.Element {
                     <Icon name={g.icon} size={18} color="#fff" />
                   </span>
                   <span style={{ flex: '1', 'min-width': '0' }}>
-                    <span style={{ display: 'block', 'font-size': '17px', color: 'var(--text)' }}>{g.title}</span>
-                    <span style={{ display: 'block', 'font-size': '13px', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
+                    <span style={{ display: 'block', 'font-size': 'calc(17px * var(--ts))', color: 'var(--text)' }}>{g.title}</span>
+                    <span style={{ display: 'block', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
                       {g.blurb ?? g.sections.map((sec) => SECTION_TITLE[sec]).join(' · ')}
                     </span>
                   </span>
@@ -167,8 +169,8 @@ function SettingsLanding(): JSX.Element {
                   }}
                 >
                   <span style={{ flex: '1' }}>
-                    <span style={{ display: 'block', 'font-size': '16px', color: 'var(--text)' }}>{SECTION_TITLE[r.section]}</span>
-                    <span style={{ display: 'block', 'font-size': '12px', color: 'var(--text-secondary)' }}>{groupTitle(r.group)}</span>
+                    <span style={{ display: 'block', 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)' }}>{SECTION_TITLE[r.section]}</span>
+                    <span style={{ display: 'block', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)' }}>{groupTitle(r.group)}</span>
                   </span>
                   <Icon name="chevron-right" size={16} color="var(--text-tertiary)" />
                 </button>
@@ -263,6 +265,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
       if (!window.confirm('Importing replaces ALL current data with the backup. Continue?')) return;
       await importData(valid);
       await startHomeLayout();
+      await startTextPrefs();
       setImportStatus(`Imported ${valid.data.tasks.length} to-dos.`);
     } catch (e) {
       setImportStatus(e instanceof Error ? e.message : 'Import failed.');
@@ -311,8 +314,8 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
         transition: 'box-shadow 0.15s, border-color 0.15s',
       }} />
       <span style={{
-        'font-size': '12px',
-        'font-weight': paletteSelected(p.id) ? '600' : '400',
+        'font-size': 'calc(12px * var(--ts))',
+        'font-weight': paletteSelected(p.id) ? 'var(--fw-600)' : 'var(--fw-400)',
         color: paletteSelected(p.id) ? 'var(--text)' : 'var(--text-secondary)',
         'letter-spacing': '-0.1px',
       }}>{p.label}</span>
@@ -322,7 +325,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
   const inputStyle = {
     width: '100%',
     padding: '10px 0',
-    'font-size': '15px',
+    'font-size': 'calc(15px * var(--ts))',
     'border-bottom': '1px solid var(--separator)',
   } as const;
 
@@ -342,15 +345,19 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
             onClick={() => void setThemePref('auto')}
             data-testid="theme-auto"
             style={{
-              'font-size': '12px',
+              'font-size': 'calc(12px * var(--ts))',
               color: themePref() === 'auto' ? 'var(--blue)' : 'var(--text-tertiary)',
-              'font-weight': themePref() === 'auto' ? '600' : '400',
+              'font-weight': themePref() === 'auto' ? 'var(--fw-600)' : 'var(--fw-400)',
             }}
           >
             {themePref() === 'auto' ? '✓ ' : ''}Follow system
           </button>
         </div>
         <MotionPicker />
+      </Section>
+
+      <Section id="text" title="Text">
+        <TextSettings />
       </Section>
 
       <Section id="completing" title="Completing to-dos">
@@ -366,7 +373,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
             'text-align': 'left',
           }}
         >
-          <span style={{ flex: '1', 'font-size': '15px' }}>Ask when a late to-do was finished</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}>Ask when a late to-do was finished</span>
           <span
             style={{
               width: '46px',
@@ -395,7 +402,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
             />
           </span>
         </button>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           Ticking a to-do whose date has already passed asks which day you
           actually finished it, and files it under that day in the Logbook. Turn
           this off to always log the moment you tick.
@@ -404,14 +411,14 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
 
       <Section id="planner" title="Planner">
         <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '10px 0 6px' }}>
-          <span style={{ flex: '1', 'font-size': '15px' }}>Snap blocks to</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}>Snap blocks to</span>
           {SNAP_CHOICES.map((m) => (
             <button
               data-testid={`snap-${m}`}
               aria-pressed={snapStep() === m}
               onClick={() => void setSnapStep(m)}
               style={{
-                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: snapStep() === m ? 'var(--blue)' : 'var(--bg-inset)',
                 color: snapStep() === m ? 'var(--text-invert)' : 'var(--text)',
               }}
@@ -421,14 +428,14 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           ))}
         </div>
         <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0' }}>
-          <span style={{ flex: '1', 'font-size': '15px' }}>Week starts on</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}>Week starts on</span>
           {([1, 0] as const).map((d) => (
             <button
               data-testid={`week-start-${d}`}
               aria-pressed={weekStart() === d}
               onClick={() => void setWeekStart(d)}
               style={{
-                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: weekStart() === d ? 'var(--blue)' : 'var(--bg-inset)',
                 color: weekStart() === d ? 'var(--text-invert)' : 'var(--text)',
               }}
@@ -438,13 +445,13 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           ))}
         </div>
         <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0' }}>
-          <span style={{ flex: '1', 'font-size': '15px' }}>Week numbers in the calendar</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}>Week numbers in the calendar</span>
           <button
             data-testid="toggle-week-numbers"
             aria-pressed={showWeekNumbers()}
             onClick={() => void setShowWeekNumbers(!showWeekNumbers())}
             style={{
-              padding: '5px 12px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+              padding: '5px 12px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
               background: showWeekNumbers() ? 'var(--blue)' : 'var(--bg-inset)',
               color: showWeekNumbers() ? 'var(--text-invert)' : 'var(--text)',
             }}
@@ -453,14 +460,14 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           </button>
         </div>
         <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '6px 0', 'flex-wrap': 'wrap' }}>
-          <span style={{ flex: '1', 'font-size': '15px', 'min-width': '140px' }}>Default alert</span>
+          <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', 'min-width': '140px' }}>Default alert</span>
           {DEFAULT_ALERT_CHOICES.map((m) => (
             <button
               data-testid={`default-alert-${m ?? 'none'}`}
               aria-pressed={defaultAlert() === m}
               onClick={() => void setDefaultAlert(m)}
               style={{
-                padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+                padding: '5px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: defaultAlert() === m ? 'var(--blue)' : 'var(--bg-inset)',
                 color: defaultAlert() === m ? 'var(--text-invert)' : 'var(--text)',
               }}
@@ -469,14 +476,14 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
             </button>
           ))}
         </div>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 6px', 'line-height': '1.5' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '0 0 6px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           Timed to-dos get this alert unless you set their own (the bell on a
           to-do). Alerts reach your phone through iOS Calendar: tap Send alerts
           on the timeline, open the file and tap Add All. If you change a time,
           send again; if the old alert still shows in Calendar, delete it there.
           While Clarity is open, alerts also show here.
         </div>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           On the timeline, press and hold a to-do to drag it; it stays selected
           with handles to change its length. Press and hold empty space to draw a
           new block. Turn on Push rest to have a block that grows push the ones
@@ -490,11 +497,11 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           <button
             data-testid="open-focus-timer"
             onClick={() => setOverlayOpen(true)}
-            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}
+            style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
           >
             Open Focus Timer
           </button>
-          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': '1.5' }}>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': 'calc(1.5 * var(--lh))' }}>
             Tilt to choose, tap to begin. A session ends when you tap Done — the clock keeps
             running into overtime, so you're never cut off mid-thought. Finished focus sessions
             are logged automatically. Presets, tags and theme all live inside the timer (open it
@@ -520,11 +527,11 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           <button
             data-testid="open-myroutine"
             onClick={() => push({ name: 'myroutine' })}
-            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}
+            style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
           >
             Open My Routine
           </button>
-          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': '1.6' }}>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': 'calc(1.6 * var(--lh))' }}>
             The apps, sites and channels you go through each day, grouped and checked off
             inside a <b>window</b> — Morning, Night, or any window you add. A window stays open
             until the next one starts, so anything a YouTube channel, Telegram channel or RSS
@@ -561,8 +568,8 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
                   flex: '1',
                   padding: '9px 4px',
                   'border-radius': '10px',
-                  'font-size': '13px',
-                  'font-weight': '600',
+                  'font-size': 'calc(13px * var(--ts))',
+                  'font-weight': 'var(--fw-600)',
                   border: `1px solid ${aiConfig().provider === id ? 'var(--blue)' : 'var(--separator)'}`,
                   background: aiConfig().provider === id ? 'rgba(47, 124, 246, 0.1)' : 'transparent',
                   color: aiConfig().provider === id ? 'var(--blue)' : 'var(--text-secondary)',
@@ -574,7 +581,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           </div>
 
           <Show when={aiConfig().provider === 'claude'}>
-            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '2px 0 8px' }}>
+            <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.5 * var(--lh))', padding: '2px 0 8px' }}>
               No key needed. The <b>send</b> button in My Routine builds a prompt from what's
               new, copies it, and opens claude.ai with it prefilled. Pick OpenRouter or Gemini
               instead if you'd rather the summary appear inside the app.
@@ -591,17 +598,17 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
               autocorrect="off"
               spellcheck={false}
               data-testid="ai-openrouter-key"
-              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '16px', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': 'calc(16px * var(--ts))', outline: 'none' }}
             />
             <select
               value={aiConfig().openRouterModel}
               onChange={(e) => void updateAiConfig({ openRouterModel: e.currentTarget.value })}
               aria-label="OpenRouter model"
-              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '15px' }}
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))' }}
             >
               {OPENROUTER_MODELS.map(([id, label]) => <option value={id}>{label}</option>)}
             </select>
-            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '4px 0 8px' }}>
+            <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.5 * var(--lh))', padding: '4px 0 8px' }}>
               Free keys from openrouter.ai/keys. The key is stored on this device only and sent
               straight to OpenRouter — there is no server in between. Free models are rate
               limited to roughly 20 requests a minute.
@@ -618,17 +625,17 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
               autocorrect="off"
               spellcheck={false}
               data-testid="ai-gemini-key"
-              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '16px', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': 'calc(16px * var(--ts))', outline: 'none' }}
             />
             <select
               value={aiConfig().geminiModel}
               onChange={(e) => void updateAiConfig({ geminiModel: e.currentTarget.value })}
               aria-label="Gemini model"
-              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': '15px' }}
+              style={{ width: '100%', padding: '10px 0', border: 'none', background: 'transparent', color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))' }}
             >
               {GEMINI_MODELS.map(([id, label]) => <option value={id}>{label}</option>)}
             </select>
-            <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.5', padding: '4px 0 8px' }}>
+            <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.5 * var(--lh))', padding: '4px 0 8px' }}>
               Free keys from aistudio.google.com/apikey. Stored on this device only and sent
               straight to Google.
             </div>
@@ -641,11 +648,11 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           <button
             data-testid="open-boards"
             onClick={() => push({ name: 'boards' })}
-            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600' }}
+            style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
           >
             Open Boards
           </button>
-          <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': '1.6' }}>
+          <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 0 8px', 'line-height': 'calc(1.6 * var(--lh))' }}>
             A Trello-style board for projects that work better as columns than a checklist —
             each <b>board</b> holds <b>lists</b> (its columns, like To Do / Doing / Done), and
             each list holds <b>cards</b>.
@@ -671,7 +678,7 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
       </Section>
 
       <Section id="google-calendar" title="Google Calendar">
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 6px', 'line-height': '1.5' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 0 6px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           In Google Calendar (web): Settings → your calendar → <b>Integrate calendar</b> →
           copy the <b>Secret address in iCal format</b> (it ends in <b>.ics</b>), then paste it
           here. Not the “Embed” or “Public URL” link — those won’t work for private calendars.
@@ -693,10 +700,10 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           style={inputStyle}
         />
         <div style={{ display: 'flex', gap: '14px', padding: '10px 0' }}>
-          <button onClick={() => void saveCalendar()} data-testid="save-calendar" style={{ color: 'var(--blue)', 'font-weight': '600', 'font-size': '15px' }}>
+          <button onClick={() => void saveCalendar()} data-testid="save-calendar" style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))' }}>
             Save &amp; Update
           </button>
-          <button onClick={() => icsFileInput.click()} style={{ color: 'var(--blue)', 'font-size': '15px' }}>
+          <button onClick={() => icsFileInput.click()} style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))' }}>
             Import .ics file…
           </button>
           <input
@@ -712,10 +719,10 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           />
         </div>
         <Show when={calStatus()}>
-          <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{calStatus()}</div>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{calStatus()}</div>
         </Show>
         <CalendarSources mainUrl={savedIcsUrl()} />
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': '1.5' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '0 0 10px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           Events appear in the Calendar screen and in Today / Upcoming, read-only. They refresh
           automatically when you open the app (hourly at most) — use the refresh button in the
           Calendar screen for an instant update. Google blocks direct browser access (CORS), so
@@ -726,10 +733,10 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
 
       <Section id="backup" title="Backup">
         <div style={{ display: 'flex', gap: '14px', padding: '10px 0' }}>
-          <button onClick={() => void doExport()} data-testid="export-data" style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}>
+          <button onClick={() => void doExport()} data-testid="export-data" style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)' }}>
             <Icon name="export" size={17} /> Export
           </button>
-          <button onClick={() => fileInput.click()} data-testid="import-data" style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px' }}>
+          <button onClick={() => fileInput.click()} data-testid="import-data" style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))' }}>
             <Icon name="import" size={17} /> Import
           </button>
           <input
@@ -745,16 +752,16 @@ function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSe
           />
         </div>
         <Show when={importStatus()}>
-          <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{importStatus()}</div>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '0 0 10px' }}>{importStatus()}</div>
         </Show>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '0 0 10px' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', padding: '0 0 10px' }}>
           All data lives on this device. Export a backup now and then — especially before
           clearing Safari website data.
         </div>
       </Section>
 
       <Section id="about" title="About">
-        <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '10px 0', 'line-height': '1.6' }}>
+        <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '10px 0', 'line-height': 'calc(1.6 * var(--lh))' }}>
           Clarity {__APP_VERSION__}
           <Show when={storageInfo()}>
             <br />

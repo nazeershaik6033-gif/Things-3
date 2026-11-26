@@ -25,7 +25,7 @@ export function StageChips(props: { task: Task }): JSX.Element {
                 void setStage(props.task.id, s.id === 'todo' ? null : s.id);
               }}
               style={{
-                padding: '3px 9px', 'border-radius': '999px', 'font-size': '12px', 'font-weight': '700',
+                padding: '3px 9px', 'border-radius': '999px', 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)',
                 background: on() ? (s.id === 'todo' ? 'var(--bg-card)' : s.color) : 'transparent',
                 color: on() ? (s.id === 'todo' ? 'var(--text)' : '#fff') : 'var(--text-secondary)',
               }}
@@ -51,7 +51,7 @@ export function WaitsChip(props: { task: Task; active: boolean; allTasks: Task[]
       onClick={props.onClick}
       style={{
         display: 'inline-flex', 'align-items': 'center', gap: '4px', padding: '4px 10px', 'border-radius': '999px',
-        'font-size': '13px', 'font-weight': '600',
+        'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
         background: blockers().length ? 'color-mix(in srgb, var(--orange, var(--yellow-deep)) 18%, transparent)' : 'var(--bg-inset)',
         color: 'var(--text)',
       }}
@@ -59,7 +59,7 @@ export function WaitsChip(props: { task: Task; active: boolean; allTasks: Task[]
       {blockers().length ? '🔒' : '⛓'}
       {blockers().length ? `Waits for ${blockers().length}` : 'Waits for…'}
       <Show when={blocking() > 0}>
-        <span style={{ color: 'var(--text-tertiary)', 'font-weight': '500' }}>· blocks {blocking()}</span>
+        <span style={{ color: 'var(--text-tertiary)', 'font-weight': 'var(--fw-500)' }}>· blocks {blocking()}</span>
       </Show>
     </button>
   );
@@ -92,7 +92,7 @@ export function WaitsForPicker(props: { task: Task; onClose: () => void }): JSX.
   };
   return (
     <div data-testid="waits-picker" style={{ padding: '10px 4px 6px', 'border-top': '1px solid var(--separator)', 'margin-top': '6px' }}>
-      <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)', 'padding-bottom': '6px' }}>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'padding-bottom': '6px' }}>
         This waits for… {isBlocked(props.task, byId()) ? '(locked until they’re done)' : ''}
       </div>
       <input
@@ -100,7 +100,7 @@ export function WaitsForPicker(props: { task: Task; onClose: () => void }): JSX.
         onInput={(e) => setQ(e.currentTarget.value)}
         placeholder="Search to-dos"
         data-testid="waits-search"
-        style={{ width: '100%', padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)', 'font-size': '15px', border: 'none' }}
+        style={{ width: '100%', padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))', border: 'none' }}
       />
       <div style={{ 'max-height': '220px', 'overflow-y': 'auto', 'margin-top': '6px' }}>
         <For each={candidates()}>
@@ -109,7 +109,7 @@ export function WaitsForPicker(props: { task: Task; onClose: () => void }): JSX.
               data-testid="waits-option"
               aria-pressed={chosen().has(t.id)}
               onClick={() => void toggle(t.id)}
-              style={{ display: 'flex', 'align-items': 'center', gap: '8px', width: '100%', padding: '8px 4px', 'text-align': 'left', 'font-size': '15px' }}
+              style={{ display: 'flex', 'align-items': 'center', gap: '8px', width: '100%', padding: '8px 4px', 'text-align': 'left', 'font-size': 'calc(15px * var(--ts))' }}
             >
               <span style={{
                 width: '18px', height: '18px', 'border-radius': '5px', flex: 'none', display: 'flex', 'align-items': 'center', 'justify-content': 'center',
@@ -129,11 +129,11 @@ export function WaitsForPicker(props: { task: Task; onClose: () => void }): JSX.
         </For>
       </div>
       <Show when={blocking().length > 0}>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'padding-top': '6px' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'padding-top': '6px' }}>
           Blocks: {blocking().map((t) => t.title || 'New To-Do').join(', ')}
         </div>
       </Show>
-      <button onClick={props.onClose} style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '600', padding: '8px 0 0' }}>Done</button>
+      <button onClick={props.onClose} style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)', padding: '8px 0 0' }}>Done</button>
     </div>
   );
 }

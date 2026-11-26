@@ -598,7 +598,7 @@ export function Timeline(props: {
           </button>
         </Show>
         <Show when={lateTargets().length > 0}>
-          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>Running late</span>
+          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'margin-left': '4px' }}>Running late</span>
           <button data-testid="tl-late-15" onClick={() => runLate(15)} style={pill(false)}>+15m</button>
           <button data-testid="tl-late-30" onClick={() => runLate(30)} style={pill(false)}>+30m</button>
         </Show>
@@ -608,10 +608,10 @@ export function Timeline(props: {
       <Show when={trayTasks().length > 0}>
         <div data-testid="tl-tray" style={{ padding: '0 0 8px' }}>
           <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '0 16px 6px' }}>
-            <span style={{ 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)' }}>
+            <span style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)' }}>
               Unscheduled · {trayTasks().length}
             </span>
-            <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+            <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
               {armed() ? 'now tap a time on the grid' : 'drag onto the grid, or tap then tap a time'}
             </span>
           </div>
@@ -630,7 +630,7 @@ export function Timeline(props: {
                   }}
                   style={{
                     display: 'inline-flex', 'align-items': 'center', gap: '6px', 'flex-shrink': '0',
-                    padding: '6px 12px', 'border-radius': '999px', 'font-size': '14px', 'font-weight': '500',
+                    padding: '6px 12px', 'border-radius': '999px', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-500)',
                     'max-width': '220px', cursor: 'grab',
                     background: armed() === t.id ? 'var(--blue)' : 'var(--bg-card)',
                     color: armed() === t.id ? 'var(--text-invert)' : 'var(--text)',
@@ -642,7 +642,7 @@ export function Timeline(props: {
                     <Icon name="star" size={11} color={armed() === t.id ? 'currentColor' : 'var(--yellow-deep)'} />
                   </Show>
                   <span style={{ overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{t.title || 'New To-Do'}</span>
-                  <span style={{ 'font-size': '12px', opacity: '0.7', 'font-variant-numeric': 'tabular-nums' }}>{taskDuration(t)}m</span>
+                  <span style={{ 'font-size': 'calc(12px * var(--ts))', opacity: '0.7', 'font-variant-numeric': 'tabular-nums' }}>{taskDuration(t)}m</span>
                 </div>
               )}
             </For>
@@ -661,8 +661,8 @@ export function Timeline(props: {
                 data-testid="tl-day-header"
                 onClick={() => props.onHeaderTap?.(d)}
                 style={{
-                  flex: '1', 'min-width': '0', padding: '6px 0', 'font-size': multi() && props.dates.length > 3 ? '12px' : '14px',
-                  'font-weight': d === today() ? '700' : '500',
+                  flex: '1', 'min-width': '0', padding: '6px 0', 'font-size': multi() && props.dates.length > 3 ? 'calc(12px * var(--ts))' : 'calc(14px * var(--ts))',
+                  'font-weight': d === today() ? 'var(--fw-700)' : 'var(--fw-500)',
                   color: d === today() ? 'var(--blue)' : 'var(--text-secondary)',
                   overflow: 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis',
                 }}
@@ -726,7 +726,7 @@ export function Timeline(props: {
           {(h) => (
             <div style={{
               position: 'absolute', left: '0', width: `${GUTTER - 6}px`, top: `${h * HOUR_PX - 7}px`,
-              'text-align': 'right', 'font-size': '11px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums',
+              'text-align': 'right', 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums',
               'pointer-events': 'none',
             }}>
               {h === 0 ? '' : formatClock(h * 60)}
@@ -782,7 +782,7 @@ export function Timeline(props: {
                     height: `${Math.max(16, (span().endMin - span().startMin) * PX_PER_MIN - 2)}px`,
                     'border-radius': '6px', border: '2px dashed var(--blue)',
                     background: 'color-mix(in srgb, var(--blue) 10%, transparent)',
-                    'font-size': '12px', 'font-weight': '600', color: 'var(--blue)', padding: '2px 6px',
+                    'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--blue)', padding: '2px 6px',
                     'pointer-events': 'none', 'z-index': '3',
                   }}>
                     {formatRange(span().startMin, span().endMin)}
@@ -810,7 +810,7 @@ export function Timeline(props: {
               position: 'fixed', left: '0', top: '0', 'z-index': '130', 'pointer-events': 'none',
               transform: `translate3d(${g().x - 40}px, ${g().y - 36}px, 0)`,
               padding: '6px 12px', 'border-radius': '999px', background: 'var(--blue)', color: '#fff',
-              'font-size': '14px', 'font-weight': '600', 'box-shadow': 'var(--shadow-card)', 'max-width': '200px',
+              'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)', 'box-shadow': 'var(--shadow-card)', 'max-width': '200px',
               overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
             }}>
               {g().title}
@@ -896,8 +896,8 @@ function BlockView(props: {
           : `color-mix(in srgb, ${accent()} 16%, var(--bg-card))`,
         color: 'var(--text)',
         padding: roomy() ? '3px 6px' : '0 6px',
-        'font-size': props.narrow ? '11px' : '13px',
-        'line-height': '1.25',
+        'font-size': props.narrow ? 'calc(11px * var(--ts))' : 'calc(13px * var(--ts))',
+        'line-height': 'calc(1.25 * var(--lh))',
         overflow: props.selected ? 'visible' : 'hidden',
         opacity: b().done ? '0.55' : '1',
         cursor: b().editable ? 'grab' : 'pointer',
@@ -916,7 +916,7 @@ function BlockView(props: {
       </Show>
       <div style={{ 'min-width': '0', flex: '1', overflow: 'hidden' }}>
         <div style={{
-          'font-weight': '600', overflow: 'hidden', 'text-overflow': 'ellipsis',
+          'font-weight': 'var(--fw-600)', overflow: 'hidden', 'text-overflow': 'ellipsis',
           'white-space': roomy() && !props.narrow ? 'normal' : 'nowrap',
           'text-decoration': b().done ? 'line-through' : 'none',
           display: '-webkit-box', '-webkit-line-clamp': roomy() ? '2' : '1', '-webkit-box-orient': 'vertical',
@@ -924,7 +924,7 @@ function BlockView(props: {
           {b().title || 'New To-Do'}
         </div>
         <Show when={roomy() && !props.narrow}>
-          <div style={{ 'font-size': '11px', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums', display: 'flex', 'align-items': 'center', gap: '4px' }}>
+          <div style={{ 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums', display: 'flex', 'align-items': 'center', gap: '4px' }}>
             {formatRange(b().startMin, b().endMin)}{b().running ? ' · now' : ''}
             <Show when={props.task && !b().done && effectiveAlerts(props.task, defaultAlert()).some((a) => a.anchor === 'start')}>
               <span data-testid="tl-bell" style={{ display: 'inline-flex', color: alertState(props.task!, defaultAlert()) === 'sent' ? 'var(--green)' : 'var(--text-tertiary)' }}>
@@ -944,13 +944,13 @@ function BlockView(props: {
 
 const pill = (active: boolean) => ({
   display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '4px 10px',
-  'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+  'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
   background: active ? 'var(--blue)' : 'var(--bg-inset)',
   color: active ? 'var(--text-invert)' : 'var(--text)',
 }) as const;
 
 const allDayChip = (color: string) => ({
-  'font-size': '11px', 'font-weight': '600', padding: '2px 6px', 'border-radius': '4px',
+  'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-600)', padding: '2px 6px', 'border-radius': '4px',
   background: `color-mix(in srgb, ${color} 14%, transparent)`, color: color === 'var(--text-tertiary)' ? 'var(--text-secondary)' : color,
   overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
 }) as const;

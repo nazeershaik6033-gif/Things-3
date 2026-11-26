@@ -76,8 +76,8 @@ export function FocusTimerMiniBar(): JSX.Element {
               background: 'var(--bg-elevated)',
               'box-shadow': 'var(--shadow-card)',
               color: 'var(--text)',
-              'font-size': '13px',
-              'font-weight': '600',
+              'font-size': 'calc(13px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
               'font-variant-numeric': 'tabular-nums',
             }}
           >
@@ -103,7 +103,7 @@ function topBtn(K: Palette, active = false): JSX.CSSProperties {
 }
 
 const labelStyle = (K: Palette): JSX.CSSProperties => ({
-  'font-size': '11px', 'font-weight': '700', 'letter-spacing': '.22em', color: K.sub,
+  'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.22em', color: K.sub,
 });
 
 function TopBar(props: {
@@ -116,7 +116,7 @@ function TopBar(props: {
       <button data-testid="pomo-back" aria-label="Back" onClick={props.onBack} style={topBtn(props.K)}>
         <Icon name="chevron-left" size={22} />
       </button>
-      <div style={{ flex: '1', 'text-align': 'center', 'font-size': '16px', 'font-weight': '700', 'letter-spacing': '.42em', 'padding-left': '6px' }}>
+      <div style={{ flex: '1', 'text-align': 'center', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.42em', 'padding-left': '6px' }}>
         {props.title}
       </div>
       <button data-testid="pomo-records" aria-label="Records" onClick={props.onRecords} style={topBtn(props.K, props.view === 'records')}>
@@ -157,20 +157,20 @@ function RunningView(props: { K: Palette }): JSX.Element {
         style={{ position: 'relative', flex: '1', display: 'flex', 'flex-direction': 'column', 'align-items': 'center', 'justify-content': 'center', cursor: 'pointer' }}
       >
         <div style={{
-          'font-size': 'clamp(88px,30vw,150px)', 'font-weight': '700', 'line-height': '.92',
+          'font-size': 'clamp(88px,30vw,150px)', 'font-weight': 'var(--fw-700)', 'line-height': '.92',
           'letter-spacing': '-.01em', 'text-align': 'center', 'font-variant-numeric': 'tabular-nums',
           'mix-blend-mode': focusState().theme === 'black' ? 'normal' : 'multiply',
         }}>
           <Show when={clock().over}>
-            <div style={{ 'font-size': 'clamp(20px,6vw,28px)', 'letter-spacing': '.28em', 'margin-bottom': '14px', opacity: '.85' }}>OVERTIME +</div>
+            <div style={{ 'font-size': 'calc(clamp(20px,6vw,28px) * var(--ts))', 'letter-spacing': '.28em', 'margin-bottom': '14px', opacity: '.85' }}>OVERTIME +</div>
           </Show>
           <div data-testid="pomo-remaining">{formatMS(clock().shown)}</div>
         </div>
-        <div data-testid="pomo-runmode" style={{ 'margin-top': '30px', 'font-size': '13px', 'font-weight': '700', 'letter-spacing': '.34em' }}>
+        <div data-testid="pomo-runmode" style={{ 'margin-top': '30px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.34em' }}>
           {MODE_LABEL[session().mode]}{session().tag ? ` · ${session().tag.toUpperCase()}` : ''}
         </div>
         <Show when={!ctl()}>
-          <div style={{ position: 'absolute', bottom: `calc(26px + ${SAFE_B})`, 'font-size': '10.5px', 'font-weight': '600', 'letter-spacing': '.24em', opacity: '.55' }}>
+          <div style={{ position: 'absolute', bottom: `calc(26px + ${SAFE_B})`, 'font-size': 'calc(10.5px * var(--ts))', 'font-weight': 'var(--fw-600)', 'letter-spacing': '.24em', opacity: '.55' }}>
             TAP FOR CONTROLS
           </div>
         </Show>
@@ -191,7 +191,7 @@ function RunningView(props: { K: Palette }): JSX.Element {
                       onClick={() => setSessionTag(tg)}
                       style={{
                         'flex-shrink': '0', padding: '8px 14px', 'border-radius': '999px', 'font-family': FONT,
-                        'font-size': '12px', 'font-weight': '700', 'letter-spacing': '.14em',
+                        'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.14em',
                         border: `1.5px solid ${on() ? K.fg : K.hair}`,
                         background: on() ? K.fg : 'transparent', color: on() ? K.bg : K.fg,
                       }}
@@ -206,7 +206,7 @@ function RunningView(props: { K: Palette }): JSX.Element {
           <button
             data-testid="pomo-done"
             onClick={finishSession}
-            style={{ width: '100%', padding: '17px', 'border-radius': '14px', background: K.fg, color: K.bg, 'font-family': FONT, 'font-size': '16px', 'font-weight': '700', 'letter-spacing': '.3em' }}
+            style={{ width: '100%', padding: '17px', 'border-radius': '14px', background: K.fg, color: K.bg, 'font-family': FONT, 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.3em' }}
           >
             DONE
           </button>
@@ -214,14 +214,14 @@ function RunningView(props: { K: Palette }): JSX.Element {
             <button
               data-testid="pomo-minimize"
               onClick={() => setOverlayOpen(false)}
-              style={{ flex: '1', padding: '10px', 'font-family': FONT, 'font-size': '12px', 'font-weight': '700', 'letter-spacing': '.22em', color: K.sub }}
+              style={{ flex: '1', padding: '10px', 'font-family': FONT, 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.22em', color: K.sub }}
             >
               MINIMIZE
             </button>
             <button
               data-testid="pomo-discard"
               onClick={discardSession}
-              style={{ flex: '1', padding: '10px', 'font-family': FONT, 'font-size': '12px', 'font-weight': '700', 'letter-spacing': '.22em', color: K.sub }}
+              style={{ flex: '1', padding: '10px', 'font-family': FONT, 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.22em', color: K.sub }}
             >
               DISCARD SESSION
             </button>
@@ -299,8 +299,8 @@ function DialView(props: { K: Palette; mode: Mode; setMode: (m: Mode) => void; s
                 data-testid={`pomo-mode-${id}`}
                 onClick={() => props.setMode(id)}
                 style={{
-                  padding: '9px 15px', 'border-radius': '999px', 'font-family': FONT, 'font-size': '11.5px',
-                  'font-weight': '700', 'letter-spacing': '.18em', border: `1.5px solid ${on() ? K.fg : K.hair}`,
+                  padding: '9px 15px', 'border-radius': '999px', 'font-family': FONT, 'font-size': 'calc(11.5px * var(--ts))',
+                  'font-weight': 'var(--fw-700)', 'letter-spacing': '.18em', border: `1.5px solid ${on() ? K.fg : K.hair}`,
                   background: on() ? K.fg : 'transparent', color: on() ? K.bg : K.sub,
                   transition: 'background-color 160ms,color 160ms',
                 }}
@@ -323,7 +323,7 @@ function DialView(props: { K: Palette; mode: Mode; setMode: (m: Mode) => void; s
                   onClick={() => props.mode === 'focus' && props.setSel(i)}
                   style={{
                     position: 'absolute', 'font-family': FONT, 'font-variant-numeric': 'tabular-nums',
-                    'line-height': '1', padding: '6px', 'font-size': on() ? '62px' : '46px', 'font-weight': '700',
+                    'line-height': 'calc(1 * var(--lh))', padding: '6px', 'font-size': on() ? 'calc(62px * var(--ts))' : 'calc(46px * var(--ts))', 'font-weight': 'var(--fw-700)',
                     'letter-spacing': '-.02em', color: K.fg, opacity: on() ? '1' : '.72',
                     transition: 'font-size 200ms,opacity 200ms', ...pos[i],
                   }}
@@ -348,7 +348,7 @@ function DialView(props: { K: Palette; mode: Mode; setMode: (m: Mode) => void; s
           >
             <div style={{ position: 'absolute', top: '11px', left: '50%', 'margin-left': '-3.5px', width: '7px', height: '7px', 'border-radius': '50%', background: K.accent }} />
             <div style={{
-              'font-family': FONT, 'font-size': '8.5px', 'font-weight': '700', 'letter-spacing': '.3em', color: K.sub,
+              'font-family': FONT, 'font-size': 'calc(8.5px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.3em', color: K.sub,
               transform: `rotate(${-activeSel() * 90}deg)`, transition: 'transform 260ms cubic-bezier(.3,.9,.3,1)',
             }}>
               START
@@ -361,17 +361,17 @@ function DialView(props: { K: Palette; mode: Mode; setMode: (m: Mode) => void; s
         <Show when={needsTiltPermission() && !tiltOn()}>
           <button
             onClick={() => void enableTilt()}
-            style={{ padding: '10px 18px', 'border-radius': '999px', border: `1.5px solid ${K.fg}`, 'font-family': FONT, 'font-size': '11.5px', 'font-weight': '700', 'letter-spacing': '.2em', color: K.fg }}
+            style={{ padding: '10px 18px', 'border-radius': '999px', border: `1.5px solid ${K.fg}`, 'font-family': FONT, 'font-size': 'calc(11.5px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.2em', color: K.fg }}
           >
             ENABLE TILT
           </button>
         </Show>
-        <div style={{ ...labelStyle(K), 'line-height': '1.7' }}>
+        <div style={{ ...labelStyle(K), 'line-height': 'calc(1.7 * var(--lh))' }}>
           {props.mode === 'focus'
             ? (tiltOn() ? 'TILT TO CHOOSE · TAP TO BEGIN' : 'TAP A TIME · TAP THE DIAL TO BEGIN')
             : 'TAP THE DIAL TO BEGIN'}
         </div>
-        <div style={{ 'font-size': '10px', 'font-weight': '600', 'letter-spacing': '.14em', color: K.sub, opacity: '.7' }}>
+        <div style={{ 'font-size': 'calc(10px * var(--ts))', 'font-weight': 'var(--fw-600)', 'letter-spacing': '.14em', color: K.sub, opacity: '.7' }}>
           ENDS WHEN YOU SAY DONE — NOT WHEN THE CLOCK DOES
         </div>
       </div>
@@ -415,8 +415,8 @@ function RecordsView(props: { K: Palette }): JSX.Element {
 
   const stat = (t: string, v: string): JSX.Element => (
     <div style={{ flex: '1', background: K.card, 'border-radius': '12px', padding: '12px 14px' }}>
-      <div style={{ ...labelStyle(K), 'font-size': '9.5px', 'margin-bottom': '5px' }}>{t}</div>
-      <div style={{ 'font-size': '19px', 'font-weight': '700', 'font-variant-numeric': 'tabular-nums' }}>{v}</div>
+      <div style={{ ...labelStyle(K), 'font-size': 'calc(9.5px * var(--ts))', 'margin-bottom': '5px' }}>{t}</div>
+      <div style={{ 'font-size': 'calc(19px * var(--ts))', 'font-weight': 'var(--fw-700)', 'font-variant-numeric': 'tabular-nums' }}>{v}</div>
     </div>
   );
 
@@ -430,8 +430,8 @@ function RecordsView(props: { K: Palette }): JSX.Element {
               <button
                 onClick={() => setTagFilter(tg)}
                 style={{
-                  'flex-shrink': '0', padding: '8px 14px', 'border-radius': '999px', 'font-family': FONT, 'font-size': '11.5px',
-                  'font-weight': '700', 'letter-spacing': '.14em', border: `1.5px solid ${on() ? K.fg : K.hair}`,
+                  'flex-shrink': '0', padding: '8px 14px', 'border-radius': '999px', 'font-family': FONT, 'font-size': 'calc(11.5px * var(--ts))',
+                  'font-weight': 'var(--fw-700)', 'letter-spacing': '.14em', border: `1.5px solid ${on() ? K.fg : K.hair}`,
                   background: on() ? K.fg : 'transparent', color: on() ? K.bg : K.fg,
                 }}
               >
@@ -451,9 +451,9 @@ function RecordsView(props: { K: Palette }): JSX.Element {
         <Show
           when={list().length}
           fallback={
-            <div style={{ padding: '50px 20px', 'text-align': 'center', color: K.sub, 'font-size': '12.5px', 'font-weight': '600', 'letter-spacing': '.14em', 'line-height': '2' }}>
+            <div style={{ padding: '50px 20px', 'text-align': 'center', color: K.sub, 'font-size': 'calc(12.5px * var(--ts))', 'font-weight': 'var(--fw-600)', 'letter-spacing': '.14em', 'line-height': 'calc(2 * var(--lh))' }}>
               NO SESSIONS YET
-              <div style={{ 'letter-spacing': '.06em', 'font-weight': '500', 'margin-top': '6px' }}>
+              <div style={{ 'letter-spacing': '.06em', 'font-weight': 'var(--fw-500)', 'margin-top': '6px' }}>
                 Finished focus sessions are logged here automatically.
               </div>
             </div>
@@ -469,8 +469,8 @@ function RecordsView(props: { K: Palette }): JSX.Element {
                       data-testid="pomo-record"
                       style={{ display: 'flex', 'align-items': 'center', gap: '12px', padding: '13px 0', 'border-bottom': `1px solid ${K.hair}` }}
                     >
-                      <div style={{ 'font-size': '19px', 'font-weight': '700', 'font-variant-numeric': 'tabular-nums' }}>{formatMS(r.sec)}</div>
-                      <div style={{ flex: '1', 'font-size': '11px', 'font-weight': '700', 'letter-spacing': '.16em', color: K.accent, 'text-align': 'right' }}>
+                      <div style={{ 'font-size': 'calc(19px * var(--ts))', 'font-weight': 'var(--fw-700)', 'font-variant-numeric': 'tabular-nums' }}>{formatMS(r.sec)}</div>
+                      <div style={{ flex: '1', 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.16em', color: K.accent, 'text-align': 'right' }}>
                         {(r.tag || 'FOCUS').toUpperCase()}
                       </div>
                       <button aria-label="Delete record" onClick={() => del(r.id)} style={{ color: K.sub, padding: '6px', display: 'flex' }}>
@@ -499,7 +499,7 @@ function SettingsView(props: { K: Palette }): JSX.Element {
       type="number" inputmode="numeric" min="1" max="999" value={value()}
       data-testid={testid}
       onChange={(e) => set(Number(e.currentTarget.value))}
-      style={{ width: '64px', padding: '8px 4px', 'text-align': 'center', background: 'transparent', border: 'none', 'border-bottom': `2px solid ${K.hair}`, color: K.fg, 'font-family': FONT, 'font-size': '22px', 'font-weight': '700', 'font-variant-numeric': 'tabular-nums' }}
+      style={{ width: '64px', padding: '8px 4px', 'text-align': 'center', background: 'transparent', border: 'none', 'border-bottom': `2px solid ${K.hair}`, color: K.fg, 'font-family': FONT, 'font-size': 'calc(22px * var(--ts))', 'font-weight': 'var(--fw-700)', 'font-variant-numeric': 'tabular-nums' }}
     />
   );
   const row = (l: string, input: JSX.Element): JSX.Element => (
@@ -527,7 +527,7 @@ function SettingsView(props: { K: Palette }): JSX.Element {
       <For each={focusState().tags}>
         {(tg) => (
           <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', padding: '11px 0', 'border-bottom': `1px solid ${K.hair}` }}>
-            <div style={{ 'font-size': '13px', 'font-weight': '700', 'letter-spacing': '.16em' }}>{tg}</div>
+            <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.16em' }}>{tg}</div>
             <button aria-label={`Remove ${tg}`} onClick={() => removeTag(tg)} style={{ color: K.sub, padding: '6px', display: 'flex' }}>
               <Icon name="close" size={15} />
             </button>
@@ -541,9 +541,9 @@ function SettingsView(props: { K: Palette }): JSX.Element {
           data-testid="pomo-newtag"
           onInput={(e) => setNewTag(e.currentTarget.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') doAddTag(); }}
-          style={{ flex: '1', padding: '9px 2px', background: 'transparent', border: 'none', 'border-bottom': `2px solid ${K.hair}`, color: K.fg, 'font-family': FONT, 'font-size': '15px', 'font-weight': '600', 'letter-spacing': '.08em' }}
+          style={{ flex: '1', padding: '9px 2px', background: 'transparent', border: 'none', 'border-bottom': `2px solid ${K.hair}`, color: K.fg, 'font-family': FONT, 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)', 'letter-spacing': '.08em' }}
         />
-        <button data-testid="pomo-addtag" onClick={doAddTag} style={{ padding: '9px 16px', 'border-radius': '999px', border: `1.5px solid ${K.fg}`, 'font-family': FONT, 'font-size': '11px', 'font-weight': '700', 'letter-spacing': '.18em', color: K.fg }}>
+        <button data-testid="pomo-addtag" onClick={doAddTag} style={{ padding: '9px 16px', 'border-radius': '999px', border: `1.5px solid ${K.fg}`, 'font-family': FONT, 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.18em', color: K.fg }}>
           ADD
         </button>
       </div>
@@ -556,7 +556,7 @@ function SettingsView(props: { K: Palette }): JSX.Element {
             return (
               <button
                 onClick={() => { if (!on()) toggleTheme(); }}
-                style={{ flex: '1', padding: '14px', 'border-radius': '12px', background: t.bg, color: t.fg, border: `2px solid ${on() ? K.accent : K.hair}`, 'font-family': FONT, 'font-size': '11px', 'font-weight': '700', 'letter-spacing': '.18em' }}
+                style={{ flex: '1', padding: '14px', 'border-radius': '12px', background: t.bg, color: t.fg, border: `2px solid ${on() ? K.accent : K.hair}`, 'font-family': FONT, 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', 'letter-spacing': '.18em' }}
               >
                 {t.label.toUpperCase()}
               </button>
@@ -565,7 +565,7 @@ function SettingsView(props: { K: Palette }): JSX.Element {
         </For>
       </div>
 
-      <div style={{ padding: '30px 0 6px', 'text-align': 'center', 'font-size': '10px', 'font-weight': '600', 'letter-spacing': '.18em', color: K.sub, 'line-height': '2' }}>
+      <div style={{ padding: '30px 0 6px', 'text-align': 'center', 'font-size': 'calc(10px * var(--ts))', 'font-weight': 'var(--fw-600)', 'letter-spacing': '.18em', color: K.sub, 'line-height': 'calc(2 * var(--lh))' }}>
         NO ACCOUNTS · NO TRACKING · NO ADS<br />
         FOCUS TIMER — ADAPTED FROM TURN FOR CLARITY
       </div>

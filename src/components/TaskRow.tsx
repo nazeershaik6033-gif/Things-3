@@ -75,7 +75,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
           <span data-testid="select-mark" style={{
             width: '19px', height: '19px', 'border-radius': '50%', display: 'flex', 'align-items': 'center', 'justify-content': 'center',
             background: selection()!.has(t().id) ? 'var(--blue)' : 'transparent',
-            border: selection()!.has(t().id) ? 'none' : '1.5px solid var(--check-border)', color: '#fff', 'font-size': '12px',
+            border: selection()!.has(t().id) ? 'none' : '1.5px solid var(--check-border)', color: '#fff', 'font-size': 'calc(12px * var(--ts))',
           }}>
             {selection()!.has(t().id) ? '✓' : ''}
           </span>
@@ -117,8 +117,8 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
                 gap: '4px',
                 padding: '1px 8px',
                 'border-radius': '999px',
-                'font-size': '11px',
-                'font-weight': '700',
+                'font-size': 'calc(11px * var(--ts))',
+                'font-weight': 'var(--fw-700)',
                 'letter-spacing': '0.3px',
                 'flex-shrink': '0',
                 ...(t().priority
@@ -137,11 +137,11 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             </button>
           </Show>
           <Show when={t().status === 'open' && blockedIds().has(t().id)}>
-            <span data-testid="row-locked" title="Waits for another to-do" style={{ 'font-size': '12px', 'flex-shrink': '0' }}>🔒</span>
+            <span data-testid="row-locked" title="Waits for another to-do" style={{ 'font-size': 'calc(12px * var(--ts))', 'flex-shrink': '0' }}>🔒</span>
           </Show>
           <Show when={t().status === 'open' && t().stage}>
             <span data-testid={`row-stage-${t().stage}`} style={{
-              'font-size': '11px', 'font-weight': '700', 'flex-shrink': '0', padding: '1px 7px', 'border-radius': '999px',
+              'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', 'flex-shrink': '0', padding: '1px 7px', 'border-radius': '999px',
               color: '#fff', background: t().stage === 'doing' ? 'var(--blue)' : 'var(--orange, var(--yellow-deep))',
             }}>
               {t().stage === 'doing' ? 'In Progress' : 'Waiting'}
@@ -165,7 +165,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             }}
           >
             <Show when={props.ctx.showMit && isMit(t(), currentDate())}>
-              <span data-testid="mit-chip" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--yellow-deep)', 'font-size': 'var(--fs-chip)', 'font-weight': '700' }}>
+              <span data-testid="mit-chip" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--yellow-deep)', 'font-size': 'var(--fs-chip)', 'font-weight': 'var(--fw-700)' }}>
                 <Icon name="star" size={11} /> MIT
               </span>
             </Show>
@@ -185,7 +185,7 @@ export function TaskRow(props: { task: Task; ctx: TaskRowContext }): JSX.Element
             </Show>
             {/* Today shows the time of day; other lists show the day, with the time */}
             <Show when={!props.ctx.showWhen && timeLabel(t(), currentDate())}>
-              <span data-testid="row-time" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--blue)', 'font-size': 'var(--fs-chip)', 'font-weight': '600', 'font-variant-numeric': 'tabular-nums' }}>
+              <span data-testid="row-time" style={{ display: 'inline-flex', 'align-items': 'center', gap: '3px', color: 'var(--blue)', 'font-size': 'var(--fs-chip)', 'font-weight': 'var(--fw-600)', 'font-variant-numeric': 'tabular-nums' }}>
                 <Icon name="clock" size={11} />
                 {timeLabel(t(), currentDate())}
               </span>

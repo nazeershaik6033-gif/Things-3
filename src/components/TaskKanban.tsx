@@ -144,8 +144,8 @@ export function TaskKanban(props: {
           >
             <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', padding: '2px 4px 8px' }}>
               <span style={{ width: '8px', height: '8px', 'border-radius': '50%', background: col.color }} />
-              <span style={{ 'font-weight': '700', 'font-size': '14px', flex: '1' }}>{col.title}</span>
-              <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums' }}>{col.tasks.length}</span>
+              <span style={{ 'font-weight': 'var(--fw-700)', 'font-size': 'calc(14px * var(--ts))', flex: '1' }}>{col.title}</span>
+              <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums' }}>{col.tasks.length}</span>
             </div>
             <div style={{ display: 'flex', 'flex-direction': 'column', gap: '6px' }}>
               <For each={col.tasks}>
@@ -168,12 +168,12 @@ export function TaskKanban(props: {
                       <Checkbox size={16} checked={false} onToggle={() => toggleComplete(t)} />
                     </div>
                     <div style={{ flex: '1', 'min-width': '0' }}>
-                      <div style={{ 'font-size': '14px', 'font-weight': '500', 'line-height': '1.3' }}>
+                      <div style={{ 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-500)', 'line-height': 'calc(1.3 * var(--lh))' }}>
                         {blockedIds().has(t.id) ? '🔒 ' : ''}{t.title || 'New To-Do'}
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap', 'margin-top': '3px', 'font-size': '11px', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap', 'margin-top': '3px', 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-secondary)' }}>
                         <Show when={timeLabel(t, currentDate(), true)}>
-                          <span style={{ color: 'var(--blue)', 'font-weight': '600' }}>{timeLabel(t, currentDate(), true)}</span>
+                          <span style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)' }}>{timeLabel(t, currentDate(), true)}</span>
                         </Show>
                         <Show when={t.deadline}>
                           <span style={{ color: t.deadline! < currentDate() ? 'var(--red)' : 'var(--text-secondary)' }}>⚑ {formatDeadline(t.deadline!, currentDate())}</span>
@@ -190,7 +190,7 @@ export function TaskKanban(props: {
                 )}
               </For>
               <Show when={col.tasks.length === 0}>
-                <div style={{ 'font-size': '13px', color: 'var(--text-tertiary)', padding: '10px 4px', 'text-align': 'center' }}>Drop here</div>
+                <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 4px', 'text-align': 'center' }}>Drop here</div>
               </Show>
             </div>
           </div>
@@ -204,7 +204,7 @@ export function TaskKanban(props: {
               position: 'fixed', left: '0', top: '0', 'z-index': '130', 'pointer-events': 'none',
               transform: `translate3d(${d().x - 60}px, ${d().y - 24}px, 0) rotate(-2deg)`,
               padding: '9px 12px', 'border-radius': '10px', background: 'var(--bg-card)', 'box-shadow': 'var(--shadow-sheet)',
-              'font-size': '14px', 'font-weight': '600', 'max-width': '240px', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
+              'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)', 'max-width': '240px', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap',
             }}>
               {d().title}
             </div>

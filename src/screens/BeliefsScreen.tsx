@@ -57,8 +57,8 @@ function MomentumTag(props: { delta: number | null }): JSX.Element {
     <Show when={props.delta !== null && Math.abs(props.delta) >= 0.5}>
       <span
         style={{
-          'font-size': '12px',
-          'font-weight': '700',
+          'font-size': 'calc(12px * var(--ts))',
+          'font-weight': 'var(--fw-700)',
           'font-variant-numeric': 'tabular-nums',
           color: props.delta! > 0 ? 'var(--green)' : 'var(--red)',
         }}
@@ -110,8 +110,8 @@ export function BeliefsScreen(): JSX.Element {
           style={{
             color: 'var(--blue)',
             padding: '8px 10px',
-            'font-size': '16px',
-            'font-weight': editing() ? '600' : '400',
+            'font-size': 'calc(16px * var(--ts))',
+            'font-weight': editing() ? 'var(--fw-600)' : 'var(--fw-400)',
           }}
         >
           {editing() ? 'Done' : 'Edit'}
@@ -138,13 +138,13 @@ export function BeliefsScreen(): JSX.Element {
             thickness={7}
             color={progress().complete ? 'var(--green)' : 'var(--purple)'}
           >
-            <span style={{ 'font-size': '17px', 'font-weight': '700', 'font-variant-numeric': 'tabular-nums' }}>
+            <span style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-700)', 'font-variant-numeric': 'tabular-nums' }}>
               {progress().average === null ? '—' : progress().average!.toFixed(1)}
             </span>
           </ProgressRing>
           <div style={{ flex: '1', 'min-width': '0' }}>
             <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
-              <span style={{ 'font-size': '17px', 'font-weight': '600' }}>
+              <span style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>
                 {progress().complete
                   ? 'All spoken today'
                   : progress().rated === 0
@@ -161,7 +161,7 @@ export function BeliefsScreen(): JSX.Element {
                 gap: '5px',
                 'margin-top': '4px',
                 color: 'var(--text-secondary)',
-                'font-size': '14px',
+                'font-size': 'calc(14px * var(--ts))',
               }}
             >
               <Icon name="flame" size={15} color={streak() > 0 ? 'var(--red)' : 'var(--text-tertiary)'} />
@@ -207,8 +207,8 @@ export function BeliefsScreen(): JSX.Element {
               'border-radius': '13px',
               background: progress().complete ? 'var(--bg-inset)' : 'var(--blue)',
               color: progress().complete ? 'var(--text)' : 'var(--text-invert)',
-              'font-size': '16px',
-              'font-weight': '600',
+              'font-size': 'calc(16px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
             }}
           >
             <Icon name="send" size={17} color={progress().complete ? 'var(--text)' : 'var(--text-invert)'} />
@@ -232,8 +232,8 @@ export function BeliefsScreen(): JSX.Element {
             <div style={{ padding: '0 20px 10px' }}>
               <div
                 style={{
-                  'font-size': '12px',
-                  'font-weight': '700',
+                  'font-size': 'calc(12px * var(--ts))',
+                  'font-weight': 'var(--fw-700)',
                   'letter-spacing': '0.05em',
                   'text-transform': 'uppercase',
                   color: 'var(--text-tertiary)',
@@ -246,8 +246,8 @@ export function BeliefsScreen(): JSX.Element {
                 {(example) => (
                   <div
                     style={{
-                      'font-size': '15px',
-                      'line-height': '1.5',
+                      'font-size': 'calc(15px * var(--ts))',
+                      'line-height': 'calc(1.5 * var(--lh))',
                       color: 'var(--text-tertiary)',
                       'font-style': 'italic',
                       'padding-bottom': '4px',
@@ -257,7 +257,7 @@ export function BeliefsScreen(): JSX.Element {
                   </div>
                 )}
               </For>
-              <p style={{ 'margin-top': '10px', 'font-size': '13px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+              <p style={{ 'margin-top': '10px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
                 Yours, not these. Write the first one below.
               </p>
             </div>
@@ -298,7 +298,7 @@ export function BeliefsScreen(): JSX.Element {
                           value={belief.text}
                           onInput={(e) => void updateBelief(belief.id, { text: e.currentTarget.value })}
                           placeholder="Belief"
-                          style={{ flex: '1', 'font-size': '15px' }}
+                          style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}
                         />
                         <button
                           aria-label={`Retire ${belief.text}`}
@@ -317,7 +317,7 @@ export function BeliefsScreen(): JSX.Element {
                       </div>
                     }
                   >
-                    <div style={{ 'font-size': '16px', 'font-weight': '600', 'line-height': '1.35' }}>
+                    <div style={{ 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)', 'line-height': 'calc(1.35 * var(--lh))' }}>
                       {belief.text || 'Untitled belief'}
                     </div>
                     <div
@@ -331,15 +331,15 @@ export function BeliefsScreen(): JSX.Element {
                       <span
                         data-testid="belief-score"
                         style={{
-                          'font-size': '15px',
-                          'font-weight': '700',
+                          'font-size': 'calc(15px * var(--ts))',
+                          'font-weight': 'var(--fw-700)',
                           'font-variant-numeric': 'tabular-nums',
                           color: carried() === null ? 'var(--text-tertiary)' : scoreColor(carried()!),
                         }}
                       >
                         {carried() === null ? '—' : `${carried()}/${MAX_SCORE}`}
                       </span>
-                      <span style={{ 'font-size': '13px', color: 'var(--text-secondary)', flex: '1', 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
+                      <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', flex: '1', 'min-width': '0', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
                         {carried() === null ? 'Not rated yet' : scoreLabel(carried()!)}
                       </span>
                       <MomentumTag delta={delta()} />
@@ -353,7 +353,7 @@ export function BeliefsScreen(): JSX.Element {
                         'align-items': 'center',
                         gap: '12px',
                         'margin-top': '10px',
-                        'font-size': '12px',
+                        'font-size': 'calc(12px * var(--ts))',
                         color: 'var(--text-tertiary)',
                       }}
                     >
@@ -362,7 +362,7 @@ export function BeliefsScreen(): JSX.Element {
                         {counts().get(belief.id) ?? 0} evidence
                       </span>
                       <Show when={score() !== null}>
-                        <span style={{ color: 'var(--green)', 'font-weight': '600' }}>Spoken today</span>
+                        <span style={{ color: 'var(--green)', 'font-weight': 'var(--fw-600)' }}>Spoken today</span>
                       </Show>
                     </div>
                   </Show>
@@ -383,11 +383,11 @@ export function BeliefsScreen(): JSX.Element {
             placeholder="I am the kind of person who…"
             style={{ flex: '1', padding: '10px 12px', 'border-radius': '11px', background: 'var(--bg-inset)' }}
           />
-          <button onClick={addBelief} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>
+          <button onClick={addBelief} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>
             Add
           </button>
         </div>
-        <p style={{ padding: '12px 18px 0', color: 'var(--text-secondary)', 'font-size': '13px', 'line-height': '1.45' }}>
+        <p style={{ padding: '12px 18px 0', color: 'var(--text-secondary)', 'font-size': 'calc(13px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))' }}>
           Retiring a belief takes it out of the daily session but keeps every rating and piece of
           evidence it gathered. Deleting throws both away.
         </p>
@@ -395,8 +395,8 @@ export function BeliefsScreen(): JSX.Element {
           <div style={{ padding: '16px 18px 0' }}>
             <div
               style={{
-                'font-size': '12px',
-                'font-weight': '700',
+                'font-size': 'calc(12px * var(--ts))',
+                'font-weight': 'var(--fw-700)',
                 'letter-spacing': '0.05em',
                 'text-transform': 'uppercase',
                 color: 'var(--text-tertiary)',
@@ -408,7 +408,7 @@ export function BeliefsScreen(): JSX.Element {
             <For each={retired()}>
               {(belief) => (
                 <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '6px 0' }}>
-                  <span style={{ flex: '1', 'font-size': '15px', color: 'var(--text-secondary)' }}>
+                  <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)' }}>
                     {belief.text || 'Untitled belief'}
                   </span>
                   <button
@@ -449,8 +449,8 @@ export function BeliefsScreen(): JSX.Element {
         >
           <div
             style={{
-              'font-size': '12px',
-              'font-weight': '700',
+              'font-size': 'calc(12px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'letter-spacing': '0.05em',
               'text-transform': 'uppercase',
               color: 'var(--text-tertiary)',
@@ -459,8 +459,8 @@ export function BeliefsScreen(): JSX.Element {
           >
             Today’s brain food
           </div>
-          <div style={{ 'font-size': '15px', 'line-height': '1.45' }}>{quote()!.text}</div>
-          <div style={{ 'margin-top': '7px', 'font-size': '13px', color: 'var(--text-secondary)' }}>
+          <div style={{ 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))' }}>{quote()!.text}</div>
+          <div style={{ 'margin-top': '7px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>
             — {attribution(quote()!)}
           </div>
         </button>
@@ -514,15 +514,15 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
         <div style={{ display: 'flex', 'align-items': 'center', gap: '10px' }}>
           <span
             style={{
-              'font-size': '22px',
-              'font-weight': '700',
+              'font-size': 'calc(22px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'font-variant-numeric': 'tabular-nums',
               color: score() === null ? 'var(--text-tertiary)' : scoreColor(score()!),
             }}
           >
             {score() === null ? '—' : `${score()}/${MAX_SCORE}`}
           </span>
-          <span style={{ flex: '1', 'font-size': '14px', color: 'var(--text-secondary)' }}>
+          <span style={{ flex: '1', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>
             {score() === null ? 'Not rated yet' : scoreLabel(score()!)}
           </span>
           <MomentumTag delta={delta()} />
@@ -530,7 +530,7 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
 
         <div style={{ 'margin-top': '14px' }}>
           <Sparkline trend={trend()} color={props.belief.color} />
-          <div style={{ 'margin-top': '6px', 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+          <div style={{ 'margin-top': '6px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
             Last 14 days
           </div>
         </div>
@@ -538,7 +538,7 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
         <div style={{ 'margin-top': '18px' }}>
           <label
             for="belief-why"
-            style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)' }}
+            style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)' }}
           >
             Why it matters
           </label>
@@ -554,13 +554,13 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
               padding: '11px 12px',
               'border-radius': '12px',
               background: 'var(--bg-inset)',
-              'font-size': '15px',
+              'font-size': 'calc(15px * var(--ts))',
             }}
           />
         </div>
 
         <div style={{ 'margin-top': '20px' }}>
-          <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)' }}>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)' }}>
             Evidence ({rows().length})
           </div>
           <div style={{ display: 'flex', gap: '8px', 'margin-top': '8px' }}>
@@ -575,17 +575,17 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
                 padding: '11px 12px',
                 'border-radius': '12px',
                 background: 'var(--bg-inset)',
-                'font-size': '15px',
+                'font-size': 'calc(15px * var(--ts))',
               }}
             />
-            <button onClick={add} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>
+            <button onClick={add} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>
               Add
             </button>
           </div>
           <Show
             when={rows().length > 0}
             fallback={
-              <p style={{ 'margin-top': '12px', 'font-size': '13px', color: 'var(--text-tertiary)', 'line-height': '1.45' }}>
+              <p style={{ 'margin-top': '12px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
                 Nothing yet. Conviction moves on evidence — one line a day is enough.
               </p>
             }
@@ -603,8 +603,8 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
                     }}
                   >
                     <div style={{ flex: '1', 'min-width': '0' }}>
-                      <div style={{ 'font-size': '15px', 'line-height': '1.4' }}>{row.text}</div>
-                      <div style={{ 'margin-top': '3px', 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                      <div style={{ 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.4 * var(--lh))' }}>{row.text}</div>
+                      <div style={{ 'margin-top': '3px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
                         {formatRelative(row.date, today())}
                       </div>
                     </div>
@@ -623,7 +623,7 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
         </div>
 
         <div style={{ 'margin-top': '20px' }}>
-          <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'padding-bottom': '8px' }}>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'padding-bottom': '8px' }}>
             Rate it now
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
@@ -641,8 +641,8 @@ function BeliefDetail(props: { belief: Belief; onClose: () => void }): JSX.Eleme
                     'min-width': '0',
                     height: '36px',
                     'border-radius': '10px',
-                    'font-size': '13px',
-                    'font-weight': '600',
+                    'font-size': 'calc(13px * var(--ts))',
+                    'font-weight': 'var(--fw-600)',
                     'font-variant-numeric': 'tabular-nums',
                     background: 'var(--bg-inset)',
                     color: 'var(--text-secondary)',

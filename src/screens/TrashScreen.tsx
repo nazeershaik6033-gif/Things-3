@@ -26,7 +26,7 @@ export function TrashScreen(): JSX.Element {
             <button
               data-testid="empty-trash"
               onClick={() => setConfirmOpen(true)}
-              style={{ color: 'var(--red)', padding: '8px 10px', 'font-size': '15px', 'font-weight': '500' }}
+              style={{ color: 'var(--red)', padding: '8px 10px', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
             >
               Empty
             </button>

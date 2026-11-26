@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, homeRow } from './helpers';
+import { loadSeeded, homeRow, tapPlus } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 test('full lifecycle: create → schedule → complete → logbook → reopen', async ({ page }) => {
   // Create in Inbox via Magic Plus tap
   await (await homeRow(page, 'home-inbox')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Write the report');
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByText('Write the report')).toBeVisible();
@@ -50,7 +50,7 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
 });
 
 test('quick entry with notes, checklist, tags, deadline and destination', async ({ page }) => {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Prepare slides');
 
   // Notes
@@ -81,7 +81,7 @@ test('quick entry with notes, checklist, tags, deadline and destination', async 
 });
 
 test('typing keystroke-by-keystroke into a 2nd+ checklist item keeps focus', async ({ page }) => {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Trip packing list');
   await page.getByRole('button', { name: 'Checklist' }).click();
 
@@ -154,7 +154,7 @@ test('new project: create, add heading, complete project', async ({ page }) => {
   await page.getByTestId('project-title').fill('Spring cleaning');
 
   // Add a to-do via Magic Plus
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Clean the windows');
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByText('Clean the windows')).toBeVisible();
@@ -175,7 +175,7 @@ test('new project: create, add heading, complete project', async ({ page }) => {
 
 test('evening tasks: quick entry from Today tonight section', async ({ page }) => {
   await (await homeRow(page, 'home-today')).click();
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.getByPlaceholder('New To-Do').fill('Stretch before bed');
   // Set to Tonight via the When chip
   await page.getByRole('button', { name: 'When' }).click();

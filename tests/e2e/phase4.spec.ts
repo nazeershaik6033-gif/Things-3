@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded, homeRow } from './helpers';
+import { currentScreen, loadSeeded, homeRow, tapPlus } from './helpers';
 
 async function quickAdd(page: Page, title: string): Promise<void> {
-  await page.getByTestId('magic-plus').click();
+  await tapPlus(page);
   await page.locator('[data-quick-entry] textarea').first().fill(title);
   await page.getByTestId('quick-entry-save').click();
 }

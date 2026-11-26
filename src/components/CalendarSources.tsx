@@ -32,18 +32,18 @@ export function CalendarSources(props: { mainUrl: string }): JSX.Element {
 
   const input = {
     width: '100%', padding: '10px 12px', 'border-radius': '10px', background: 'var(--bg-inset)',
-    color: 'var(--text)', 'font-size': '15px', border: 'none', margin: '4px 0',
+    color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))', border: 'none', margin: '4px 0',
   } as const;
 
   return (
     <div data-testid="calendar-sources" style={{ padding: '6px 0 10px' }}>
       <Show when={rows().length > 0}>
-        <div style={{ 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)', padding: '4px 0' }}>Calendars and colours</div>
+        <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', padding: '4px 0' }}>Calendars and colours</div>
         <For each={rows()}>
           {(row) => (
             <div data-testid="calendar-source" style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '6px 0', 'flex-wrap': 'wrap' }}>
               <span style={{ width: '10px', height: '10px', 'border-radius': '50%', background: calendarColor(row.url), flex: 'none' }} />
-              <span style={{ flex: '1', 'font-size': '15px', 'min-width': '120px', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{row.name}</span>
+              <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', 'min-width': '120px', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>{row.name}</span>
               <div style={{ display: 'flex', gap: '5px' }}>
                 <For each={CALENDAR_COLORS}>
                   {(c) => (
@@ -60,20 +60,20 @@ export function CalendarSources(props: { mainUrl: string }): JSX.Element {
                 </For>
               </div>
               <Show when={row.removable}>
-                <button onClick={() => void removeExtraCalendar(row.url)} style={{ color: 'var(--red)', 'font-size': '13px' }}>Remove</button>
+                <button onClick={() => void removeExtraCalendar(row.url)} style={{ color: 'var(--red)', 'font-size': 'calc(13px * var(--ts))' }}>Remove</button>
               </Show>
             </div>
           )}
         </For>
       </Show>
-      <div style={{ 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)', padding: '10px 0 2px' }}>Add another calendar</div>
+      <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', padding: '10px 0 2px' }}>Add another calendar</div>
       <input value={name()} onInput={(e) => setName(e.currentTarget.value)} placeholder="Name (Work, Family…)" style={input} data-testid="extra-cal-name" />
       <input value={url()} onInput={(e) => setUrl(e.currentTarget.value)} placeholder="Its .ics link" inputmode="url" autocapitalize="off" style={input} data-testid="extra-cal-url" />
-      <button onClick={() => void add()} data-testid="extra-cal-add" style={{ color: 'var(--blue)', 'font-weight': '600', 'font-size': '15px', padding: '8px 0' }}>
+      <button onClick={() => void add()} data-testid="extra-cal-add" style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', padding: '8px 0' }}>
         Add calendar
       </button>
       <Show when={status()}>
-        <div style={{ 'font-size': '13px', color: 'var(--text-secondary)' }}>{status()}</div>
+        <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>{status()}</div>
       </Show>
     </div>
   );

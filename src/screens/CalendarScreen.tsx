@@ -87,14 +87,14 @@ export function CalendarScreen(): JSX.Element {
       }}
     >
       <span style={{
-        'font-size': '12px', 'font-weight': '600', 'min-width': '54px',
+        'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', 'min-width': '54px',
         'font-variant-numeric': 'tabular-nums',
         color: props.entry.kind === 'task' && props.entry.reason === 'deadline'
           ? 'var(--red)' : 'var(--text-secondary)',
       }}>
         {entryTime(props.entry)}
       </span>
-      <span style={{ color: 'var(--text)', 'font-size': '15px' }}>
+      <span style={{ color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))' }}>
         {props.entry.title || 'Untitled'}
       </span>
     </div>
@@ -122,7 +122,7 @@ export function CalendarScreen(): JSX.Element {
           data-testid="calendar-refresh"
           disabled={refreshing()}
           onClick={() => void doRefresh()}
-          style={{ color: 'var(--blue)', padding: '8px 12px', 'font-size': '15px', opacity: refreshing() ? '0.5' : '1' }}
+          style={{ color: 'var(--blue)', padding: '8px 12px', 'font-size': 'calc(15px * var(--ts))', opacity: refreshing() ? '0.5' : '1' }}
         >
           <Icon name="restore" size={18} />
         </button>
@@ -136,7 +136,7 @@ export function CalendarScreen(): JSX.Element {
             aria-pressed={view() === v}
             onClick={() => (v === 'day' ? openPlanner(selected(), 1) : v === 'week' ? openPlanner(selected(), 7) : setView(v))}
             style={{
-              padding: '5px 12px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+              padding: '5px 12px', 'border-radius': '8px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
               background: view() === v ? 'var(--bg-card)' : 'transparent',
               color: view() === v ? 'var(--text)' : 'var(--text-secondary)',
               'box-shadow': view() === v ? 'var(--shadow-card)' : 'none',
@@ -168,7 +168,7 @@ export function CalendarScreen(): JSX.Element {
           style={{ color: 'var(--blue)', padding: '8px 14px' }}>
           <Icon name="chevron-left" size={18} />
         </button>
-        <div data-testid="cal-month-label" style={{ 'font-size': '17px', 'font-weight': '600', color: 'var(--text)' }}>
+        <div data-testid="cal-month-label" style={{ 'font-size': 'calc(17px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text)' }}>
           {MONTHS[month()]} {year()}
         </div>
         <button aria-label="Next month" data-testid="cal-next" onClick={() => changeMonth(1)}
@@ -182,7 +182,7 @@ export function CalendarScreen(): JSX.Element {
         <Show when={showWeekNumbers()}><div /></Show>
         <For each={weekdayLabels(weekStart())}>
           {(w) => (
-            <div style={{ 'text-align': 'center', 'font-size': '11px', 'font-weight': '600', color: 'var(--text-tertiary)', padding: '2px 0 6px' }}>
+            <div style={{ 'text-align': 'center', 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-tertiary)', padding: '2px 0 6px' }}>
               {w}
             </div>
           )}
@@ -200,7 +200,7 @@ export function CalendarScreen(): JSX.Element {
                   data-testid="cal-weeknum"
                   title="Open this week in the Planner"
                   onClick={() => openPlanner(row.find((d) => d) ?? today, 7)}
-                  style={{ 'font-size': '11px', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums', padding: '7px 0 0' }}
+                  style={{ 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-tertiary)', 'font-variant-numeric': 'tabular-nums', padding: '7px 0 0' }}
                 >
                   {isoWeek(row.find((d) => d)!)}
                 </button>
@@ -222,9 +222,9 @@ export function CalendarScreen(): JSX.Element {
                       }}
                     >
                       <span style={{
-                        'font-size': '15px',
+                        'font-size': 'calc(15px * var(--ts))',
                         'font-variant-numeric': 'tabular-nums',
-                        'font-weight': date === today ? '700' : '400',
+                        'font-weight': date === today ? 'var(--fw-700)' : 'var(--fw-400)',
                         color: selected() === date ? '#fff' : date === today ? 'var(--blue)' : 'var(--text)',
                       }}>
                         {Number(date!.slice(8))}
@@ -252,10 +252,10 @@ export function CalendarScreen(): JSX.Element {
 
       {/* The selected day, pinned above the month */}
       <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '14px 16px 4px' }}>
-        <span style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+        <span style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
           {fmtSelected()}
         </span>
-        <span style={{ 'font-size': '11px', 'font-weight': '700', color: 'var(--blue)', 'letter-spacing': '0.06em' }}>
+        <span style={{ 'font-size': 'calc(11px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--blue)', 'letter-spacing': '0.06em' }}>
           SELECTED
         </span>
       </div>
@@ -273,7 +273,7 @@ export function CalendarScreen(): JSX.Element {
         <Show
           when={dayEvents().length > 0}
           fallback={
-            <div style={{ 'font-size': '14px', color: 'var(--text-tertiary)', padding: '10px 0' }}>
+            <div style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-tertiary)', padding: '10px 0' }}>
               No events this day.
             </div>
           }
@@ -284,10 +284,10 @@ export function CalendarScreen(): JSX.Element {
 
       {/* The whole month, in one list */}
       <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 16px 6px', 'border-bottom': '1px solid var(--separator)', margin: '0 0 10px' }}>
-        <span style={{ flex: '1', 'font-weight': '700', 'font-size': '15px' }}>
+        <span style={{ flex: '1', 'font-weight': 'var(--fw-700)', 'font-size': 'calc(15px * var(--ts))' }}>
           All of {MONTHS[month()]}
         </span>
-        <span style={{ 'font-size': '13px', color: 'var(--text-tertiary)' }}>
+        <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-tertiary)' }}>
           {monthCount()} {monthCount() === 1 ? 'entry' : 'entries'}
         </span>
       </div>
@@ -295,7 +295,7 @@ export function CalendarScreen(): JSX.Element {
         <Show
           when={agenda().length > 0}
           fallback={
-            <div style={{ padding: '2px 16px 14px', color: 'var(--text-tertiary)', 'font-size': '14px' }}>
+            <div style={{ padding: '2px 16px 14px', color: 'var(--text-tertiary)', 'font-size': 'calc(14px * var(--ts))' }}>
               Nothing scheduled this month.
             </div>
           }
@@ -316,10 +316,10 @@ export function CalendarScreen(): JSX.Element {
                 }}
               >
                 <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', padding: '4px 0 2px' }}>
-                  <span style={{ 'font-weight': '700', 'font-size': '14px' }}>
+                  <span style={{ 'font-weight': 'var(--fw-700)', 'font-size': 'calc(14px * var(--ts))' }}>
                     {WEEKDAYS[(fromDateStr(day.date).getDay() + 6) % 7]} {Number(day.date.slice(8))}
                   </span>
-                  <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+                  <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
                     {formatRelative(day.date, today)}
                   </span>
                 </div>
@@ -336,19 +336,19 @@ export function CalendarScreen(): JSX.Element {
         <button
           data-testid="cal-add-event"
           onClick={() => window.open(googleCalendarEventUrl({ date: selected() }), '_blank')}
-          style={{ display: 'inline-flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}
+          style={{ display: 'inline-flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
         >
           <Icon name="plus" size={15} />
           Add event in Google Calendar
         </button>
-        <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', 'margin-top': '4px', 'line-height': '1.45' }}>
+        <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'margin-top': '4px', 'line-height': 'calc(1.45 * var(--lh))' }}>
           Opens Google Calendar pre-filled for this day — save there and it appears
           here on the next refresh. Set the reminder in Google Calendar too.
         </div>
       </div>
 
       <Show when={status()}>
-        <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 16px 8px' }}>{status()}</div>
+        <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '0 16px 8px' }}>{status()}</div>
       </Show>
 
       <Show when={events().length === 0}>
@@ -356,7 +356,7 @@ export function CalendarScreen(): JSX.Element {
           <button
             onClick={() => push({ name: 'settings' })}
             data-testid="cal-link-settings"
-            style={{ color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}
+            style={{ color: 'var(--blue)', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
           >
             Link your Google Calendar in Settings →
           </button>

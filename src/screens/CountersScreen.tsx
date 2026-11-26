@@ -40,18 +40,18 @@ function CounterCard(props: { counter: Counter; days: CounterDay[]; now: number;
           color={c().color}
         />
         <div style={{ flex: '1', 'min-width': '0' }}>
-          <div style={{ 'font-size': '16px', 'font-weight': '600', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
+          <div style={{ 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
             {c().title}
           </div>
-          <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', display: 'flex', gap: '8px', 'align-items': 'center' }}>
-            <span data-testid="counter-value" style={{ 'font-variant-numeric': 'tabular-nums', color: 'var(--text)', 'font-weight': '600' }}>
+          <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', display: 'flex', gap: '8px', 'align-items': 'center' }}>
+            <span data-testid="counter-value" style={{ 'font-variant-numeric': 'tabular-nums', color: 'var(--text)', 'font-weight': 'var(--fw-600)' }}>
               {formatCounterValue(c(), value())}
             </span>
             <Show when={c().goal > 0}>
               <span>/ {c().kind === 'stopwatch' ? `${c().goal}m` : c().goal}</span>
             </Show>
             <Show when={streak() > 0}>
-              <span data-testid="counter-streak" style={{ display: 'inline-flex', 'align-items': 'center', gap: '2px', color: 'var(--yellow-deep)', 'font-weight': '600' }}>
+              <span data-testid="counter-streak" style={{ display: 'inline-flex', 'align-items': 'center', gap: '2px', color: 'var(--yellow-deep)', 'font-weight': 'var(--fw-600)' }}>
                 <Icon name="flame" size={12} /> {streak()}
               </span>
             </Show>
@@ -81,7 +81,7 @@ function CounterCard(props: { counter: Counter; days: CounterDay[]; now: number;
             data-testid="counter-minus"
             aria-label="Minus one"
             onClick={() => { haptic('tick'); void bumpCounter(c().id, today(), -1); }}
-            style={{ width: '34px', height: '34px', 'border-radius': '50%', 'font-size': '20px', background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
+            style={{ width: '34px', height: '34px', 'border-radius': '50%', 'font-size': 'calc(20px * var(--ts))', background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
           >
             −
           </button>
@@ -89,7 +89,7 @@ function CounterCard(props: { counter: Counter; days: CounterDay[]; now: number;
             data-testid="counter-plus"
             aria-label="Plus one"
             onClick={() => { haptic('tick'); void bumpCounter(c().id, today(), 1); }}
-            style={{ width: '44px', height: '44px', 'border-radius': '50%', 'font-size': '22px', 'font-weight': '600', background: c().color, color: '#fff' }}
+            style={{ width: '44px', height: '44px', 'border-radius': '50%', 'font-size': 'calc(22px * var(--ts))', 'font-weight': 'var(--fw-600)', background: c().color, color: '#fff' }}
           >
             +
           </button>
@@ -106,7 +106,7 @@ function CounterCard(props: { counter: Counter; days: CounterDay[]; now: number;
                   background: d.met ? c().color : d.value > 0 ? 'var(--check-border)' : 'var(--bg-inset)',
                 }}
               />
-              <div style={{ 'font-size': '10px', color: 'var(--text-tertiary)', 'margin-top': '3px' }}>
+              <div style={{ 'font-size': 'calc(10px * var(--ts))', color: 'var(--text-tertiary)', 'margin-top': '3px' }}>
                 {weekdayName(d.date).slice(0, 1)}
               </div>
             </div>

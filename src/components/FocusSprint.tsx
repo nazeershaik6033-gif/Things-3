@@ -90,8 +90,8 @@ function createWakeLock(): { on: () => boolean; set: (v: boolean) => void } {
 const pill = (active: boolean): JSX.CSSProperties => ({
   padding: '8px 14px',
   'border-radius': '999px',
-  'font-size': '15px',
-  'font-weight': '600',
+  'font-size': 'calc(15px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
   background: active ? 'var(--blue)' : 'var(--bg-inset)',
   color: active ? 'var(--text-invert)' : 'var(--text)',
 });
@@ -102,8 +102,8 @@ const primaryBtn: JSX.CSSProperties = {
   'border-radius': '14px',
   background: 'var(--blue)',
   color: 'var(--text-invert)',
-  'font-size': '17px',
-  'font-weight': '600',
+  'font-size': 'calc(17px * var(--ts))',
+  'font-weight': 'var(--fw-600)',
 };
 
 const secondaryBtn: JSX.CSSProperties = {
@@ -112,8 +112,8 @@ const secondaryBtn: JSX.CSSProperties = {
   'border-radius': '14px',
   background: 'var(--bg-inset)',
   color: 'var(--text)',
-  'font-size': '16px',
-  'font-weight': '500',
+  'font-size': 'calc(16px * var(--ts))',
+  'font-weight': 'var(--fw-500)',
 };
 
 const field: JSX.CSSProperties = {
@@ -121,8 +121,8 @@ const field: JSX.CSSProperties = {
   padding: '12px 14px',
   'border-radius': '12px',
   background: 'var(--bg-inset)',
-  'font-size': '16px',
-  'line-height': '1.4',
+  'font-size': 'calc(16px * var(--ts))',
+  'line-height': 'calc(1.4 * var(--lh))',
 };
 
 function StepHeader(props: { stage: Stage }): JSX.Element {
@@ -143,13 +143,13 @@ function StepHeader(props: { stage: Stage }): JSX.Element {
           )}
         </For>
       </div>
-      <div style={{ 'font-size': '13px', 'font-weight': '700', color: 'var(--blue)', 'letter-spacing': '0.4px', 'text-transform': 'uppercase' }}>
+      <div style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--blue)', 'letter-spacing': '0.4px', 'text-transform': 'uppercase' }}>
         Step {step().n} of 5
       </div>
-      <h2 data-testid="sprint-step-title" style={{ 'font-size': '26px', 'font-weight': '700', margin: '2px 0 6px', color: 'var(--text)' }}>
+      <h2 data-testid="sprint-step-title" style={{ 'font-size': 'calc(26px * var(--ts))', 'font-weight': 'var(--fw-700)', margin: '2px 0 6px', color: 'var(--text)' }}>
         {step().title}
       </h2>
-      <p style={{ color: 'var(--text-secondary)', 'font-size': '15px', 'line-height': '1.45' }}>{step().hint}</p>
+      <p style={{ color: 'var(--text-secondary)', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))' }}>{step().hint}</p>
     </div>
   );
 }
@@ -194,8 +194,8 @@ function SprintPill(): JSX.Element {
           'border-radius': '999px',
           background: 'var(--text)',
           color: 'var(--bg)',
-          'font-size': '14px',
-          'font-weight': '600',
+          'font-size': 'calc(14px * var(--ts))',
+          'font-weight': 'var(--fw-600)',
           'font-variant-numeric': 'tabular-nums',
           'box-shadow': 'var(--shadow-card)',
         }}
@@ -390,7 +390,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
           >
             <Icon name={stage() === 'timer' ? 'chevron-down' : 'close'} size={22} />
           </button>
-          <div style={{ flex: '1', 'text-align': 'center', 'font-weight': '600', 'font-size': '15px', color: 'var(--text)' }}>
+          <div style={{ flex: '1', 'text-align': 'center', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>
             Focus Sprint
           </div>
           <div style={{ width: '42px' }} />
@@ -400,7 +400,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
           {/* ----------------------------------------------- 1 schedule */}
           <Show when={stage() === 'schedule'}>
             <StepHeader stage="schedule" />
-            <div style={{ 'font-weight': '600', 'font-size': '15px', margin: '0 0 8px', color: 'var(--text)' }}>One important task</div>
+            <div style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', margin: '0 0 8px', color: 'var(--text)' }}>One important task</div>
             <div style={{ background: 'var(--bg-inset)', 'border-radius': '14px', overflow: 'hidden' }}>
               <For each={candidates()}>
                 {(t) => (
@@ -409,7 +409,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                     onClick={() => setTaskId(t.id)}
                     style={{
                       display: 'flex', 'align-items': 'center', gap: '10px', width: '100%',
-                      padding: '12px 14px', 'text-align': 'left', 'font-size': '16px', color: 'var(--text)',
+                      padding: '12px 14px', 'text-align': 'left', 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)',
                       'border-bottom': '1px solid var(--separator)',
                       background: taskId() === t.id ? 'color-mix(in srgb, var(--blue) 14%, transparent)' : 'transparent',
                     }}
@@ -434,12 +434,12 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                   placeholder="Or name the focus…"
                   onFocus={() => setTaskId(null)}
                   onInput={(e) => { setTaskId(null); setFreeTitle(e.currentTarget.value); }}
-                  style={{ flex: '1', padding: '10px 0', 'font-size': '16px' }}
+                  style={{ flex: '1', padding: '10px 0', 'font-size': 'calc(16px * var(--ts))' }}
                 />
               </div>
             </div>
 
-            <div style={{ 'font-weight': '600', 'font-size': '15px', margin: '20px 0 8px', color: 'var(--text)' }}>A realistic duration</div>
+            <div style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', margin: '20px 0 8px', color: 'var(--text)' }}>A realistic duration</div>
             <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap' }}>
               <For each={[25, 45, 60, 90]}>
                 {(m) => (
@@ -449,16 +449,16 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 )}
               </For>
             </div>
-            <p style={{ color: 'var(--text-tertiary)', 'font-size': '13px', margin: '8px 0 0' }}>
+            <p style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(13px * var(--ts))', margin: '8px 0 0' }}>
               Rebuilding attention? 25–45 min. Consistency beats longer sessions.
             </p>
             <Show when={advice()?.shortNight}>
-              <p data-testid="sprint-short-night" style={{ color: 'var(--yellow-deep)', 'font-size': '13px', margin: '6px 0 0', 'line-height': '1.45' }}>
+              <p data-testid="sprint-short-night" style={{ color: 'var(--yellow-deep)', 'font-size': 'calc(13px * var(--ts))', margin: '6px 0 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
                 Short night — defaulting to {advice()!.sprintMinutes} min today.
               </p>
             </Show>
 
-            <div style={{ 'font-weight': '600', 'font-size': '15px', margin: '20px 0 8px', color: 'var(--text)' }}>A start time</div>
+            <div style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', margin: '20px 0 8px', color: 'var(--text)' }}>A start time</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setLater(false)} style={pill(!later())}>Now</button>
               <button data-testid="sprint-later" onClick={() => setLater(true)} style={pill(later())}>Later today</button>
@@ -471,7 +471,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 onInput={(e) => setLaterTime(e.currentTarget.value)}
                 style={{ ...field, 'margin-top': '10px' }}
               />
-              <p style={{ color: 'var(--text-tertiary)', 'font-size': '13px', margin: '8px 0 0', 'line-height': '1.45' }}>
+              <p style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(13px * var(--ts))', margin: '8px 0 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
                 You’ll get a calendar file with two alerts — 5 min before (prepare) and at the end (recover).
                 In the share sheet choose <b>Save to Files</b> or <b>Mail</b>, then tap the file and <b>Add All</b>.
               </p>
@@ -500,7 +500,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
           {/* --------------------------------------------- 2 next action */}
           <Show when={stage() === 'action'}>
             <StepHeader stage="action" />
-            <div style={{ color: 'var(--text-secondary)', 'font-size': '14px', margin: '0 0 6px' }}>
+            <div style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))', margin: '0 0 6px' }}>
               Task: <b style={{ color: 'var(--text)' }}>{title()}</b>
             </div>
             <textarea
@@ -512,18 +512,18 @@ function SprintFlow(_props: { key: string }): JSX.Element {
               style={field}
             />
             <Show when={checklistIdeas().length > 0}>
-              <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '12px 0 6px' }}>From the checklist</div>
+              <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '12px 0 6px' }}>From the checklist</div>
               <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap' }}>
                 <For each={checklistIdeas()}>
                   {(c) => (
-                    <button onClick={() => setNextAction(c.title)} style={{ ...pill(nextAction() === c.title), 'font-weight': '500', 'font-size': '14px' }}>
+                    <button onClick={() => setNextAction(c.title)} style={{ ...pill(nextAction() === c.title), 'font-weight': 'var(--fw-500)', 'font-size': 'calc(14px * var(--ts))' }}>
                       {c.title}
                     </button>
                   )}
                 </For>
               </div>
             </Show>
-            <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '12px 14px', margin: '16px 0 0', 'font-size': '14px', 'line-height': '1.5', color: 'var(--text-secondary)' }}>
+            <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '12px 14px', margin: '16px 0 0', 'font-size': 'calc(14px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', color: 'var(--text-secondary)' }}>
               Instead of <i>“Work on website”</i>: review the homepage · rewrite the headline · draft the service
               description · test the contact form.
             </div>
@@ -548,13 +548,13 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                       <Checkbox checked={!!env()[c.id]} onToggle={() => setEnv((e) => ({ ...e, [c.id]: !e[c.id] }))} />
                     </div>
                     <div>
-                      <div style={{ 'font-size': '16px', color: 'var(--text)', 'font-weight': '500' }}>{c.label}</div>
-                      <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.4', 'margin-top': '2px' }}>{c.hint}</div>
+                      <div style={{ 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)', 'font-weight': 'var(--fw-500)' }}>{c.label}</div>
+                      <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.4 * var(--lh))', 'margin-top': '2px' }}>{c.hint}</div>
                     </div>
                   </div>
                 )}
               </For>
-              <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '12px 0' }}>
+              <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '12px 0' }}>
                 Familiar instrumental music can help. Make focused behavior easier and distraction harder.
               </div>
             </div>
@@ -582,16 +582,16 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 data-testid="sprint-clock"
                 style={{
                   position: 'absolute', inset: '0', display: 'flex', 'align-items': 'center', 'justify-content': 'center',
-                  'font-size': '56px', 'font-weight': '700',
+                  'font-size': 'calc(56px * var(--ts))', 'font-weight': 'var(--fw-700)',
                   'font-variant-numeric': 'tabular-nums', color: 'var(--text)', 'letter-spacing': '-1px',
                 }}
               >
                 {formatClock(remaining())}
               </div>
             </div>
-            <div style={{ 'text-align': 'center', 'font-size': '18px', 'font-weight': '600', color: 'var(--text)' }}>{title()}</div>
+            <div style={{ 'text-align': 'center', 'font-size': 'calc(18px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text)' }}>{title()}</div>
             <Show when={nextAction().trim()}>
-              <div style={{ 'text-align': 'center', 'font-size': '15px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+              <div style={{ 'text-align': 'center', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                 Next: {nextAction()}
               </div>
             </Show>
@@ -615,13 +615,13 @@ function SprintFlow(_props: { key: string }): JSX.Element {
               End sprint &amp; recover
             </button>
 
-            <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', margin: '18px 2px 0', 'font-size': '14px', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', margin: '18px 2px 0', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>
               <label style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                 <input type="checkbox" checked={wake.on()} onChange={(e) => wake.set(e.currentTarget.checked)} />
                 Keep screen on
               </label>
               <button
-                style={{ color: 'var(--blue)', 'font-size': '14px' }}
+                style={{ color: 'var(--blue)', 'font-size': 'calc(14px * var(--ts))' }}
                 onClick={() => sprint() && void deliverFile(
                   'focus-sprint-end.ics',
                   sprintCalendar({
@@ -637,7 +637,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 End alert via Calendar
               </button>
             </div>
-            <p style={{ color: 'var(--text-tertiary)', 'font-size': '12px', 'text-align': 'center', margin: '14px 0 0', 'line-height': '1.45' }}>
+            <p style={{ color: 'var(--text-tertiary)', 'font-size': 'calc(12px * var(--ts))', 'text-align': 'center', margin: '14px 0 0', 'line-height': 'calc(1.45 * var(--lh))' }}>
               The timer runs on the clock — lock the phone or put it away. Clarity chimes if it’s open;
               your routine’s calendar alert marks the end of scheduled sprints.
             </p>
@@ -647,15 +647,15 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 data-testid="reset-card"
                 style={{ background: 'var(--bg-inset)', 'border-radius': '14px', padding: '16px', margin: '18px 0 0' }}
               >
-                <div style={{ 'font-weight': '700', 'font-size': '17px', color: 'var(--text)', 'margin-bottom': '8px' }}>
+                <div style={{ 'font-weight': 'var(--fw-700)', 'font-size': 'calc(17px * var(--ts))', color: 'var(--text)', 'margin-bottom': '8px' }}>
                   Use reset to improve thinking
                 </div>
-                <ol style={{ 'padding-left': '20px', 'font-size': '15px', 'line-height': '1.55', color: 'var(--text)' }}>
+                <ol style={{ 'padding-left': '20px', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.55 * var(--lh))', color: 'var(--text)' }}>
                   <li><b>Work on it deliberately.</b> Gather info, explore options, name what’s unclear.</li>
                   <li><b>Step away.</b> A walk, a shower, a simple physical task.</li>
                   <li><b>Return with fresh attention.</b> Review and test new ideas.</li>
                 </ol>
-                <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '8px 0 12px' }}>
+                <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '8px 0 12px' }}>
                   This is incubation. A break doesn’t guarantee insight, but it can change your perspective.
                 </p>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -684,7 +684,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
           {/* ------------------------------------------------ 5 recover */}
           <Show when={stage() === 'recover'}>
             <StepHeader stage="recover" />
-            <label style={{ 'font-weight': '600', 'font-size': '15px', color: 'var(--text)' }}>What did you complete?</label>
+            <label style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>What did you complete?</label>
             <textarea
               data-testid="sprint-note"
               value={note()}
@@ -694,7 +694,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
               style={{ ...field, margin: '6px 0 14px' }}
             />
             <Show when={task()}>
-              <label style={{ 'font-weight': '600', 'font-size': '15px', color: 'var(--text)' }}>The next action</label>
+              <label style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>The next action</label>
               <input
                 data-testid="sprint-next-step"
                 value={nextStep()}
@@ -702,7 +702,7 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 onInput={(e) => setNextStep(e.currentTarget.value)}
                 style={{ ...field, margin: '6px 0 6px' }}
               />
-              <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', margin: '0 0 12px' }}>
+              <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', margin: '0 0 12px' }}>
                 Added to the top of the to-do’s checklist.
               </div>
               <div
@@ -710,19 +710,19 @@ function SprintFlow(_props: { key: string }): JSX.Element {
                 style={{ display: 'flex', 'align-items': 'center', gap: '14px', padding: '6px 2px 14px', cursor: 'pointer' }}
               >
                 <Checkbox checked={markDone()} onToggle={() => setMarkDone((v) => !v)} />
-                <span style={{ 'font-size': '15px', color: 'var(--text)' }}>Mark “{task()!.title}” complete</span>
+                <span style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>Mark “{task()!.title}” complete</span>
               </div>
             </Show>
 
-            <div style={{ 'font-weight': '600', 'font-size': '15px', color: 'var(--text)', margin: '4px 0 8px' }}>Recover before you restart</div>
+            <div style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', margin: '4px 0 8px' }}>Recover before you restart</div>
             <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap' }}>
               <For each={RECOVERY_OPTIONS}>
-                {(r) => <button onClick={() => setRecovery(r)} style={{ ...pill(recovery() === r), 'font-weight': '500' }}>{r}</button>}
+                {(r) => <button onClick={() => setRecovery(r)} style={{ ...pill(recovery() === r), 'font-weight': 'var(--fw-500)' }}>{r}</button>}
               </For>
             </div>
 
-            <div style={{ 'font-weight': '600', 'font-size': '15px', color: 'var(--text)', margin: '18px 0 8px' }}>
-              Energy right now <span style={{ color: 'var(--text-tertiary)', 'font-weight': '400' }}>(optional)</span>
+            <div style={{ 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)', margin: '18px 0 8px' }}>
+              Energy right now <span style={{ color: 'var(--text-tertiary)', 'font-weight': 'var(--fw-400)' }}>(optional)</span>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <For each={[1, 2, 3, 4, 5]}>

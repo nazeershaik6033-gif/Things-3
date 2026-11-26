@@ -95,7 +95,7 @@ export function ChecklistEditor(props: {
               }}
               style={{
                 flex: '1',
-                'font-size': '15px',
+                'font-size': 'calc(15px * var(--ts))',
                 color: item().completed ? 'var(--text-secondary)' : 'var(--text)',
                 'text-decoration': item().completed ? 'line-through' : 'none',
                 padding: '2px 0',
@@ -112,7 +112,7 @@ export function ChecklistEditor(props: {
           e.preventDefault();
           focusItem(insertAfter(null));
         }}
-        style={{ color: 'var(--text-secondary)', 'font-size': '14px', padding: '4px 0 2px 27px' }}
+        style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))', padding: '4px 0 2px 27px' }}
       >
         + Add item
       </button>

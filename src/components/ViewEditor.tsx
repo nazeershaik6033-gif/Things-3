@@ -28,7 +28,7 @@ export function ViewEditor(props: {
       aria-pressed={on}
       onClick={onClick}
       style={{
-        padding: '5px 10px', 'border-radius': '999px', 'font-size': '13px', 'font-weight': '600',
+        padding: '5px 10px', 'border-radius': '999px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
         background: on ? 'var(--blue)' : 'var(--bg-inset)', color: on ? 'var(--text-invert)' : 'var(--text)',
       }}
     >
@@ -37,12 +37,12 @@ export function ViewEditor(props: {
   );
   const row = (label: string, body: JSX.Element) => (
     <div style={{ padding: '6px 0' }}>
-      <div style={{ 'font-size': '12px', 'font-weight': '700', color: 'var(--text-secondary)', 'padding-bottom': '5px' }}>{label}</div>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'padding-bottom': '5px' }}>{label}</div>
       <div style={{ display: 'flex', gap: '6px', 'flex-wrap': 'wrap' }}>{body}</div>
     </div>
   );
   const select = {
-    padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)', 'font-size': '15px', border: 'none',
+    padding: '8px 10px', 'border-radius': '10px', background: 'var(--bg-inset)', color: 'var(--text)', 'font-size': 'calc(15px * var(--ts))', border: 'none',
   } as const;
 
   return (
@@ -80,7 +80,7 @@ export function ViewEditor(props: {
             props.onSave(title(), f(), groupBy());
             props.onClose();
           }}
-          style={{ width: '100%', 'margin-top': '10px', padding: '12px', 'border-radius': '12px', background: 'var(--blue)', color: '#fff', 'font-size': '16px', 'font-weight': '600' }}
+          style={{ width: '100%', 'margin-top': '10px', padding: '12px', 'border-radius': '12px', background: 'var(--blue)', color: '#fff', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-600)' }}
         >
           Save View
         </button>

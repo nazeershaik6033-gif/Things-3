@@ -198,8 +198,8 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
         padding: '4px 11px',
         'border-radius': '999px',
         background: 'var(--bg-inset)',
-        'font-size': '13px',
-        'font-weight': '500',
+        'font-size': 'calc(13px * var(--ts))',
+        'font-weight': 'var(--fw-500)',
         color: color ?? 'var(--text)',
       }}
     >
@@ -240,7 +240,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           <button
             class="pressable"
             onClick={close}
-            style={{ color: 'var(--text-secondary)', 'font-size': '16px', padding: '8px 6px' }}
+            style={{ color: 'var(--text-secondary)', 'font-size': 'calc(16px * var(--ts))', padding: '8px 6px' }}
           >
             Cancel
           </button>
@@ -253,8 +253,8 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
             style={{
               background: 'var(--blue)',
               color: '#fff',
-              'font-weight': '600',
-              'font-size': '15px',
+              'font-weight': 'var(--fw-600)',
+              'font-size': 'calc(15px * var(--ts))',
               padding: '8px 18px',
               'border-radius': '999px',
             }}
@@ -288,9 +288,9 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
             enterkeyhint="done"
             autofocus
             style={{
-              'font-size': '20px',
-              'font-weight': '600',
-              'line-height': '1.3',
+              'font-size': 'calc(20px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
+              'line-height': 'calc(1.3 * var(--lh))',
               padding: '2px 0 10px',
             }}
           />
@@ -319,7 +319,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
               return (
                 <Show when={bits().length + nat().recognised.length > 0}>
                   <div style={{ display: 'flex', 'align-items': 'baseline', gap: '10px', padding: '0 0 8px', 'flex-wrap': 'wrap' }}>
-                    <div data-testid="short-syntax-preview" style={{ 'font-size': '13px', color: 'var(--blue)', 'font-weight': '500', flex: '1', 'min-width': '0' }}>
+                    <div data-testid="short-syntax-preview" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--blue)', 'font-weight': 'var(--fw-500)', flex: '1', 'min-width': '0' }}>
                       {[...bits(), ...natBits()].join('  ·  ') || 'Kept as text'}
                     </div>
                     <Show when={nat().recognised.length > 0}>
@@ -328,7 +328,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
                         aria-pressed={!natural()}
                         onPointerDown={(e) => e.preventDefault()}
                         onClick={() => setNatural(!natural())}
-                        style={{ 'font-size': '12px', 'font-weight': '600', color: 'var(--text-secondary)', padding: '2px 0' }}
+                        style={{ 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', padding: '2px 0' }}
                       >
                         {natural() ? 'Keep as text' : 'Read the words'}
                       </button>
@@ -357,7 +357,7 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
               <Show when={whenChip() === 'Today'}>
                 <button
                   onClick={() => applyWhen({ type: 'date', date: addDays(currentDate(), 1) })}
-                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': '13px', 'font-weight': '500', color: 'var(--text-secondary)' }}
+                  style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', padding: '3px 10px', 'border-radius': '999px', background: 'var(--bg-inset)', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-500)', color: 'var(--text-secondary)' }}
                 >
                   Tomorrow
                 </button>
@@ -386,9 +386,9 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
                 onInput={setTagDraft}
                 onKeyDown={(e) => e.key === 'Enter' && void addTag()}
                 placeholder="Add tag…"
-                style={{ flex: '1', padding: '8px 12px', 'border-radius': '10px', background: 'var(--bg-inset)', 'font-size': '15px' }}
+                style={{ flex: '1', padding: '8px 12px', 'border-radius': '10px', background: 'var(--bg-inset)', 'font-size': 'calc(15px * var(--ts))' }}
               />
-              <button class="pressable" onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': '600' }}>
+              <button class="pressable" onClick={() => void addTag()} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)' }}>
                 Add
               </button>
             </div>
@@ -397,11 +397,12 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
           {/* Notes is always present — the whole point of the taller panel. */}
           <AutoTextarea
             ref={(el) => (notesEl = el)}
+            class="notes-type"
             value={notes()}
             onInput={setNotes}
             placeholder="Notes"
             rows={3}
-            style={{ 'font-size': '16px', 'line-height': '1.5', 'min-height': '88px', padding: '2px 0' }}
+            style={{ 'font-size': 'calc(16px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', 'min-height': '88px', padding: '2px 0' }}
           />
 
           <Show when={showChecklist() || checklist().length > 0}>
@@ -423,13 +424,13 @@ function QuickEntryInner(props: { init: QuickEntryState }): JSX.Element {
               gap: '8px',
               width: '100%',
               padding: '11px 18px',
-              'font-size': '15px',
+              'font-size': 'calc(15px * var(--ts))',
               'text-align': 'left',
               color: 'var(--text-secondary)',
             }}
           >
             <span style={{ flex: '1' }}>List</span>
-            <span style={{ color: 'var(--text)', 'font-weight': '500' }}>{destLabel()}</span>
+            <span style={{ color: 'var(--text)', 'font-weight': 'var(--fw-500)' }}>{destLabel()}</span>
             <Icon name="chevron-right" size={13} />
           </button>
 

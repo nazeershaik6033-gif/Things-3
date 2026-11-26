@@ -34,9 +34,9 @@ function PromptSheet(props: { task: Task; onClose: () => void }): JSX.Element {
         style={{
           padding: '0 20px 10px',
           color: 'var(--text-secondary)',
-          'font-size': '14px',
+          'font-size': 'calc(14px * var(--ts))',
           'text-align': 'center',
-          'line-height': '1.4',
+          'line-height': 'calc(1.4 * var(--lh))',
         }}
       >
         “{props.task.title || 'New To-Do'}” was due {formatRelative(due(), today())}. It
@@ -88,7 +88,7 @@ function PromptSheet(props: { task: Task; onClose: () => void }): JSX.Element {
           width: '100%',
           padding: '12px 20px 16px',
           color: 'var(--text-secondary)',
-          'font-size': '14px',
+          'font-size': 'calc(14px * var(--ts))',
         }}
       >
         Always use today — don’t ask again

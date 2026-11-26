@@ -92,8 +92,8 @@ export function BoardsScreen(): JSX.Element {
                   <span
                     style={{
                       display: 'block',
-                      'font-size': '16px',
-                      'font-weight': '600',
+                      'font-size': 'calc(16px * var(--ts))',
+                      'font-weight': 'var(--fw-600)',
                       color: 'var(--text)',
                       overflow: 'hidden',
                       'text-overflow': 'ellipsis',
@@ -108,7 +108,7 @@ export function BoardsScreen(): JSX.Element {
                       'align-items': 'center',
                       gap: '8px',
                       'margin-top': '5px',
-                      'font-size': '12px',
+                      'font-size': 'calc(12px * var(--ts))',
                       color: 'var(--text-tertiary)',
                     }}
                   >
@@ -155,7 +155,7 @@ export function BoardsScreen(): JSX.Element {
           data-testid="new-board-row"
           class="pressable"
           onClick={newBoard}
-          style={{ display: 'flex', 'align-items': 'center', gap: '7px', color: 'var(--blue)', 'font-size': '16px', 'font-weight': '500' }}
+          style={{ display: 'flex', 'align-items': 'center', gap: '7px', color: 'var(--blue)', 'font-size': 'calc(16px * var(--ts))', 'font-weight': 'var(--fw-500)' }}
         >
           <Icon name="plus" size={17} /> New Board
         </button>

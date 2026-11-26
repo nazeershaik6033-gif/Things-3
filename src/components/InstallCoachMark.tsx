@@ -48,7 +48,7 @@ export function InstallCoachMark(): JSX.Element {
         }}
       >
         <Icon name="export" size={22} color="var(--blue)" />
-        <div style={{ flex: '1', 'font-size': '14px', 'line-height': '1.5' }}>
+        <div style={{ flex: '1', 'font-size': 'calc(14px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))' }}>
           <strong>Install Clarity:</strong> tap the Share button in Safari, then{' '}
           <strong>Add to Home Screen</strong>. You’ll get the full-screen app, offline support,
           and protected storage.

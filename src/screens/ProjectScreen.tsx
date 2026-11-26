@@ -113,7 +113,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
             placeholder="New Project"
             data-testid="project-title"
             onInput={(e) => void updateProject(props.id, { title: e.currentTarget.value })}
-            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': '700' }}
+            style={{ width: '100%', 'font-size': 'var(--fs-title)', 'font-weight': 'var(--fw-700)' }}
           />
         }
         icon={<ProgressPie progress={progress()} size={26} />}
@@ -133,6 +133,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
         {/* Editable notes */}
         <div style={{ padding: '0 16px 6px' }}>
           <textarea
+            class="notes-type"
             value={project()!.notes}
             placeholder="Notes"
             rows={1}
@@ -141,7 +142,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
               e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
               void updateProject(props.id, { notes: e.currentTarget.value });
             }}
-            style={{ width: '100%', 'font-size': '15px', color: 'var(--text-secondary)', overflow: 'hidden' }}
+            style={{ width: '100%', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)', overflow: 'hidden' }}
           />
         </div>
 
@@ -152,7 +153,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
               aria-pressed={projectView() === v}
               onClick={() => setProjectView(v)}
               style={{
-                padding: '5px 11px', 'border-radius': '8px', 'font-size': '13px', 'font-weight': '600',
+                padding: '5px 11px', 'border-radius': '8px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
                 background: projectView() === v ? 'var(--bg-card)' : 'transparent',
                 color: projectView() === v ? 'var(--text)' : 'var(--text-secondary)',
                 'box-shadow': projectView() === v ? 'var(--shadow-card)' : 'none',
@@ -192,7 +193,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
                         value={section().heading!.title}
                         placeholder="Heading"
                         onInput={(e) => void updateHeading(section().heading!.id, { title: e.currentTarget.value })}
-                        style={{ flex: '1', color: 'var(--blue)', 'font-weight': '600', 'font-size': '16px' }}
+                        style={{ flex: '1', color: 'var(--blue)', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(16px * var(--ts))' }}
                       />
                       <button
                         aria-label="Heading menu"
@@ -221,7 +222,7 @@ export function ProjectScreen(props: { id: string }): JSX.Element {
         <Show when={sections().loggedOlder.length > 0}>
           <button
             onClick={() => setShowLogged(!showLogged())}
-            style={{ color: 'var(--text-secondary)', 'font-size': '14px', padding: '12px 16px' }}
+            style={{ color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))', padding: '12px 16px' }}
           >
             {showLogged() ? 'Hide logged items' : `Show ${sections().loggedOlder.length} logged items`}
           </button>

@@ -47,22 +47,22 @@ function DayBlock(props: {
         style={{ display: 'flex', 'align-items': 'center', gap: '10px', width: '100%', padding: '11px 14px', 'text-align': 'left' }}
       >
         <Icon name={open() ? 'chevron-down' : 'chevron-right'} size={14} color="var(--text-tertiary)" />
-        <span style={{ flex: '1', 'font-size': '15px', 'font-weight': '600' }}>{label()}</span>
+        <span style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>{label()}</span>
         <Show when={props.day.completedCount > 0}>
-          <span style={{ 'font-size': '12px', color: 'var(--green)', 'font-weight': '600' }}>
+          <span style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--green)', 'font-weight': 'var(--fw-600)' }}>
             {props.day.completedCount} done
           </span>
         </Show>
-        <span style={{ 'font-size': '14px', 'font-variant-numeric': 'tabular-nums', color: 'var(--text-secondary)', 'min-width': '56px', 'text-align': 'right' }}>
+        <span style={{ 'font-size': 'calc(14px * var(--ts))', 'font-variant-numeric': 'tabular-nums', color: 'var(--text-secondary)', 'min-width': '56px', 'text-align': 'right' }}>
           {props.day.totalSec > 0 ? formatDuration(props.day.totalSec) : '—'}
         </span>
       </button>
       <Show when={open()}>
         <div style={{ padding: '0 14px 10px 38px' }}>
           <Show when={props.day.review}>
-            <div data-testid="worklog-review" style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '0 0 8px', 'line-height': '1.45' }}>
+            <div data-testid="worklog-review" style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', padding: '0 0 8px', 'line-height': 'calc(1.45 * var(--lh))' }}>
               <Show when={props.day.review!.impact}>
-                <span style={{ color: 'var(--purple)', 'font-weight': '600' }}>
+                <span style={{ color: 'var(--purple)', 'font-weight': 'var(--fw-600)' }}>
                   {IMPACT_LABELS[(props.day.review!.impact ?? 1) - 1]} impact
                 </span>
                 {props.day.review!.note ? ' · ' : ''}
@@ -72,7 +72,7 @@ function DayBlock(props: {
           </Show>
           <For each={props.day.entries}>
             {(e) => (
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '5px 0', 'font-size': '14px' }}>
+              <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '5px 0', 'font-size': 'calc(14px * var(--ts))' }}>
                 <span style={{ width: '14px', color: 'var(--green)', display: 'inline-flex' }}>
                   <Show when={e.completed}><Icon name="check" size={13} strokeWidth={2.6} /></Show>
                 </span>
@@ -108,7 +108,7 @@ function DayBlock(props: {
                       else props.onSetTime(e.taskId, props.day.date, min * 60);
                       setEditing(null);
                     }}
-                    style={{ ...fieldStyle, width: '76px', padding: '4px 8px', 'font-size': '14px' }}
+                    style={{ ...fieldStyle, width: '76px', padding: '4px 8px', 'font-size': 'calc(14px * var(--ts))' }}
                   />
                 </Show>
               </div>
@@ -179,7 +179,7 @@ export function WorklogScreen(): JSX.Element {
       </StatRow>
 
       <div style={{ display: 'flex', gap: '6px', 'align-items': 'center', padding: '0 16px 12px', 'flex-wrap': 'wrap' }}>
-        <span style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'margin-right': '4px' }}>Timesheet</span>
+        <span style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'margin-right': '4px' }}>Timesheet</span>
         <For each={(['week', 'month', 'all'] as Range[])}>
           {(r) => (
             <button
@@ -187,7 +187,7 @@ export function WorklogScreen(): JSX.Element {
               style={{
                 ...softButton,
                 padding: '5px 10px',
-                'font-size': '13px',
+                'font-size': 'calc(13px * var(--ts))',
                 background: range() === r ? 'var(--blue)' : 'var(--bg-inset)',
                 color: range() === r ? 'var(--text-invert)' : 'var(--text)',
               }}
@@ -214,7 +214,7 @@ export function WorklogScreen(): JSX.Element {
               <For each={m.weeks}>
                 {(w) => (
                   <Panel pad={false}>
-                    <div style={{ display: 'flex', padding: '9px 14px', 'font-size': '13px', color: 'var(--text-secondary)', 'font-weight': '600' }}>
+                    <div style={{ display: 'flex', padding: '9px 14px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'font-weight': 'var(--fw-600)' }}>
                       <span style={{ flex: '1' }}>Week of {shortDate(w.start)} – {shortDate(addDays(w.start, 6))}</span>
                       <span style={{ 'font-variant-numeric': 'tabular-nums' }}>{formatDuration(w.totalSec)}</span>
                     </div>

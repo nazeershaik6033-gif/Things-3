@@ -107,7 +107,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
           placeholder="New Board"
           data-testid="board-title"
           onInput={(e) => void updateBoard(props.id, { title: e.currentTarget.value })}
-          style={{ flex: '1', 'font-size': '19px', 'font-weight': '700', 'min-width': '0' }}
+          style={{ flex: '1', 'font-size': 'calc(19px * var(--ts))', 'font-weight': 'var(--fw-700)', 'min-width': '0' }}
         />
         <button
           aria-label="Board calendar"
@@ -181,7 +181,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                   placeholder="List name"
                   data-testid="list-title"
                   onInput={(e) => void updateList(list().id, { title: e.currentTarget.value })}
-                  style={{ flex: '1', 'font-weight': '600', 'font-size': '15px', 'min-width': '0' }}
+                  style={{ flex: '1', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(15px * var(--ts))', 'min-width': '0' }}
                 />
                 <span
                   style={{
@@ -190,8 +190,8 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                     'border-radius': '999px',
                     background: 'var(--bg-inset)',
                     color: 'var(--text-secondary)',
-                    'font-size': '12px',
-                    'font-weight': '600',
+                    'font-size': 'calc(12px * var(--ts))',
+                    'font-weight': 'var(--fw-600)',
                     'text-align': 'center',
                     'font-variant-numeric': 'tabular-nums',
                   }}
@@ -222,7 +222,7 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                     data-testid="add-card"
                     class="pressable"
                     onClick={() => { haptic('tick'); setComposerFor(list().id); setDraft(''); }}
-                    style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-secondary)', 'font-size': '14px', padding: '10px 12px' }}
+                    style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))', padding: '10px 12px' }}
                   >
                     <Icon name="plus" size={15} /> Add a card
                   </button>
@@ -249,13 +249,13 @@ export function BoardScreen(props: { id: string }): JSX.Element {
                       background: 'var(--bg-card)',
                       'border-radius': '9px',
                       padding: '9px 11px',
-                      'font-size': '15px',
+                      'font-size': 'calc(15px * var(--ts))',
                       'box-shadow': '0 1px 2px rgba(0,0,0,0.12)',
                       overflow: 'hidden',
                     }}
                   />
                   <div style={{ display: 'flex', gap: '10px', 'margin-top': '6px', 'align-items': 'center' }}>
-                    <button onClick={() => addCard(list().id)} style={{ color: '#fff', background: 'var(--blue)', padding: '6px 14px', 'border-radius': '8px', 'font-weight': '600', 'font-size': '14px' }}>
+                    <button onClick={() => addCard(list().id)} style={{ color: '#fff', background: 'var(--blue)', padding: '6px 14px', 'border-radius': '8px', 'font-weight': 'var(--fw-600)', 'font-size': 'calc(14px * var(--ts))' }}>
                       Add
                     </button>
                     <button onClick={() => setComposerFor(null)} style={{ color: 'var(--text-secondary)', padding: '6px', display: 'flex' }}>
@@ -288,8 +288,8 @@ export function BoardScreen(props: { id: string }): JSX.Element {
             background: 'transparent',
             border: '1.5px dashed var(--check-border)',
             color: 'var(--text-secondary)',
-            'font-size': '15px',
-            'font-weight': '500',
+            'font-size': 'calc(15px * var(--ts))',
+            'font-weight': 'var(--fw-500)',
           }}
         >
           <Icon name="plus" size={17} /> Add list
@@ -366,7 +366,7 @@ function LabelManager(props: { boardId: string; labels: BoardLabel[]; onClose: (
                 value={label().title}
                 placeholder="Label name"
                 onInput={(e) => void updateLabel(label().id, { title: e.currentTarget.value })}
-                style={{ flex: '1', 'font-size': '15px' }}
+                style={{ flex: '1', 'font-size': 'calc(15px * var(--ts))' }}
               />
               <button aria-label="Delete label" onClick={() => void deleteLabel(label().id)} style={{ color: 'var(--red)', padding: '4px', display: 'flex' }}>
                 <Icon name="trash" size={17} />
@@ -394,7 +394,7 @@ function LabelManager(props: { boardId: string; labels: BoardLabel[]; onClose: (
           placeholder="New label…"
           style={{ flex: '1', padding: '8px 12px', 'border-radius': '9px', background: 'var(--bg-inset)' }}
         />
-        <button onClick={add} style={{ color: 'var(--blue)', 'font-weight': '600', padding: '8px 6px' }}>Add</button>
+        <button onClick={add} style={{ color: 'var(--blue)', 'font-weight': 'var(--fw-600)', padding: '8px 6px' }}>Add</button>
       </div>
     </Sheet>
   );

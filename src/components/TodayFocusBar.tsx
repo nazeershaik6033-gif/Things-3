@@ -25,7 +25,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
     >
       <button
         onClick={() => push({ name: 'focus' })}
-        style={{ display: 'flex', 'align-items': 'center', gap: '8px', width: '100%', 'text-align': 'left', 'font-size': '14px', color: 'var(--text)' }}
+        style={{ display: 'flex', 'align-items': 'center', gap: '8px', width: '100%', 'text-align': 'left', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text)' }}
       >
         <Icon name="mountain" size={17} color="var(--teal)" />
         <span style={{ flex: '1', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap', color: everest() ? 'var(--text)' : 'var(--text-secondary)' }}>
@@ -37,7 +37,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
         <button
           data-testid="today-short-night"
           onClick={() => push({ name: 'focus' })}
-          style={{ display: 'block', width: '100%', 'text-align': 'left', 'margin-top': '8px', 'font-size': '13px', 'line-height': '1.4', color: 'var(--text)', padding: '7px 9px', 'border-radius': '9px', background: 'color-mix(in srgb, var(--yellow) 22%, transparent)' }}
+          style={{ display: 'block', width: '100%', 'text-align': 'left', 'margin-top': '8px', 'font-size': 'calc(13px * var(--ts))', 'line-height': 'calc(1.4 * var(--lh))', color: 'var(--text)', padding: '7px 9px', 'border-radius': '9px', background: 'color-mix(in srgb, var(--yellow) 22%, transparent)' }}
         >
           ⌚ {formatDuration(health()!.sleep!.asleepMin)} sleep — aim for {advice()!.mitSuggest} MITs and {advice()!.sprintMinutes}-min sprints today.
         </button>
@@ -46,7 +46,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
         <button
           data-testid="today-sync-nudge"
           onClick={() => push({ name: 'focus' })}
-          style={{ display: 'block', 'margin-top': '6px', 'font-size': '13px', color: 'var(--blue)' }}
+          style={{ display: 'block', 'margin-top': '6px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--blue)' }}
         >
           ⌚ Sync last night’s sleep ›
         </button>
@@ -54,7 +54,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
       <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', 'margin-top': '8px' }}>
         <span
           data-testid="mit-count"
-          style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', flex: '1' }}
+          style={{ display: 'inline-flex', 'align-items': 'center', gap: '5px', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)', flex: '1' }}
         >
           <Icon name="star" size={13} color="var(--yellow-deep)" />
           <Show when={props.mitCount > 0} fallback={'Tap a to-do → ★ MIT (1–3)'}>
@@ -66,7 +66,7 @@ export function TodayFocusBar(props: { mitCount: number }): JSX.Element {
           onClick={() => openSprint({})}
           style={{
             display: 'inline-flex', 'align-items': 'center', gap: '6px', padding: '6px 12px', 'border-radius': '999px',
-            background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': '13px', 'font-weight': '600',
+            background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)',
           }}
         >
           <Icon name="start" size={11} /> Focus Sprint

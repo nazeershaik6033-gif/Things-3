@@ -29,9 +29,9 @@ function QuoteMark(props: { color: string }): JSX.Element {
     <span
       aria-hidden="true"
       style={{
-        'font-size': '34px',
-        'line-height': '0.8',
-        'font-weight': '700',
+        'font-size': 'calc(34px * var(--ts))',
+        'line-height': 'calc(0.8 * var(--lh))',
+        'font-weight': 'var(--fw-700)',
         color: props.color,
         opacity: '0.35',
         'font-family': 'Georgia, serif',
@@ -77,8 +77,8 @@ export function QuoteCard(props: { today: DateStr; delayIndex?: number }): JSX.E
           <Icon name="sparkle" size={14} color={TOPIC_COLOR[quote()!.topic]} />
           <span
             style={{
-              'font-size': '12px',
-              'font-weight': '700',
+              'font-size': 'calc(12px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'letter-spacing': '0.05em',
               'text-transform': 'uppercase',
               color: 'var(--text-tertiary)',
@@ -95,9 +95,9 @@ export function QuoteCard(props: { today: DateStr; delayIndex?: number }): JSX.E
         <div
           data-testid="home-quote-text"
           style={{
-            'font-size': '16px',
-            'line-height': '1.4',
-            'font-weight': '500',
+            'font-size': 'calc(16px * var(--ts))',
+            'line-height': 'calc(1.4 * var(--lh))',
+            'font-weight': 'var(--fw-500)',
             display: '-webkit-box',
             '-webkit-line-clamp': '3',
             '-webkit-box-orient': 'vertical',
@@ -109,7 +109,7 @@ export function QuoteCard(props: { today: DateStr; delayIndex?: number }): JSX.E
         <div
           style={{
             'margin-top': '6px',
-            'font-size': '13px',
+            'font-size': 'calc(13px * var(--ts))',
             color: 'var(--text-secondary)',
             overflow: 'hidden',
             'text-overflow': 'ellipsis',
@@ -176,8 +176,8 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
           <Icon name="sparkle" size={15} color={TOPIC_COLOR[props.quote.topic]} />
           <span
             style={{
-              'font-size': '12px',
-              'font-weight': '700',
+              'font-size': 'calc(12px * var(--ts))',
+              'font-weight': 'var(--fw-700)',
               'letter-spacing': '0.05em',
               'text-transform': 'uppercase',
               color: 'var(--text-tertiary)',
@@ -190,14 +190,14 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
         <div style={{ display: 'flex', gap: '8px' }}>
           <QuoteMark color={TOPIC_COLOR[props.quote.topic]} />
           <div>
-            <div data-testid="quote-sheet-text" style={{ 'font-size': '19px', 'line-height': '1.4', 'font-weight': '500' }}>
+            <div data-testid="quote-sheet-text" style={{ 'font-size': 'calc(19px * var(--ts))', 'line-height': 'calc(1.4 * var(--lh))', 'font-weight': 'var(--fw-500)' }}>
               {props.quote.text}
             </div>
-            <div style={{ 'margin-top': '10px', 'font-size': '14px', color: 'var(--text-secondary)' }}>
+            <div style={{ 'margin-top': '10px', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)' }}>
               — {attribution(props.quote)}
             </div>
             <Show when={props.quote.attributed}>
-              <div style={{ 'margin-top': '6px', 'font-size': '12px', color: 'var(--text-tertiary)', 'line-height': '1.4' }}>
+              <div style={{ 'margin-top': '6px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.4 * var(--lh))' }}>
                 Widely repeated under this name, but it can’t be traced to a primary text — treat the
                 attribution, not the line, with suspicion.
               </div>
@@ -220,8 +220,8 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
               'border-radius': '11px',
               background: 'var(--bg-inset)',
               color: saved() ? 'var(--yellow-deep)' : 'var(--text)',
-              'font-size': '15px',
-              'font-weight': '600',
+              'font-size': 'calc(15px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
             }}
           >
             <Icon name="star" size={15} color={saved() ? 'var(--yellow-deep)' : 'var(--text-secondary)'} />
@@ -241,8 +241,8 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
               'border-radius': '11px',
               background: 'var(--blue)',
               color: 'var(--text-invert)',
-              'font-size': '15px',
-              'font-weight': '600',
+              'font-size': 'calc(15px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
               opacity: busy() ? '0.6' : '1',
             }}
           >
@@ -252,7 +252,7 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
         </div>
 
         <Show when={error()}>
-          <div style={{ 'margin-top': '12px', 'font-size': '13px', color: 'var(--red)', 'line-height': '1.45' }}>
+          <div style={{ 'margin-top': '12px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--red)', 'line-height': 'calc(1.45 * var(--lh))' }}>
             {error()}
           </div>
         </Show>
@@ -268,14 +268,14 @@ export function QuoteSheet(props: { quote: BrainQuote; onClose: () => void }): J
             }}
           >
             <MarkdownView source={note()!.text} />
-            <div style={{ 'margin-top': '10px', 'font-size': '12px', color: 'var(--text-tertiary)' }}>
+            <div style={{ 'margin-top': '10px', 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)' }}>
               Written by {note()!.provider} · kept on this device
             </div>
           </div>
         </Show>
 
         <Show when={!note() && !busy()}>
-          <p style={{ 'margin-top': '14px', 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.45' }}>
+          <p style={{ 'margin-top': '14px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
             “Go deeper” asks what the science behind the line actually says and gives you one thing to
             try today. With an OpenRouter or Gemini key (Settings → AI) the answer appears here and is
             kept for later; without one, the prompt is handed to the Claude app.

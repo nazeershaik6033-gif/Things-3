@@ -48,8 +48,8 @@ function ConvictionDots(props: {
                 'min-width': '0',
                 height: '42px',
                 'border-radius': '11px',
-                'font-size': '14px',
-                'font-weight': selected() ? '700' : '600',
+                'font-size': 'calc(14px * var(--ts))',
+                'font-weight': selected() ? 'var(--fw-700)' : 'var(--fw-600)',
                 'font-variant-numeric': 'tabular-nums',
                 color: filled() ? 'var(--text-invert)' : 'var(--text-secondary)',
                 background: filled()
@@ -190,8 +190,8 @@ export function BeliefSession(props: {
         <span
           data-testid="session-position"
           style={{
-            'font-size': '12px',
-            'font-weight': '700',
+            'font-size': 'calc(12px * var(--ts))',
+            'font-weight': 'var(--fw-700)',
             'letter-spacing': '0.05em',
             'text-transform': 'uppercase',
             color: 'var(--text-tertiary)',
@@ -249,14 +249,14 @@ export function BeliefSession(props: {
           when={!onSummary() && belief()}
           fallback={
             <div style={{ display: 'flex', 'flex-direction': 'column', gap: '16px', 'padding-top': '18px' }}>
-              <div style={{ 'font-size': '24px', 'font-weight': '700' }}>
+              <div style={{ 'font-size': 'calc(24px * var(--ts))', 'font-weight': 'var(--fw-700)' }}>
                 {progress().complete ? 'Every belief spoken.' : 'Session ended.'}
               </div>
-              <div data-testid="session-summary" style={{ 'font-size': '16px', color: 'var(--text-secondary)', 'line-height': '1.5' }}>
+              <div data-testid="session-summary" style={{ 'font-size': 'calc(16px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))' }}>
                 {progress().rated} of {progress().total} rated
                 <Show when={progress().average !== null}>
                   {' · '}average conviction{' '}
-                  <span style={{ color: scoreColor(progress().average!), 'font-weight': '700' }}>
+                  <span style={{ color: scoreColor(progress().average!), 'font-weight': 'var(--fw-700)' }}>
                     {progress().average!.toFixed(1)}
                   </span>
                 </Show>
@@ -270,15 +270,15 @@ export function BeliefSession(props: {
                     background: 'var(--bg-inset)',
                   }}
                 >
-                  <div style={{ 'font-size': '16px', 'line-height': '1.45', 'font-weight': '500' }}>
+                  <div style={{ 'font-size': 'calc(16px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))', 'font-weight': 'var(--fw-500)' }}>
                     {quote()!.text}
                   </div>
-                  <div style={{ 'margin-top': '8px', 'font-size': '13px', color: 'var(--text-secondary)' }}>
+                  <div style={{ 'margin-top': '8px', 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>
                     — {attribution(quote()!)}
                   </div>
                 </div>
               </Show>
-              <p style={{ 'font-size': '14px', color: 'var(--text-tertiary)', 'line-height': '1.5' }}>
+              <p style={{ 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-tertiary)', 'line-height': 'calc(1.5 * var(--lh))' }}>
                 Conviction moves on evidence, not repetition. Come back tonight and add the one thing
                 that happened today which argues the belief is true.
               </p>
@@ -291,8 +291,8 @@ export function BeliefSession(props: {
                 display: 'flex',
                 'align-items': 'center',
                 gap: '7px',
-                'font-size': '13px',
-                'font-weight': '600',
+                'font-size': 'calc(13px * var(--ts))',
+                'font-weight': 'var(--fw-600)',
                 color: belief()!.color,
               }}
             >
@@ -303,23 +303,23 @@ export function BeliefSession(props: {
               data-testid="session-belief"
               style={{
                 'margin-top': '14px',
-                'font-size': '26px',
-                'line-height': '1.28',
-                'font-weight': '700',
+                'font-size': 'calc(26px * var(--ts))',
+                'line-height': 'calc(1.28 * var(--lh))',
+                'font-weight': 'var(--fw-700)',
                 'letter-spacing': '-0.01em',
               }}
             >
               {belief()!.text}
             </div>
             <Show when={belief()!.why}>
-              <div style={{ 'margin-top': '12px', 'font-size': '15px', 'line-height': '1.5', color: 'var(--text-secondary)' }}>
+              <div style={{ 'margin-top': '12px', 'font-size': 'calc(15px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', color: 'var(--text-secondary)' }}>
                 {belief()!.why}
               </div>
             </Show>
 
             <div style={{ 'margin-top': '26px' }}>
               <div style={{ display: 'flex', 'align-items': 'baseline', gap: '8px', 'padding-bottom': '10px' }}>
-                <span style={{ 'font-size': '15px', 'font-weight': '600' }}>
+                <span style={{ 'font-size': 'calc(15px * var(--ts))', 'font-weight': 'var(--fw-600)' }}>
                   How much of you believes it, right now?
                 </span>
               </div>
@@ -328,8 +328,8 @@ export function BeliefSession(props: {
                 data-testid="session-score-label"
                 style={{
                   'margin-top': '10px',
-                  'font-size': '14px',
-                  'font-weight': '600',
+                  'font-size': 'calc(14px * var(--ts))',
+                  'font-weight': 'var(--fw-600)',
                   color: score() === null ? 'var(--text-tertiary)' : scoreColor(score()!),
                 }}
               >
@@ -344,7 +344,7 @@ export function BeliefSession(props: {
             <div style={{ 'margin-top': '24px' }}>
               <label
                 for="belief-evidence"
-                style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)' }}
+                style={{ 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-600)', color: 'var(--text-secondary)' }}
               >
                 Evidence from today (optional)
               </label>
@@ -366,7 +366,7 @@ export function BeliefSession(props: {
                   padding: '12px',
                   'border-radius': '12px',
                   background: 'var(--bg-inset)',
-                  'font-size': '15px',
+                  'font-size': 'calc(15px * var(--ts))',
                 }}
               />
             </div>
@@ -390,8 +390,8 @@ export function BeliefSession(props: {
               padding: '13px 18px',
               'border-radius': '13px',
               background: 'var(--bg-inset)',
-              'font-size': '16px',
-              'font-weight': '600',
+              'font-size': 'calc(16px * var(--ts))',
+              'font-weight': 'var(--fw-600)',
             }}
           >
             Back
@@ -414,8 +414,8 @@ export function BeliefSession(props: {
             'border-radius': '13px',
             background: 'var(--blue)',
             color: 'var(--text-invert)',
-            'font-size': '16px',
-            'font-weight': '600',
+            'font-size': 'calc(16px * var(--ts))',
+            'font-weight': 'var(--fw-600)',
           }}
         >
           {onSummary() ? 'Done' : index() === total() - 1 ? 'Finish' : 'Next'}

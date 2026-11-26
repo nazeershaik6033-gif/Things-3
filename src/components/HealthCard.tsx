@@ -44,14 +44,14 @@ export async function importHealthText(text: string): Promise<string> {
 }
 
 const btn = (primary: boolean): JSX.CSSProperties => ({
-  flex: '1', padding: '11px 8px', 'border-radius': '12px', 'font-size': '14px', 'font-weight': '600',
+  flex: '1', padding: '11px 8px', 'border-radius': '12px', 'font-size': 'calc(14px * var(--ts))', 'font-weight': 'var(--fw-600)',
   background: primary ? 'var(--blue)' : 'var(--bg-inset)', color: primary ? 'var(--text-invert)' : 'var(--text)',
   display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center', gap: '6px', 'text-decoration': 'none',
 });
 const field: JSX.CSSProperties = {
-  width: '100%', padding: '10px 12px', 'border-radius': '11px', background: 'var(--bg-inset)', 'font-size': '16px', color: 'var(--text)',
+  width: '100%', padding: '10px 12px', 'border-radius': '11px', background: 'var(--bg-inset)', 'font-size': 'calc(16px * var(--ts))', color: 'var(--text)',
 };
-const small: JSX.CSSProperties = { 'font-size': '12px', color: 'var(--text-secondary)', 'margin-bottom': '4px', 'font-weight': '600' };
+const small: JSX.CSSProperties = { 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-secondary)', 'margin-bottom': '4px', 'font-weight': 'var(--fw-600)' };
 
 // ---------------------------------------------------------------- rings ---
 
@@ -98,7 +98,7 @@ function SleepChart(props: { days: HealthDay[]; today: string; targetBed: string
     <figure aria-label="Hours asleep, last 14 nights" style={{ margin: '12px 0 0' }}>
       <div style={{ position: 'relative', height: '84px', display: 'flex', 'align-items': 'flex-end', gap: '3px', 'border-bottom': '1px solid var(--separator)' }}>
         <div style={{ position: 'absolute', left: '0', right: '0', bottom: `${(GOOD_NIGHT_MIN / MAX) * 100}%`, 'border-top': '1px dashed var(--text-tertiary)' }} />
-        <span style={{ position: 'absolute', right: '0', bottom: `calc(${(GOOD_NIGHT_MIN / MAX) * 100}% + 2px)`, 'font-size': '10px', color: 'var(--text-secondary)' }}>7h</span>
+        <span style={{ position: 'absolute', right: '0', bottom: `calc(${(GOOD_NIGHT_MIN / MAX) * 100}% + 2px)`, 'font-size': 'calc(10px * var(--ts))', color: 'var(--text-secondary)' }}>7h</span>
         <For each={nights()}>
           {(n) => (
             <div
@@ -119,14 +119,14 @@ function SleepChart(props: { days: HealthDay[]; today: string; targetBed: string
         <Show when={selected()}>
           <div style={{
             position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-elevated)',
-            'box-shadow': 'var(--shadow-card)', 'border-radius': '8px', padding: '4px 8px', 'font-size': '12px',
+            'box-shadow': 'var(--shadow-card)', 'border-radius': '8px', padding: '4px 8px', 'font-size': 'calc(12px * var(--ts))',
             color: 'var(--text)', 'white-space': 'nowrap', 'pointer-events': 'none',
           }}>
             {selected()!.date.slice(5)} · {formatDuration(selected()!.min!)} · asleep {selected()!.onset}
           </div>
         </Show>
       </div>
-      <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': '11px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+      <div style={{ display: 'flex', 'justify-content': 'space-between', 'font-size': 'calc(11px * var(--ts))', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
         <span>{nights()[0]!.date.slice(5)}</span><span>last night</span>
       </div>
     </figure>
@@ -153,17 +153,17 @@ export function HealthCard(): JSX.Element {
   return (
     <section data-testid="health-card" style={{ margin: '0 12px 14px', background: 'var(--bg-list)', 'border-radius': '14px', padding: '14px 16px' }}>
       <div style={{ display: 'flex', 'align-items': 'center', 'margin-bottom': '10px' }}>
-        <h2 style={{ flex: '1', 'font-size': '13px', 'font-weight': '700', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
+        <h2 style={{ flex: '1', 'font-size': 'calc(13px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px' }}>
           Sleep &amp; activity
         </h2>
-        <button onClick={() => setSheet('guide')} style={{ 'font-size': '13px', color: 'var(--blue)' }}>Shortcut setup</button>
+        <button onClick={() => setSheet('guide')} style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--blue)' }}>Shortcut setup</button>
       </div>
 
       {/* ---------------- sleep ---------------- */}
       <Show
         when={night() && score()}
         fallback={
-          <div data-testid="no-sleep" style={{ 'font-size': '15px', color: 'var(--text-secondary)', 'line-height': '1.45' }}>
+          <div data-testid="no-sleep" style={{ 'font-size': 'calc(15px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.45 * var(--lh))' }}>
             No sleep data for last night yet. Sync from your Apple Watch or enter it by hand.
           </div>
         }
@@ -174,17 +174,17 @@ export function HealthCard(): JSX.Element {
             aria-label={`Clarity sleep score ${score()!.total}, ${score()!.label}`}
             style={{
               width: '68px', height: '68px', 'border-radius': '50%', border: '6px solid var(--blue)', display: 'flex',
-              'align-items': 'center', 'justify-content': 'center', 'font-size': '24px', 'font-weight': '700', color: 'var(--text)', flex: 'none',
+              'align-items': 'center', 'justify-content': 'center', 'font-size': 'calc(24px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text)', flex: 'none',
             }}
           >
             {score()!.total}
           </div>
           <div style={{ 'min-width': '0' }}>
-            <div style={{ 'font-size': '20px', 'font-weight': '700', color: 'var(--text)' }}>{score()!.label}</div>
-            <div style={{ 'font-size': '13px', color: 'var(--text-secondary)' }}>Clarity sleep score · not Apple’s, but built the same way</div>
+            <div style={{ 'font-size': 'calc(20px * var(--ts))', 'font-weight': 'var(--fw-700)', color: 'var(--text)' }}>{score()!.label}</div>
+            <div style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)' }}>Clarity sleep score · not Apple’s, but built the same way</div>
           </div>
         </div>
-        <div style={{ display: 'grid', 'grid-template-columns': '1fr auto', gap: '6px 10px', margin: '12px 0 0', 'font-size': '14px' }}>
+        <div style={{ display: 'grid', 'grid-template-columns': '1fr auto', gap: '6px 10px', margin: '12px 0 0', 'font-size': 'calc(14px * var(--ts))' }}>
           <span style={{ color: 'var(--text)' }}>Duration · <b data-testid="sleep-duration">{formatDuration(night()!.asleepMin)}</b></span>
           <span style={{ color: 'var(--text-secondary)', 'font-variant-numeric': 'tabular-nums' }}>{score()!.duration}/50</span>
           <span style={{ color: 'var(--text)' }}>
@@ -201,7 +201,7 @@ export function HealthCard(): JSX.Element {
           <div
             data-testid="day-advice"
             style={{
-              margin: '12px 0 0', padding: '10px 12px', 'border-radius': '11px', 'font-size': '14px', 'line-height': '1.45',
+              margin: '12px 0 0', padding: '10px 12px', 'border-radius': '11px', 'font-size': 'calc(14px * var(--ts))', 'line-height': 'calc(1.45 * var(--lh))',
               background: advice()!.shortNight ? 'color-mix(in srgb, var(--yellow) 22%, transparent)' : 'var(--bg-inset)', color: 'var(--text)',
             }}
           >
@@ -214,7 +214,7 @@ export function HealthCard(): JSX.Element {
       {/* ---------------- rings ---------------- */}
       <div style={{ display: 'flex', gap: '14px', 'align-items': 'center', margin: '16px 0 0' }}>
         <Rings move={rings().move} exercise={rings().exercise} stand={rings().stand} />
-        <div data-testid="rings" style={{ display: 'grid', 'grid-template-columns': 'auto 1fr', gap: '4px 10px', 'font-size': '14px', 'align-items': 'baseline' }}>
+        <div data-testid="rings" style={{ display: 'grid', 'grid-template-columns': 'auto 1fr', gap: '4px 10px', 'font-size': 'calc(14px * var(--ts))', 'align-items': 'baseline' }}>
           <span style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--red)' }}>●</span> Move</span>
           <span style={{ color: 'var(--text)', 'font-variant-numeric': 'tabular-nums' }}><b>{todayRow()?.activity?.moveKcal ?? '–'}</b> / {goals().moveKcal} kcal</span>
           <span style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--green)' }}>●</span> Exercise</span>
@@ -223,12 +223,12 @@ export function HealthCard(): JSX.Element {
           <span style={{ color: 'var(--text)', 'font-variant-numeric': 'tabular-nums' }}><b>{todayRow()?.activity?.standHr ?? '–'}</b> / {goals().standHr} hr</span>
         </div>
       </div>
-      <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
+      <div style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
         Today so far.
         <Show when={yesterday()}>
           {' '}Yesterday: {yesterday()!.moveKcal ?? '–'} kcal · {yesterday()!.exerciseMin ?? '–'} min · {yesterday()!.standHr ?? '–'} hr.
         </Show>
-        {' '}<button onClick={() => setSheet('goals')} style={{ color: 'var(--blue)', 'font-size': '12px' }}>Goals</button>
+        {' '}<button onClick={() => setSheet('goals')} style={{ color: 'var(--blue)', 'font-size': 'calc(12px * var(--ts))' }}>Goals</button>
       </div>
 
       <div style={{ display: 'flex', gap: '8px', margin: '14px 0 0' }}>
@@ -275,7 +275,7 @@ function SyncSheet(props: { onClose: () => void; onGuide: () => void }): JSX.Ele
     <Sheet onClose={props.onClose} trackKeyboard>
       <SheetTitle>Sync from Apple Watch</SheetTitle>
       <div data-testid="sync-sheet" style={{ padding: '0 18px 18px' }}>
-        <ol style={{ 'padding-left': '20px', 'font-size': '14px', color: 'var(--text-secondary)', 'line-height': '1.55', margin: '0 0 12px' }}>
+        <ol style={{ 'padding-left': '20px', 'font-size': 'calc(14px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.55 * var(--lh))', margin: '0 0 12px' }}>
           <li>Run the <b>{SHORTCUT_NAME}</b> shortcut. It copies last night’s sleep and today’s rings.</li>
           <li>Come back here and tap <b>Paste</b>.</li>
         </ol>
@@ -291,7 +291,7 @@ function SyncSheet(props: { onClose: () => void; onGuide: () => void }): JSX.Ele
           value={text()}
           placeholder="…or paste the copied text here"
           onInput={(e) => setText(e.currentTarget.value)}
-          style={{ ...field, margin: '12px 0 0', 'font-size': '13px', 'font-family': 'ui-monospace, monospace' }}
+          style={{ ...field, margin: '12px 0 0', 'font-size': 'calc(13px * var(--ts))', 'font-family': 'ui-monospace, monospace' }}
         />
         <Show when={text().trim()}>
           <button data-testid="apply-health-text" style={{ ...btn(true), width: '100%', margin: '8px 0 0' }} onClick={() => void apply(text())}>
@@ -299,12 +299,12 @@ function SyncSheet(props: { onClose: () => void; onGuide: () => void }): JSX.Ele
           </button>
         </Show>
         <Show when={error()}>
-          <div data-testid="sync-error" style={{ color: 'var(--red)', 'font-size': '13px', margin: '10px 0 0' }}>{error()}</div>
+          <div data-testid="sync-error" style={{ color: 'var(--red)', 'font-size': 'calc(13px * var(--ts))', margin: '10px 0 0' }}>{error()}</div>
         </Show>
-        <p style={{ 'font-size': '12px', color: 'var(--text-tertiary)', margin: '12px 0 0', 'line-height': '1.5' }}>
+        <p style={{ 'font-size': 'calc(12px * var(--ts))', color: 'var(--text-tertiary)', margin: '12px 0 0', 'line-height': 'calc(1.5 * var(--lh))' }}>
           Sync in the morning for sleep and again at your evening shutdown for the day’s rings. Rings only ever go up,
           so syncing twice never loses anything. No shortcut yet?{' '}
-          <button onClick={props.onGuide} style={{ color: 'var(--blue)', 'font-size': '12px' }}>Set it up</button>
+          <button onClick={props.onGuide} style={{ color: 'var(--blue)', 'font-size': 'calc(12px * var(--ts))' }}>Set it up</button>
         </p>
       </div>
     </Sheet>
@@ -364,7 +364,7 @@ function ManualSheet(props: { onClose: () => void }): JSX.Element {
           {input('manual-exercise', exercise, setExercise, 'Exercise min')}
           {input('manual-stand', stand, setStand, 'Stand hr')}
         </div>
-        <button data-testid="manual-save" onClick={() => void save()} style={{ ...btn(true), width: '100%', padding: '14px', margin: '16px 0 0', 'font-size': '16px' }}>
+        <button data-testid="manual-save" onClick={() => void save()} style={{ ...btn(true), width: '100%', padding: '14px', margin: '16px 0 0', 'font-size': 'calc(16px * var(--ts))' }}>
           Save
         </button>
       </div>
@@ -375,7 +375,7 @@ function ManualSheet(props: { onClose: () => void }): JSX.Element {
 function GoalsSheet(props: { goals: ActivityGoals; onClose: () => void }): JSX.Element {
   const [g, setG] = createSignal({ ...props.goals });
   const row = (key: keyof ActivityGoals, label: string) => (
-    <label style={{ display: 'grid', 'grid-template-columns': '1fr 110px', 'align-items': 'center', gap: '10px', margin: '0 0 8px', 'font-size': '15px', color: 'var(--text)' }}>
+    <label style={{ display: 'grid', 'grid-template-columns': '1fr 110px', 'align-items': 'center', gap: '10px', margin: '0 0 8px', 'font-size': 'calc(15px * var(--ts))', color: 'var(--text)' }}>
       {label}
       <input type="number" inputmode="numeric" value={g()[key]} onInput={(e) => setG({ ...g(), [key]: Number(e.currentTarget.value) })} style={field} />
     </label>
@@ -384,7 +384,7 @@ function GoalsSheet(props: { goals: ActivityGoals; onClose: () => void }): JSX.E
     <Sheet onClose={props.onClose} trackKeyboard>
       <SheetTitle>Ring goals</SheetTitle>
       <div style={{ padding: '0 18px 18px' }}>
-        <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>Use the same goals as the Activity app on your Watch.</p>
+        <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '0 0 12px' }}>Use the same goals as the Activity app on your Watch.</p>
         {row('moveKcal', 'Move (kcal)')}
         {row('exerciseMin', 'Exercise (min)')}
         {row('standHr', 'Stand (hr)')}
@@ -394,7 +394,7 @@ function GoalsSheet(props: { goals: ActivityGoals; onClose: () => void }): JSX.E
         >
           Save
         </button>
-        <button onClick={() => setG({ ...DEFAULT_GOALS })} style={{ width: '100%', padding: '10px', color: 'var(--text-secondary)', 'font-size': '14px' }}>
+        <button onClick={() => setG({ ...DEFAULT_GOALS })} style={{ width: '100%', padding: '10px', color: 'var(--text-secondary)', 'font-size': 'calc(14px * var(--ts))' }}>
           Reset to 400 / 30 / 12
         </button>
       </div>
@@ -408,16 +408,16 @@ function GoalsSheet(props: { goals: ActivityGoals; onClose: () => void }): JSX.E
 function GuideSheet(props: { onClose: () => void }): JSX.Element {
   const step = (n: number, body: JSX.Element) => (
     <li style={{ display: 'flex', gap: '10px', margin: '0 0 12px' }}>
-      <span style={{ flex: 'none', width: '22px', height: '22px', 'border-radius': '50%', background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': '12px', 'font-weight': '700', display: 'flex', 'align-items': 'center', 'justify-content': 'center' }}>{n}</span>
-      <div style={{ 'font-size': '14px', 'line-height': '1.5', color: 'var(--text)' }}>{body}</div>
+      <span style={{ flex: 'none', width: '22px', height: '22px', 'border-radius': '50%', background: 'var(--blue)', color: 'var(--text-invert)', 'font-size': 'calc(12px * var(--ts))', 'font-weight': 'var(--fw-700)', display: 'flex', 'align-items': 'center', 'justify-content': 'center' }}>{n}</span>
+      <div style={{ 'font-size': 'calc(14px * var(--ts))', 'line-height': 'calc(1.5 * var(--lh))', color: 'var(--text)' }}>{body}</div>
     </li>
   );
-  const code: JSX.CSSProperties = { 'font-family': 'ui-monospace, monospace', 'font-size': '12.5px', background: 'var(--bg-inset)', padding: '1px 5px', 'border-radius': '5px' };
+  const code: JSX.CSSProperties = { 'font-family': 'ui-monospace, monospace', 'font-size': 'calc(12.5px * var(--ts))', background: 'var(--bg-inset)', padding: '1px 5px', 'border-radius': '5px' };
   return (
     <Sheet onClose={props.onClose}>
       <SheetTitle>Set up the “{SHORTCUT_NAME}” shortcut</SheetTitle>
       <div data-testid="guide-sheet" style={{ padding: '0 18px 18px', 'max-height': '74vh', overflow: 'auto' }}>
-        <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', margin: '0 0 14px', 'line-height': '1.5' }}>
+        <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', margin: '0 0 14px', 'line-height': 'calc(1.5 * var(--lh))' }}>
           About 10 minutes, once. Open the <b>Shortcuts</b> app → <b>+</b>, name it exactly <span style={code}>{SHORTCUT_NAME}</span>,
           then add these actions in order. iOS asks for Health permission the first time it runs.
         </p>
@@ -430,11 +430,11 @@ function GuideSheet(props: { onClose: () => void }): JSX.Element {
           {step(6, <><b>Dictionary</b> with keys: <span style={code}>v</span> = 1, <span style={code}>date</span> = Current Date (Custom format <span style={code}>yyyy-MM-dd</span>), <span style={code}>sleep</span> = Combined Text, <span style={code}>move</span>, <span style={code}>exercise</span>, <span style={code}>stand</span> = the three Values.</>)}
           {step(7, <><b>Copy to Clipboard</b> (Dictionary). Optional: <b>Show Notification</b> “Copied — back to Clarity”.</>)}
         </ol>
-        <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.5', margin: '4px 0 0' }}>
+        <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))', margin: '4px 0 0' }}>
           Labels can differ slightly between iOS versions. Clarity is lenient: it accepts Core/Deep/REM/Asleep/Awake/In Bed labels,
           values with units (“337 kcal”), and plain sample lines without the Dictionary. If something’s missing, <b>Enter by hand</b> fills the gap.
         </p>
-        <p style={{ 'font-size': '13px', color: 'var(--text-secondary)', 'line-height': '1.5', margin: '10px 0 0' }}>
+        <p style={{ 'font-size': 'calc(13px * var(--ts))', color: 'var(--text-secondary)', 'line-height': 'calc(1.5 * var(--lh))', margin: '10px 0 0' }}>
           Your health data never leaves your phone: the Shortcut copies it, Clarity stores it on-device, and it’s included in your backup.
         </p>
       </div>
