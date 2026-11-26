@@ -151,6 +151,9 @@ test('settings expose break reminders, short syntax and GitHub import', async ({
   await currentScreen(page).getByTestId('toggle-break-reminder').click();
   await expect(currentScreen(page).getByTestId('toggle-break-reminder')).toHaveAttribute('aria-pressed', 'false');
   await expect(currentScreen(page).getByText('~45m')).toBeVisible();
+  // GitHub import is in another group: back to the Settings landing page
+  await page.getByTestId('back-button').last().click();
+  await page.getByTestId('settings-group-integrations').click();
   await currentScreen(page).getByTestId('github-repo').fill('not a repo');
   await currentScreen(page).getByTestId('github-repo').blur();
   await currentScreen(page).getByTestId('github-sync').click();
