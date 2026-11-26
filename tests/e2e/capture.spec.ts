@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow } from './helpers';
 
 test('Quick Entry reads plain words: time, length and a weekly repeat', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-today"]');
+  await (await homeRow(page, 'home-today')).click();
   await page.click('[data-testid="today-view-list"]');
   await page.getByTestId('magic-plus').click();
   const title = page.locator('[data-quick-entry] textarea').first();
@@ -21,7 +21,7 @@ test('Quick Entry reads plain words: time, length and a weekly repeat', async ({
 
 test('"Keep as text" saves the words as typed', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-inbox"]');
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.locator('[data-quick-entry] textarea').first().fill('Read Monday notes');
   await expect(page.getByTestId('short-syntax-preview')).toHaveText('Mon');
@@ -32,7 +32,7 @@ test('"Keep as text" saves the words as typed', async ({ page }) => {
 
 test('# suggests existing tags', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-inbox"]');
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   const tagTitle = await page.evaluate(async () => {
     const req = indexedDB.open('clarity');
@@ -50,7 +50,7 @@ test('# suggests existing tags', async ({ page }) => {
 
 test('Alerts: a timed to-do offers calendar alerts with the default on', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-today"]');
+  await (await homeRow(page, 'home-today')).click();
   await page.click('[data-testid="today-view-list"]');
   await currentScreen(page).locator('.task-row').first().click();
   await page.getByTestId('chip-time').click();

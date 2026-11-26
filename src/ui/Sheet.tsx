@@ -3,6 +3,7 @@ import { Portal } from 'solid-js/web';
 import { createSpring, rubberband, Spring, SPRING } from '../gestures/springs';
 import { createPan } from '../gestures/createPan';
 import { release, tryClaim } from '../gestures/arbiter';
+import { entranceSpring, reduceMotion } from '../app/motion';
 
 /** Keyboard inset in standalone iOS PWAs: the visual viewport shrinks but
  *  fixed elements don't move, so sheets translate up by the occluded delta. */
@@ -51,6 +52,11 @@ export function Sheet(props: {
   function close(velocity = 0): void {
     if (closing) return;
     closing = true;
+    if (reduceMotion()) {
+      props.onClose();
+      return;
+    }
+    spring.tune(SPRING.nav);
     spring.to(height, {
       velocity,
       onRest: () => props.onClose(),
@@ -59,10 +65,20 @@ export function Sheet(props: {
 
   onMount(() => {
     height = sheetEl.offsetHeight + 40;
-    spring = createSpring(height, apply, SPRING.nav);
-    apply(height);
-    setMounted(true);
-    requestAnimationFrame(() => spring.to(0));
+    if (reduceMotion()) {
+      spring = createSpring(0, apply, SPRING.nav);
+      apply(0);
+      setMounted(true);
+    } else {
+      // Arrive on the entrance spring (a soft overshoot on "rich"); every
+      // later move — drags, snap-backs, closing — uses the calm nav spring.
+      spring = createSpring(height, apply, entranceSpring());
+      apply(height);
+      setMounted(true);
+      requestAnimationFrame(() => spring.to(0, {
+        onRest: () => { spring.tune(SPRING.nav); },
+      }));
+    }
 
     const ro = new ResizeObserver(() => {
       const next = sheetEl.offsetHeight + 40;
@@ -75,7 +91,9 @@ export function Sheet(props: {
     const cleanup = createPan(dragTarget, {
       axis: 'y',
       canStart: () => !closing && tryClaim('sheet'),
-      onStart: () => {},
+      onStart: () => {
+        spring.tune(SPRING.nav);
+      },
       onMove: (_dx, dy) => {
         spring.set(dy >= 0 ? dy : rubberband(dy, 80));
       },
@@ -157,6 +175,21 @@ export function Sheet(props: {
             />
           </div>
           {props.children}
+          {/* Extends the sheet below the screen edge: when the entrance spring
+              overshoots, the sheet rises a few px past its rest point and this
+              keeps the gap under it filled. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: '0',
+              right: '0',
+              top: '100%',
+              height: '80px',
+              background: 'var(--bg-elevated)',
+              'pointer-events': 'none',
+            }}
+          />
         </div>
       </div>
     </Portal>

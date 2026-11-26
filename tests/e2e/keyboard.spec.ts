@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 /** Regression suite for focus loss while typing.
  *
@@ -80,12 +80,12 @@ test('quick entry shows title, notes and checklist at once', async ({ page }) =>
 
   await page.getByTestId('quick-entry-save').click();
   await expect(page.getByTestId('quick-entry-save')).toBeHidden();
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await expect(page.getByText('Pack')).toBeVisible();
 });
 
 test('card notes keep focus and every character across debounce flushes', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('New idea: balcony garden').click();
   const card = page.locator('[data-task-card]');
   await card.getByText('Notes').click();
@@ -98,7 +98,7 @@ test('card notes keep focus and every character across debounce flushes', async 
 });
 
 test('card checklist keeps focus while typing an item', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('New idea: balcony garden').click();
   const card = page.locator('[data-task-card]');
   await card.getByText('+ Add item').click();
@@ -111,7 +111,7 @@ test('card checklist keeps focus while typing an item', async ({ page }) => {
 });
 
 test('ticking a checklist item does not blur the item being typed', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('New idea: balcony garden').click();
   const card = page.locator('[data-task-card]');
 

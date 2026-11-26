@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test('label a Today task with an Eisenhower quadrant and regroup', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
 
   // Every Today row shows an unlabeled EM chip
   const row = page.locator('div.task-row', { hasText: 'Buy groceries' });

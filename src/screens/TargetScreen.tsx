@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, For, on, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
+import { celebrate } from '../app/celebrate';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
 import { haptic, staggerDelay } from '../app/motion';
@@ -70,6 +71,7 @@ export function TargetScreen(): JSX.Element {
 
   const judge = (outcome: TargetOutcome) => {
     haptic(outcome === 'hit' ? 'success' : 'tick');
+    if (outcome === 'hit') celebrate(`target:${today()}`);
     void reviewDailyTarget(today(), outcome, reflection());
   };
 

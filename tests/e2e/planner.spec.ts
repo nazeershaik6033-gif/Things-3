@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow } from './helpers';
 
 /** Scroll the current screen so `min` (minutes since midnight) sits just
  *  under the timeline's pinned header. */
@@ -37,7 +37,7 @@ const blockStarts = (page: Page) =>
 
 test('Today timeline: place from the tray, move, undo, push the rest', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-today"]');
+  await (await homeRow(page, 'home-today')).click();
   await page.click('[data-testid="today-view-timeline"]');
   const screen = currentScreen(page);
   await expect(screen.getByTestId('timeline')).toBeVisible();
@@ -79,7 +79,7 @@ test('Today timeline: place from the tray, move, undo, push the rest', async ({ 
 
 test('Planner: days, and a to-do timed from its card shows in the list', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-planner"]');
+  await (await homeRow(page, 'home-planner')).click();
   const screen = currentScreen(page);
   await expect(screen.getByTestId('tl-col')).toHaveCount(3); // phone default
   await screen.getByTestId('planner-days-7').click();

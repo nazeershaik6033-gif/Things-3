@@ -150,21 +150,37 @@ ol {
   transform: scale(0.985);
 }
 
-/* A single honest switch: when the user asks for less motion they get none of
-   the decorative kind. Navigation still moves, just without the spring travel
-   (see reduceMotion() in app/motion.ts). */
-@media (prefers-reduced-motion: reduce) {
-  .rise,
-  .pressable,
-  .pressable-card {
-    animation: none !important;
-    transition: none !important;
-  }
+/* Press feedback on the "rich" motion level: the press goes in fast and the
+   release springs back past its size and settles (the curve overshoots). */
+html[data-motion='rich'] .pressable,
+html[data-motion='rich'] .pressable-card {
+  transition: transform 320ms cubic-bezier(0.2, 1.5, 0.4, 1),
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+html[data-motion='rich'] .pressable:active,
+html[data-motion='rich'] .pressable-card:active {
+  transition-duration: 90ms, 140ms, 140ms;
+}
 
-  .pressable:active,
-  .pressable-card:active {
-    transform: none;
-  }
+/* Subtle: entrances are quicker and travel less. */
+html[data-motion='subtle'] .rise {
+  animation-duration: 220ms;
+}
+
+/* A single honest switch: when the user asks for less motion (Settings →
+   Motion → Off, or the system Reduce Motion switch while Motion is on Auto)
+   they get none of the decorative kind. Navigation jumps instead of sliding
+   (see reduceMotion() in app/motion.ts). */
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+html[data-motion='off'] .pressable:active,
+html[data-motion='off'] .pressable-card:active {
+  transform: none;
 }
 
 /* Focus Timer overtime pulse */
@@ -186,6 +202,187 @@ ol {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .tracking-dot { animation: none; }
+
+
+/* ── Page rise-in: a tab's content rises into place when you switch to it ── */
+@keyframes page-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.992); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes page-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* "backwards", not "both": a transform kept after the animation would trap
+   position:fixed descendants inside the page. */
+.page-in {
+  animation: page-in 380ms cubic-bezier(0.16, 1.18, 0.36, 1) backwards;
+}
+html[data-motion='subtle'] .page-in {
+  animation: page-fade 180ms ease-out backwards;
+}
+
+/* ── Floating tab bar ───────────────────────────────────────────────────── */
+.tabbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(14px + var(--safe-bottom));
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 31px;
+  background: var(--tabbar-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+  border: 1px solid var(--separator);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.tabbar-tab {
+  position: relative;
+  z-index: 1;
+  width: var(--tab-w);
+  height: 48px;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  transition: color 260ms ease;
+}
+.tabbar-tab[aria-selected='true'] {
+  color: var(--text);
+}
+.tabbar-tab-label {
+  max-width: calc(var(--tab-w) - 6px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The highlight glides under the tabs. Its wrapper slides (with a springy
+   curve); the pill inside squashes and stretches on each move. */
+.tabbar-glide {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: var(--tab-w);
+  height: 48px;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 480ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+html[data-motion='subtle'] .tabbar-glide {
+  transition: transform 260ms cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+.tabbar-pill {
+  position: absolute;
+  inset: 0 2px;
+  border-radius: 24px;
+  background: var(--tabbar-pill);
+}
+@keyframes tab-goo {
+  0% { transform: scale(0.82, 0.86); opacity: 0.55; }
+  40% { transform: scale(1.22, 0.9); opacity: 1; }
+  72% { transform: scale(0.96, 1.04); }
+  100% { transform: none; }
+}
+html[data-motion='rich'] .tabbar-pill.goo {
+  animation: tab-goo 480ms cubic-bezier(0.3, 1.2, 0.5, 1) both;
+}
+@keyframes tab-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+html[data-motion='rich'] .tabbar-tab[aria-selected='true'] .tabbar-icon {
+  animation: tab-pop 420ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+.tabbar-plus {
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  margin: 0 4px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--blue);
+  box-shadow: 0 0 0 4px rgba(47, 124, 246, 0.16), var(--shadow-fab);
+  transition: transform 560ms cubic-bezier(0.2, 1.7, 0.4, 1), box-shadow 300ms;
+}
+.tabbar-plus:active {
+  transform: scale(0.84);
+  transition-duration: 120ms;
+}
+html[data-motion='subtle'] .tabbar-plus {
+  transition: transform 200ms ease, box-shadow 200ms;
+}
+.tabbar-plus-glyph {
+  display: flex;
+  transition: transform 520ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+html[data-motion='subtle'] .tabbar-plus-glyph {
+  transition: transform 220ms ease;
+}
+.tabbar-plus[aria-expanded='true'] .tabbar-plus-glyph {
+  transform: rotate(135deg);
+}
+
+/* ── + menu: a card that pops up out of the + button ──────────────────── */
+@keyframes pop-in {
+  from { transform: translateX(-50%) scale(0.7); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+.add-menu {
+  position: absolute;
+  left: 50%;
+  bottom: calc(80px + var(--safe-bottom));
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  z-index: 41;
+  width: min(300px, calc(100% - 32px));
+  padding: 6px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-card);
+}
+html[data-motion='rich'] .add-menu {
+  animation: pop-in 300ms cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+html[data-motion='subtle'] .add-menu {
+  animation: page-fade 160ms ease-out both;
+}
+.add-menu-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 39;
+  background: var(--backdrop);
+  animation: page-fade 200ms ease-out both;
+}
+
+/* ── Confetti (rich motion only; see app/celebrate.ts) ────────────────── */
+@keyframes confetti-fall {
+  to {
+    transform: translate3d(var(--dx), 110vh, 0) rotate(var(--rot));
+    opacity: 0.9;
+  }
+}
+.confetti {
+  position: fixed;
+  top: -14px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: confetti-fall linear forwards;
 }

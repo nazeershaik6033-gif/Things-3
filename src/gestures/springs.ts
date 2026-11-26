@@ -70,6 +70,14 @@ export class Spring {
     activate(this);
   }
 
+  /** Change the tuning mid-flight; position, velocity and target carry over. */
+  tune(opts: SpringOpts): void {
+    if (opts.stiffness !== undefined) this.stiffness = opts.stiffness;
+    if (opts.damping !== undefined) this.damping = opts.damping;
+    if (opts.restDelta !== undefined) this.restDelta = opts.restDelta;
+    if (opts.restSpeed !== undefined) this.restSpeed = opts.restSpeed;
+  }
+
   stop(): void {
     activeSprings.delete(this);
     this.onRest = null;
@@ -130,6 +138,10 @@ export const SPRING = {
   flip: { stiffness: 560, damping: 46 },
   /** Bouncy accents (FAB return) */
   bouncy: { stiffness: 480, damping: 30 },
+  /** Sheets and pop-overs arriving on the "rich" motion level: damping ratio
+   *  ≈ 0.68, so it passes its rest point by a few percent and settles back,
+   *  the way a sheet lands on iOS. Rests at half a pixel like `nav`. */
+  overshoot: { stiffness: 520, damping: 31, restDelta: 0.5, restSpeed: 8 },
 } as const satisfies Record<string, SpringOpts>;
 
 /** Rubber-band resistance past a boundary (iOS overscroll curve). */

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('daily routine: seed a starter set, tick items, progress reaches Home', async ({ page }) => {
-  await page.getByTestId('home-routine').click();
+  await (await homeRow(page, 'home-routine')).click();
   await expect(page).toHaveURL(/#\/routine$/);
 
   // Empty state offers a starter routine
@@ -28,11 +28,11 @@ test('daily routine: seed a starter set, tick items, progress reaches Home', asy
 
   // Home reflects today's progress
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-routine-progress')).toContainText('2/8');
+  await expect((await homeRow(page, 'home-routine-progress'))).toContainText('2/8');
 });
 
 test('daily routine: add and delete a check in edit mode', async ({ page }) => {
-  await page.getByTestId('home-routine').click();
+  await (await homeRow(page, 'home-routine')).click();
   await page.getByTestId('routine-edit').click();
   await page.getByTestId('routine-new').fill('Cold shower');
   await page.getByTestId('routine-new').press('Enter');
@@ -46,7 +46,7 @@ test('daily routine: add and delete a check in edit mode', async ({ page }) => {
 });
 
 test('routine state survives a reload', async ({ page }) => {
-  await page.getByTestId('home-routine').click();
+  await (await homeRow(page, 'home-routine')).click();
   await page.getByTestId('routine-starter').click();
   await page.locator('.screen').last().getByRole('button', { name: 'Mark complete' }).first().click();
   await expect(page.getByTestId('routine-hero')).toContainText('1');

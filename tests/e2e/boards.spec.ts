@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { currentScreen, loadEmpty, loadSeeded } from './helpers';
+import { currentScreen, loadEmpty, loadSeeded, homeRow, openSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -11,7 +11,7 @@ test('seeded board: browse columns, edit a card, move it, calendar view', async 
   await loadSeeded(page);
 
   // Open the demo board from Home → Boards.
-  await page.getByTestId('home-boards').click();
+  await (await homeRow(page, 'home-boards')).click();
   await expect(page.getByText('Product Roadmap')).toBeVisible();
   await page.getByTestId('board-row').first().click();
 
@@ -51,7 +51,7 @@ test('create a board, add a list and a card; it persists across reload', async (
   await loadEmpty(page);
 
   // New Board from the Home "New List" sheet.
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByRole('button', { name: 'New Board' }).click();
   await page.getByTestId('board-title').fill('Trip planning');
 
@@ -75,7 +75,7 @@ test('typing keystroke-by-keystroke into a list title keeps focus', async ({ pag
   // write round-trips through the live query and re-fetches a brand-new
   // array of objects — only the first character ever landed.
   await loadEmpty(page);
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByRole('button', { name: 'New Board' }).click();
   await page.getByTestId('add-list').click();
 
@@ -90,7 +90,7 @@ test('typing keystroke-by-keystroke into a label name keeps focus', async ({ pag
   // Dexie's row order isn't creation order, so this sidesteps needing to
   // pick "the new one" out of several.
   await loadEmpty(page);
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByRole('button', { name: 'New Board' }).click();
   await page.getByTestId('board-menu').click();
   await page.getByRole('button', { name: 'Manage Labels' }).click();
@@ -109,7 +109,7 @@ test('typing keystroke-by-keystroke into a label name keeps focus', async ({ pag
 
 test('Settings has a Boards guide and its Open Boards button navigates there', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await expect(currentScreen(page).getByText(/Trello-style board/)).toBeVisible();
   await page.getByTestId('open-boards').click();
   await expect(currentScreen(page).getByText('Product Roadmap')).toBeVisible();
@@ -117,7 +117,7 @@ test('Settings has a Boards guide and its Open Boards button navigates there', a
 
 test('card checklist and labels update the card badges', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-boards').click();
+  await (await homeRow(page, 'home-boards')).click();
   await page.getByTestId('board-row').first().click();
 
   // "Write API docs" starts with no checklist.
@@ -133,7 +133,7 @@ test('card checklist and labels update the card badges', async ({ page }) => {
 
 test('boards gallery shows per-board card and list counts', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-boards').click();
+  await (await homeRow(page, 'home-boards')).click();
 
   const tile = page.getByTestId('board-row').first();
   await expect(tile).toContainText('Product Roadmap');
@@ -144,7 +144,7 @@ test('boards gallery shows per-board card and list counts', async ({ page }) => 
 
 test('board calendar groups due cards by day and flags overdue ones', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-boards').click();
+  await (await homeRow(page, 'home-boards')).click();
   await page.getByTestId('board-row').first().click();
   await page.getByTestId('board-calendar').click();
 
@@ -160,7 +160,7 @@ test('board calendar groups due cards by day and flags overdue ones', async ({ p
 
 test('a card cover renders on the card screen', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-boards').click();
+  await (await homeRow(page, 'home-boards')).click();
   await page.getByTestId('board-row').first().click();
   await page.getByText('Design onboarding flow').click();
 

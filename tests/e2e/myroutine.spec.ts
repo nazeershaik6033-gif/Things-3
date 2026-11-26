@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow } from './helpers';
 
 /** My Routine end to end. Every source added here is a plain link, so nothing
  *  in this file reaches the network — feed fetching only runs for YouTube,
@@ -28,7 +28,7 @@ async function addSource(page: import('@playwright/test').Page, group: string, n
 }
 
 test('my routine: build a group, tick a source, and see progress reach Home', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await expect(page).toHaveURL(/#\/myroutine$/);
 
   const screen = currentScreen(page);
@@ -60,7 +60,7 @@ test('my routine: build a group, tick a source, and see progress reach Home', as
 });
 
 test('my routine: filters and search narrow the list', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await addSource(page, 'Social', 'Instagram');
   await addSource(page, 'Social', 'WhatsApp');
 
@@ -85,7 +85,7 @@ test('my routine: filters and search narrow the list', async ({ page }) => {
 });
 
 test('my routine: ticks are scoped to their window', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await addSource(page, 'Social', 'Instagram');
 
   const screen = currentScreen(page);
@@ -108,7 +108,7 @@ test('my routine: ticks are scoped to their window', async ({ page }) => {
 });
 
 test('my routine: windows can be added and removed', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await page.getByTestId('routine-edit-windows').click();
   await page.getByTestId('routine-add-window').click();
 
@@ -118,7 +118,7 @@ test('my routine: windows can be added and removed', async ({ page }) => {
 });
 
 test('my routine: history is present and explains itself when empty', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await addSource(page, 'Social', 'Instagram');
 
   await page.getByTestId('routine-history-toggle').click();
@@ -129,7 +129,7 @@ test('my routine: history is present and explains itself when empty', async ({ p
 });
 
 test('my routine: a group can be deleted without losing its sources', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await addSource(page, 'Social', 'Instagram');
 
   const screen = currentScreen(page);
@@ -140,16 +140,16 @@ test('my routine: a group can be deleted without losing its sources', async ({ p
 });
 
 test('habits keeps its own screen alongside My Routine', async ({ page }) => {
-  await expect(page.getByTestId('home-routine')).toContainText('Habits');
-  await expect(page.getByTestId('home-myroutine')).toContainText('My Routine');
+  await expect((await homeRow(page, 'home-routine'))).toContainText('Habits');
+  await expect((await homeRow(page, 'home-myroutine'))).toContainText('My Routine');
 
-  await page.getByTestId('home-routine').click();
+  await (await homeRow(page, 'home-routine')).click();
   await expect(page).toHaveURL(/#\/routine$/);
   await expect(currentScreen(page).getByRole('heading', { name: 'Habits' })).toBeVisible();
 });
 
 test('my routine: opening a source ticks it off and returns you to the list', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await addSource(page, 'Daily Watch', 'Veritasium');
 
   const screen = currentScreen(page);
@@ -175,7 +175,7 @@ test('my routine: opening a source ticks it off and returns you to the list', as
 });
 
 test('my routine: a channel entered by name still opens somewhere real', async ({ page }) => {
-  await page.getByTestId('home-myroutine').click();
+  await (await homeRow(page, 'home-myroutine')).click();
   await page.getByTestId('routine-new-group').click();
   await page.getByTestId('routine-group-name').fill('Daily Watch');
   await page.getByTestId('routine-group-save').click();

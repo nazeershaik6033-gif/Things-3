@@ -8,6 +8,7 @@ import { startTheme } from './theme';
 import { startCalendarSync } from './calendar';
 import { startMotion } from './motion';
 import { startSettings } from './settings';
+import { startHomeLayout } from './homeLayout';
 import { startFocusClock } from './pomodoro';
 import { FocusTimerMiniBar, FocusTimerOverlay } from '../components/PomodoroTimer';
 import { startReminders } from './reminders';
@@ -69,7 +70,7 @@ function ScreenFor(props: { route: Route }): JSX.Element {
     case 'myroutine': return <MyRoutineScreen />;
     case 'target': return <TargetScreen />;
     case 'beliefs': return <BeliefsScreen />;
-    case 'settings': return <SettingsScreen />;
+    case 'settings': return <SettingsScreen group={r.group} section={r.section} />;
     case 'boards': return <BoardsScreen />;
     case 'board': return <BoardScreen id={r.id} />;
     case 'boardCalendar': return <BoardCalendarScreen id={r.id} />;
@@ -108,6 +109,7 @@ export function App(): JSX.Element {
     startTheme();
     startDateTicker();
     void startSettings();
+    void startHomeLayout();
     void startPlannerSettings();
     void startAlertSettings();
     void startCalendarViewSettings();

@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, For, on, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
+import { celebrate } from '../app/celebrate';
 import { createLiveQuery } from '../db/liveQuery';
 import { moveToTomorrow, saveDayReview } from '../db/superMutations';
 import { currentDate } from '../app/currentDate';
@@ -47,6 +48,7 @@ export function FinishDayScreen(): JSX.Element {
     if (trackingTaskId()) await stopTracking();
     await saveDayReview(currentDate(), { impact: impact(), note: note() }, summarizeDay(tasks(), sprints(), currentDate()));
     haptic('success');
+    if (!existing()) celebrate(`finish:${currentDate()}`);
     showToast(existing() ? 'Day review updated' : 'Day finished — see you tomorrow');
     back();
   };

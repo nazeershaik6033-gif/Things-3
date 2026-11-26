@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadEmpty, loadSeeded } from './helpers';
+import { loadEmpty, loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -45,7 +45,7 @@ test('setting a target opens the deck on an otherwise empty day', async ({ page 
   await loadEmpty(page);
   await expect(page.getByTestId('widget-deck')).toBeHidden();
 
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await page.getByTestId('target-input').fill('Ship the release');
   await page.getByTestId('target-save').click();
   await page.getByTestId('back-button').last().click();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -21,7 +21,7 @@ async function markMit(page: Page, title: string, expectCount: number): Promise<
 }
 
 test('pick MITs in Today: own section, ≤3 cap, energy chip', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(page.getByTestId('today-focus-bar')).toBeVisible();
 
   await markMit(page, 'Buy groceries', 1);
@@ -42,7 +42,7 @@ test('pick MITs in Today: own section, ≤3 cap, energy chip', async ({ page }) 
 });
 
 test('focus sprint: five steps, next action lands in the checklist', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await markMit(page, 'Finish landing page', 1);
   await page.getByTestId('today-start-sprint').click();
 
@@ -96,7 +96,7 @@ test('focus sprint: five steps, next action lands in the checklist', async ({ pa
 });
 
 test('daily focus: Everest, flow auto-checks, energy, routine calendar', async ({ page, request }) => {
-  await page.getByTestId('home-focus').click();
+  await (await homeRow(page, 'home-focus')).click();
   await expect(page.getByTestId('daily-flow')).toBeVisible();
 
   // Everest persists
@@ -134,6 +134,6 @@ test('daily focus: Everest, flow auto-checks, energy, routine calendar', async (
 
   // Everest shows on Today
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(page.getByTestId('today-focus-bar')).toContainText('design studio');
 });

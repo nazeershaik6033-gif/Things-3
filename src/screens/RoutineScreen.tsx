@@ -1,5 +1,6 @@
 import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
 import { db } from '../db/db';
+import { celebrate } from '../app/celebrate';
 import { createLiveQuery } from '../db/liveQuery';
 import { currentDate } from '../app/currentDate';
 import { haptic, staggerDelay } from '../app/motion';
@@ -39,6 +40,11 @@ export function RoutineScreen(): JSX.Element {
   const toggle = (itemId: string) => {
     const next = !done().has(itemId);
     haptic(next ? 'select' : 'tick');
+    // Ticking the last habit due today finishes the day's set
+    const p = progress();
+    if (next && p.total > 0 && p.done === p.total - 1 && due().some((i) => i.id === itemId)) {
+      celebrate(`habits:${today()}`);
+    }
     void setRoutineDone(itemId, today(), next);
   };
 

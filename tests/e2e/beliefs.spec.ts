@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -16,7 +16,7 @@ async function addBelief(page: import('@playwright/test').Page, text: string): P
 }
 
 test('beliefs: the board starts empty and never writes a belief for you', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await expect(page).toHaveURL(/#\/beliefs$/);
   const screen = currentScreen(page);
   await expect(screen.getByText(/A belief here is a sentence you are deliberately installing/)).toBeVisible();
@@ -25,7 +25,7 @@ test('beliefs: the board starts empty and never writes a belief for you', async 
 });
 
 test('beliefs: say it out loud, score it, and the conviction lands on the board', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await addBelief(page, 'I finish what I start.');
   await addBelief(page, 'Rest is part of the work.');
   await expect(page.getByTestId('belief-card')).toHaveCount(2);
@@ -54,11 +54,11 @@ test('beliefs: say it out loud, score it, and the conviction lands on the board'
   await expect(page.getByTestId('beliefs-hero')).toContainText('All spoken today');
   await expect(page.getByTestId('belief-score').first()).toHaveText('7/10');
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-beliefs-state')).toContainText('2/2');
+  await expect((await homeRow(page, 'home-beliefs-state'))).toContainText('2/2');
 });
 
 test('beliefs: the previous score is offered as an outline, never pre-picked', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await addBelief(page, 'My focus is a skill.');
 
   await page.getByTestId('beliefs-start').click();
@@ -73,7 +73,7 @@ test('beliefs: the previous score is offered as an outline, never pre-picked', a
 });
 
 test('beliefs: evidence typed in the session is kept against the belief', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await addBelief(page, 'I keep my word to myself.');
 
   await page.getByTestId('beliefs-start').click();
@@ -91,7 +91,7 @@ test('beliefs: evidence typed in the session is kept against the belief', async 
 });
 
 test('beliefs: retiring keeps the history, deleting throws it away', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await addBelief(page, 'Keep me.');
   await addBelief(page, 'Delete me.');
 
@@ -106,7 +106,7 @@ test('beliefs: retiring keeps the history, deleting throws it away', async ({ pa
 });
 
 test('beliefs: a rating survives a reload', async ({ page }) => {
-  await page.getByTestId('home-beliefs').click();
+  await (await homeRow(page, 'home-beliefs')).click();
   await addBelief(page, 'I am the kind of person who trains daily.');
   await page.getByTestId('beliefs-start').click();
   await page.getByTestId('conviction-8').click();
@@ -118,9 +118,9 @@ test('beliefs: a rating survives a reload', async ({ page }) => {
 });
 
 test('quotes: Home carries today’s quote and it opens with its attribution', async ({ page }) => {
-  const card = page.getByTestId('home-quote');
+  const card = (await homeRow(page, 'home-quote'));
   await expect(card).toBeVisible();
-  const text = (await page.getByTestId('home-quote-text').textContent())!.trim();
+  const text = (await (await homeRow(page, 'home-quote-text')).textContent())!.trim();
   expect(text.length).toBeGreaterThan(10);
 
   await card.click();
@@ -132,14 +132,14 @@ test('quotes: Home carries today’s quote and it opens with its attribution', a
   await expect(page.getByTestId('quote-save')).toContainText('Kept');
   await page.keyboard.press('Escape');
   await page.reload();
-  await page.getByTestId('home-quote').click();
+  await (await homeRow(page, 'home-quote')).click();
   await expect(page.getByTestId('quote-save')).toContainText('Kept');
 });
 
 test('quotes: the same day shows the same quote, offline', async ({ page, context }) => {
-  const before = (await page.getByTestId('home-quote-text').textContent())!.trim();
+  const before = (await (await homeRow(page, 'home-quote-text')).textContent())!.trim();
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByTestId('home-quote-text')).toHaveText(before);
+  await expect((await homeRow(page, 'home-quote-text'))).toHaveText(before);
   await context.setOffline(false);
 });

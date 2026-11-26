@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, currentScreen } from './helpers';
+import { loadSeeded, currentScreen, homeRow, openSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -9,9 +9,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('home shows lists, counts, areas and projects', async ({ page }) => {
-  await expect(page.getByTestId('home-inbox')).toContainText('Inbox');
-  await expect(page.getByTestId('home-inbox')).toContainText('2'); // seeded inbox count
-  await expect(page.getByTestId('home-today')).toContainText('Today');
+  await expect((await homeRow(page, 'home-inbox'))).toContainText('Inbox');
+  await expect((await homeRow(page, 'home-inbox'))).toContainText('2'); // seeded inbox count
+  await expect((await homeRow(page, 'home-today'))).toContainText('Today');
   await expect(page.getByText('Family')).toBeVisible();
   await expect(page.getByText('Vacation in Rome')).toBeVisible();
   await expect(page.getByText('Website Launch')).toBeVisible();
@@ -29,7 +29,7 @@ test('navigate into every built-in list and back', async ({ page }) => {
 });
 
 test('today shows seeded tasks in day and evening sections', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const screen = currentScreen(page);
   await expect(screen.getByText('Buy groceries')).toBeVisible();
   await expect(screen.getByText('Book flights')).toBeVisible();
@@ -51,23 +51,23 @@ test('project screen shows headings, progress and logged toggle', async ({ page 
 });
 
 test('upcoming groups by day and month', async ({ page }) => {
-  await page.getByTestId('home-upcoming').click();
+  await (await homeRow(page, 'home-upcoming')).click();
   await expect(page.getByText('Tomorrow')).toBeVisible();
   await expect(page.getByText('Set up analytics')).toBeVisible();
   await expect(page.getByText('Plan weekend hike')).toBeVisible();
 });
 
 test('deep link to a list works after reload', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page.reload();
   await expect(currentScreen(page).getByText('Buy groceries')).toBeVisible();
   // back still goes home
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-inbox')).toBeVisible();
+  await expect((await homeRow(page, 'home-inbox'))).toBeVisible();
 });
 
 test('theme palette persists across reload', async ({ page }) => {
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'general');
   await page.getByTestId('theme-midnight').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
   // Reload and navigate explicitly to home so hash doesn't re-open settings
@@ -75,7 +75,7 @@ test('theme palette persists across reload', async ({ page }) => {
   await page.waitForSelector('[data-testid="home-inbox"]', { timeout: 15_000 });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
   // Also verify another palette persists
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'general');
   await page.getByTestId('theme-parchment').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'parchment');
 });

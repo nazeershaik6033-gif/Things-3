@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 /** Regression: the demo seed used to fire on any hash *containing* "seed",
  *  so a reload on a route like #/project/<id-with-seed-in-it> wiped the whole
@@ -20,7 +20,7 @@ async function taskTitles(page: import('@playwright/test').Page): Promise<string
 
 test('a reload on a route whose id contains "seed" keeps the data', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Precious to-do');
   await page.getByTestId('quick-entry-save').click();
@@ -34,7 +34,7 @@ test('a reload on a route whose id contains "seed" keeps the data', async ({ pag
 
 test('completed to-dos stay in the Logbook across a reload', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Logged to-do');
   await page.getByTestId('quick-entry-save').click();
@@ -46,13 +46,13 @@ test('completed to-dos stay in the Logbook across a reload', async ({ page }) =>
 
   await page.goto('./');
   await page.waitForSelector('[data-testid="home-logbook"]');
-  await page.getByTestId('home-logbook').click();
+  await (await homeRow(page, 'home-logbook')).click();
   await expect(page.getByText('Logged to-do')).toBeVisible();
 });
 
 test('re-seeding over existing data asks first, and declining keeps the data', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Do not delete me');
   await page.getByTestId('quick-entry-save').click();

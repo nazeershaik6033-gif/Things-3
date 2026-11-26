@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow } from './helpers';
 
 async function quickAdd(page: Page, title: string): Promise<void> {
   await page.getByTestId('magic-plus').click();
@@ -73,7 +73,7 @@ test('Kanban: hold a card and drop it in another column', async ({ page }) => {
 
 test('Daily Note saves, and the Weekly Review walks the steps', async ({ page }) => {
   await loadSeeded(page);
-  await page.click('[data-testid="home-note"]');
+  await (await homeRow(page, 'home-note')).click();
   const note = page.getByTestId('note-text');
   await note.click();
   await note.fill('## Plan\nShip phase 4');
@@ -82,16 +82,16 @@ test('Daily Note saves, and the Weekly Review walks the steps', async ({ page })
   await expect(currentScreen(page).getByTestId('note-view')).toContainText('Ship phase 4');
 
   await page.goto('./');
-  await expect(page.getByTestId('home-review-due')).toBeVisible();
-  await page.click('[data-testid="home-review"]');
+  await expect((await homeRow(page, 'home-review-due'))).toBeVisible();
+  await (await homeRow(page, 'home-review')).click();
   await expect(currentScreen(page).getByText('Celebrate what got done')).toBeVisible();
   await page.getByTestId('review-finish').click();
-  await expect(page.getByTestId('home-review-due')).toHaveCount(0);
+  await expect((await homeRow(page, 'home-review-due'))).toHaveCount(0);
 });
 
 test('a saved view filters to-dos', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByText('New View (filtered list)').click();
   await page.getByTestId('view-title').fill('Due soon');
   await page.getByTestId('view-due-7').click();
@@ -99,12 +99,12 @@ test('a saved view filters to-dos', async ({ page }) => {
   const screen = currentScreen(page);
   await expect(screen.locator('h1')).toHaveText('Due soon');
   await page.goto('./');
-  await expect(page.getByTestId('home-view')).toHaveText(/Due soon/);
+  await expect((await homeRow(page, 'home-view'))).toHaveText(/Due soon/);
 });
 
 test('a project saved as a template starts a new project', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByText('New Project').click();
   await page.getByTestId('project-title').fill('Launch plan');
   await quickAdd(page, 'Draft announcement');
@@ -112,7 +112,7 @@ test('a project saved as a template starts a new project', async ({ page }) => {
   await page.getByTestId('project-menu').click();
   await page.getByText('Save as Template').click();
   await page.goto('./');
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByText('Project from Template').click();
   await page.getByTestId('template-use').first().click();
   const screen = currentScreen(page);

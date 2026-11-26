@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -10,9 +10,9 @@ test.beforeEach(async ({ page }) => {
 
 test('set a target in the morning, judge it at night', async ({ page }) => {
   // Home says nothing is set yet
-  await expect(page.getByTestId('home-target-state')).toHaveText('Not set');
+  await expect((await homeRow(page, 'home-target-state'))).toHaveText('Not set');
 
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await expect(page).toHaveURL(/#\/target$/);
 
   await page.getByTestId('target-input').fill('Finish the migration plan');
@@ -30,15 +30,15 @@ test('set a target in the morning, judge it at night', async ({ page }) => {
 
   // Home reflects the verdict, and it survives a reload
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-target-state')).toHaveText('Hit');
+  await expect((await homeRow(page, 'home-target-state'))).toHaveText('Hit');
   await expect(page.getByTestId('widget-target-text')).toHaveText('Finish the migration plan');
 
   await page.reload();
-  await expect(page.getByTestId('home-target-state')).toHaveText('Hit');
+  await expect((await homeRow(page, 'home-target-state'))).toHaveText('Hit');
 });
 
 test('only one target exists per day — setting again replaces it', async ({ page }) => {
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await page.getByTestId('target-input').fill('First idea');
   await page.getByTestId('target-save').click();
   await expect(page.getByTestId('target-text')).toHaveText('First idea');
@@ -53,7 +53,7 @@ test('only one target exists per day — setting again replaces it', async ({ pa
 });
 
 test('a linked to-do carries the target, and a verdict overrides it', async ({ page }) => {
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await page.getByTestId('target-input').fill('Ship the groceries run');
   await page.getByTestId('target-save').click();
 
@@ -66,7 +66,7 @@ test('a linked to-do carries the target, and a verdict overrides it', async ({ p
 
   // Completing that to-do counts the target as hit, without a manual verdict
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page
     .locator('.screen')
     .last()
@@ -74,17 +74,17 @@ test('a linked to-do carries the target, and a verdict overrides it', async ({ p
     .getByRole('button', { name: 'Mark complete' })
     .click();
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-target-state')).toHaveText('Hit');
+  await expect((await homeRow(page, 'home-target-state'))).toHaveText('Hit');
 
   // An explicit verdict wins over the derived one
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await page.getByTestId('target-missed').click();
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-target-state')).toHaveText('Missed');
+  await expect((await homeRow(page, 'home-target-state'))).toHaveText('Missed');
 });
 
 test('a verdict can be undone', async ({ page }) => {
-  await page.getByTestId('home-target').click();
+  await (await homeRow(page, 'home-target')).click();
   await page.getByTestId('target-input').fill('Write the brief');
   await page.getByTestId('target-save').click();
   await page.getByTestId('target-hit').click();

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow, openSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await loadSeeded(page);
@@ -39,7 +39,7 @@ test('search finds notes content and opens the task where it lives', async ({ pa
 });
 
 test('empty query shows quick list shortcuts', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page.getByRole('button', { name: 'Search' }).last().click();
   // Today is the current list so it's omitted from shortcuts
   const overlay = page.getByTestId('search-overlay');
@@ -50,7 +50,7 @@ test('empty query shows quick list shortcuts', async ({ page }) => {
 });
 
 test('export then import restores data (backup roundtrip)', async ({ page }) => {
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'data');
   const downloadPromise = page.waitForEvent('download');
   await page.getByTestId('export-data').click();
   const download = await downloadPromise;
@@ -58,14 +58,14 @@ test('export then import restores data (backup roundtrip)', async ({ page }) => 
 
   // Wipe by importing an empty-ish state? Instead: delete a task, then import
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('Check insurance offer').click();
   await page.locator('[data-task-card]').getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText('Check insurance offer')).toBeHidden();
 
   // Import the backup (accept the confirm dialog)
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'data');
   page.on('dialog', (d) => void d.accept());
   const chooserPromise = page.waitForEvent('filechooser');
   await page.getByTestId('import-data').click();
@@ -74,6 +74,6 @@ test('export then import restores data (backup roundtrip)', async ({ page }) => 
 
   // The deleted task is back in the Inbox
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await expect(page.getByText('Check insurance offer')).toBeVisible();
 });

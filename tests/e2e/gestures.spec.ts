@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, swipe, longPressDrag, currentScreen } from './helpers';
+import { loadSeeded, swipe, longPressDrag, currentScreen, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('swipe right completes a task', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await expect(page.getByText('Check insurance offer')).toBeVisible();
   await swipe(page, '[data-key] .task-row:has-text("Check insurance offer")', 160);
   // Completed: checkbox filled, still visible during grace
@@ -21,7 +21,7 @@ test('swipe right completes a task', async ({ page }) => {
 });
 
 test('swipe left opens the schedule picker', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await swipe(page, '.task-row:has-text("New idea: balcony garden")', -160);
   await expect(page.getByText('When', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Today (Anytime)', exact: true }).click();
@@ -30,12 +30,12 @@ test('swipe left opens the schedule picker', async ({ page }) => {
   await expect(currentScreen(page).getByText('New idea: balcony garden')).toBeHidden();
   // Now in Today
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(currentScreen(page).getByText('New idea: balcony garden')).toBeVisible();
 });
 
 test('long-press drag reorders within the inbox and persists', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   const rows = page.locator('[data-reorder-row] .task-row');
   await expect(rows).toHaveCount(2);
   const first = await rows.first().textContent();
@@ -51,7 +51,7 @@ test('long-press drag reorders within the inbox and persists', async ({ page }) 
 });
 
 test('drag between Today and Tonight moves the task', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(page.getByText('Tonight')).toBeVisible();
   // 'Water the plants' is in Tonight; drag it far up into the day section
   const eveningRow = '[data-reorder-row][data-section="tonight"]';
@@ -64,7 +64,7 @@ test('drag between Today and Tonight moves the task', async ({ page }) => {
 });
 
 test('magic plus drag-to-position inserts at that spot', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   const fab = page.getByTestId('magic-plus');
   const box = (await fab.boundingBox())!;
   const firstRow = page.locator('[data-reorder-row]').first();
@@ -98,7 +98,7 @@ test('magic plus drag-to-position inserts at that spot', async ({ page }) => {
 });
 
 test('edge swipe goes back', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(page).toHaveURL(/#\/today$/);
   await page.waitForTimeout(800); // let the push transition settle
   // Swipe from the left edge to the right
@@ -116,5 +116,5 @@ test('edge swipe goes back', async ({ page }) => {
     pointerId: 7, isPrimary: true, bubbles: true, pointerType: 'touch', clientX: 8 + 12 * 22, clientY: 300,
   });
   await expect(page).toHaveURL(/#\/$/, { timeout: 3000 });
-  await expect(page.getByTestId('home-inbox')).toBeVisible();
+  await expect((await homeRow(page, 'home-inbox'))).toBeVisible();
 });

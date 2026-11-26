@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow, openSettings } from './helpers';
 
 function icsFixture(todayCompact: string): string {
   return [
@@ -34,13 +34,13 @@ test('ICS subscription shows events in Today', async ({ page }) => {
   );
 
   await loadSeeded(page);
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await page.getByTestId('ics-url').fill('https://calendar.example.com/feed.ics');
   await page.getByTestId('save-calendar').click();
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
 
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const block = page.getByTestId('calendar-block');
   await expect(block).toBeVisible();
   await expect(block).toContainText('Company holiday');
@@ -62,14 +62,14 @@ test('Calendar screen shows month grid with events from home row', async ({ page
 
   await loadSeeded(page);
   // Link the calendar in settings first
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await page.getByTestId('ics-url').fill('https://calendar.example.com/feed.ics');
   await page.getByTestId('save-calendar').click();
   await expect(page.getByText(/Updated — 2 events/)).toBeVisible();
   await page.getByTestId('back-button').last().click();
 
   // Open the new Calendar screen from the home row above Logbook
-  await page.getByTestId('home-calendar').click();
+  await (await homeRow(page, 'home-calendar')).click();
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   await expect(page.getByTestId('cal-month-label')).toHaveText(`${monthNames[today.getMonth()]} ${today.getFullYear()}`);
 
@@ -93,7 +93,7 @@ test('Calendar screen shows month grid with events from home row', async ({ page
 
 test('Calendar lists the whole month and pins the day you select', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-calendar').click();
+  await (await homeRow(page, 'home-calendar')).click();
 
   // The seeded to-dos give this month dated entries, with or without a feed
   const agenda = page.getByTestId('cal-month-agenda');
@@ -132,7 +132,7 @@ test('sync still works when proxy field is cleared (Google-style CORS block)', a
   );
 
   await loadSeeded(page);
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await page.getByTestId('ics-url').fill('https://calendar.google.com/calendar/ical/secret/basic.ics');
   // Simulate the user having cleared the proxy field
   await page.getByPlaceholder('CORS proxy prefix (optional)').fill('');
@@ -156,7 +156,7 @@ test('pasting a Google "Embed" link auto-converts to the public feed', async ({ 
   );
 
   await loadSeeded(page);
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await page
     .getByTestId('ics-url')
     .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com&ctz=Asia%2FKolkata');
@@ -171,7 +171,7 @@ test('private embed link that cannot be fetched explains which link to copy', as
   await page.route('https://api.allorigins.win/**', (r) => r.abort('failed'));
 
   await loadSeeded(page);
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'integrations');
   await page
     .getByTestId('ics-url')
     .fill('https://calendar.google.com/calendar/embed?src=me%40gmail.com');
@@ -184,7 +184,7 @@ test('Add event opens Google Calendar pre-filled for the selected day', async ({
     r.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }),
   );
   await loadSeeded(page);
-  await page.getByTestId('home-calendar').click();
+  await (await homeRow(page, 'home-calendar')).click();
   const popupPromise = context.waitForEvent('page');
   await page.getByTestId('cal-add-event').click();
   const popup = await popupPromise;

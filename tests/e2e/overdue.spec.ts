@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow, openSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 
 /** The seed puts "Call the dentist" one day past its deadline. */
 test('ticking an overdue to-do asks for the day and logs it there', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const todayScreen = page.locator('.screen').last();
   await todayScreen
     .locator('div.task-row', { hasText: 'Call the dentist' })
@@ -31,14 +31,14 @@ test('ticking an overdue to-do asks for the day and logs it there', async ({ pag
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
   });
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-logbook').click();
+  await (await homeRow(page, 'home-logbook')).click();
   const logbook = page.locator('.screen').last();
   await expect(logbook.getByText('Call the dentist')).toBeVisible();
   await expect(logbook.getByText(yesterdayLabel, { exact: true })).toBeVisible();
 });
 
 test('a to-do due today completes without asking', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const todayScreen = page.locator('.screen').last();
   await todayScreen
     .locator('div.task-row', { hasText: 'Buy groceries' })
@@ -48,11 +48,11 @@ test('a to-do due today completes without asking', async ({ page }) => {
 });
 
 test('the prompt can be turned off from Settings', async ({ page }) => {
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'general');
   await page.getByTestId('toggle-ask-completion').click();
   await page.getByTestId('back-button').last().click();
 
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page
     .locator('.screen')
     .last()

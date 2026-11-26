@@ -2,6 +2,9 @@ import { createSignal } from 'solid-js';
 import { createSpring, SPRING } from '../gestures/springs';
 import { release, tryClaim } from '../gestures/arbiter';
 import { reduceMotion } from './motion';
+import {
+  isSettingsGroup, isSettingsSection, type SettingsGroupId, type SettingsSectionId,
+} from '../domain/settingsGroups';
 
 /** Custom navigation stack: screens stay mounted during iOS-style push/pop
  *  slides, and the left-edge swipe scrubs the same spring the buttons use.
@@ -21,7 +24,7 @@ export type Route =
   | { name: 'myroutine' }
   | { name: 'target' }
   | { name: 'beliefs' }
-  | { name: 'settings' }
+  | { name: 'settings'; group?: SettingsGroupId; section?: SettingsSectionId }
   | { name: 'boards' }
   | { name: 'board'; id: string }
   | { name: 'boardCalendar'; id: string }
@@ -55,7 +58,9 @@ export function hashFor(route: Route): string {
     case 'myroutine': return '#/myroutine';
     case 'target': return '#/target';
     case 'beliefs': return '#/beliefs';
-    case 'settings': return '#/settings';
+    case 'settings':
+      if (!route.group) return '#/settings';
+      return route.section ? `#/settings/${route.group}/${route.section}` : `#/settings/${route.group}`;
     case 'boards': return '#/boards';
     case 'board': return `#/board/${route.id}`;
     case 'boardCalendar': return `#/board/${route.id}/calendar`;
@@ -78,7 +83,12 @@ export function parseHash(hash: string): Route {
   if (!head) return { name: 'home' };
   if ((BUILTINS as string[]).includes(head)) return { name: 'list', list: head as BuiltinList };
   if (head === 'calendar') return { name: 'calendar' };
-  if (head === 'settings') return { name: 'settings' };
+  if (head === 'settings') {
+    if (!isSettingsGroup(parts[1])) return { name: 'settings' };
+    return isSettingsSection(parts[2])
+      ? { name: 'settings', group: parts[1], section: parts[2] }
+      : { name: 'settings', group: parts[1] };
+  }
   if (head === 'routine') return { name: 'routine' };
   if (head === 'myroutine') return { name: 'myroutine' };
   if (head === 'target') return { name: 'target' };

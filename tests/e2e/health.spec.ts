@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -14,7 +14,7 @@ function localDate(d = new Date()): string {
 }
 
 async function openFocus(page: Page): Promise<void> {
-  await page.getByTestId('home-focus').click();
+  await (await homeRow(page, 'home-focus')).click();
   await expect(page.getByTestId('health-card')).toBeVisible();
 }
 
@@ -47,7 +47,7 @@ test("manual check-in reproduces the Watch's night and adapts the day", async ({
 
   // Today suggests a lighter day; the sprint defaults to 25 min
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').first().click();
+  await (await homeRow(page, 'home-today')).first().click();
   await expect(page.getByTestId('today-short-night')).toContainText('5h 28m');
   await page.getByTestId('today-start-sprint').click();
   await expect(page.getByTestId('sprint-short-night')).toContainText('25 min');
@@ -87,7 +87,7 @@ test('pasting the Shortcut output imports sleep and rings', async ({ page }) => 
 });
 
 test('a running sprint can be edited: next action and time left', async ({ page }) => {
-  await page.getByTestId('home-today').first().click();
+  await (await homeRow(page, 'home-today')).first().click();
   await page.getByTestId('today-start-sprint').click();
   const sprint = page.getByTestId('focus-sprint');
   await sprint.getByTestId('sprint-task-option').first().click();
@@ -110,7 +110,7 @@ test('a running sprint can be edited: next action and time left', async ({ page 
 
 test('finished sprints are editable in the log; scheduled ones can be moved', async ({ page }) => {
   // Finish a sprint
-  await page.getByTestId('home-today').first().click();
+  await (await homeRow(page, 'home-today')).first().click();
   await page.getByTestId('today-start-sprint').click();
   const sprint = page.getByTestId('focus-sprint');
   await sprint.getByTestId('sprint-free-title').fill('Write report');

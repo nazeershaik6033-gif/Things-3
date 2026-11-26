@@ -1,6 +1,7 @@
 import { createEffect, createSignal, onCleanup, onMount, type JSX } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { createSpring, rubberband, Spring, SPRING } from '../gestures/springs';
+import { reduceMotion } from '../app/motion';
 import { createPan } from '../gestures/createPan';
 import { release, tryClaim } from '../gestures/arbiter';
 import { createViewport } from './viewport';
@@ -37,14 +38,21 @@ export function FullScreenSheet(props: {
   const close = (velocity = 0) => {
     if (closing) return;
     closing = true;
+    if (reduceMotion()) {
+      props.onClose();
+      return;
+    }
     spring.to(travel(), { velocity, onRest: () => props.onClose() });
   };
 
   onMount(() => {
-    spring = createSpring(travel(), apply, SPRING.nav);
-    apply(travel());
+    // Full-height panels never overshoot (there is nothing below them to
+    // cover the gap); with motion off they simply appear.
+    const still = reduceMotion();
+    spring = createSpring(still ? 0 : travel(), apply, SPRING.nav);
+    apply(still ? 0 : travel());
     setMounted(true);
-    requestAnimationFrame(() => spring.to(0));
+    if (!still) requestAnimationFrame(() => spring.to(0));
 
     props.gripRef?.(gripEl);
 

@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test('focus timer: start, minimize to mini bar, reopen, finish → logged record', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
 
   // Open from the Today header
   await page.getByTestId('pomo-open').click();
@@ -41,7 +41,7 @@ test('focus timer: start, minimize to mini bar, reopen, finish → logged record
 
 test('focus timer: discard leaves no record', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page.getByTestId('pomo-open').click();
 
   await page.getByTestId('pomo-start').click();
@@ -55,7 +55,7 @@ test('focus timer: discard leaves no record', async ({ page }) => {
 
 test('focus timer: editing a compass preset changes the planned time', async ({ page }) => {
   await loadSeeded(page);
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page.getByTestId('pomo-open').click();
 
   await page.getByTestId('pomo-settings').click();

@@ -1,5 +1,6 @@
 import { createMemo, createSignal, For, Show, type JSX } from 'solid-js';
 import { Portal } from 'solid-js/web';
+import { topRoute } from '../app/navigation';
 import type { DateStr, RepeatCfg, RepeatRule, Sprint, Task } from '../db/models';
 import { db } from '../db/db';
 import { createLiveQuery } from '../db/liveQuery';
@@ -400,7 +401,10 @@ export function TrackerBar(): JSX.Element {
           style={{
             position: 'fixed',
             left: '12px',
-            bottom: 'calc(var(--safe-bottom) + 22px)',
+            // On Home it rides above the floating tab bar
+            bottom: topRoute().name === 'home'
+              ? 'calc(var(--safe-bottom) + 84px)'
+              : 'calc(var(--safe-bottom) + 22px)',
             'max-width': 'calc(100% - 110px)',
             'z-index': '58',
             display: 'flex',

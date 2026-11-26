@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { currentScreen, loadSeeded } from './helpers';
+import { currentScreen, loadSeeded, homeRow, openSettings } from './helpers';
 
 /** Features ported from Super Productivity, end to end on the iPhone profile. */
 
@@ -17,7 +17,7 @@ async function quickAdd(page: Page, text: string): Promise<void> {
 }
 
 test('short syntax files tags, project, date and estimate', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Plan sprint #planning @today ~45m');
   await expect(page.getByTestId('short-syntax-preview')).toContainText('#planning');
@@ -27,7 +27,7 @@ test('short syntax files tags, project, date and estimate', async ({ page }) => 
   // @today moved it out of the Inbox and into Today, title cleaned up
   await expect(currentScreen(page).getByText('Plan sprint', { exact: true })).toBeHidden();
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const row = currentScreen(page).locator('div.task-row', { hasText: 'Plan sprint' });
   await expect(row).toBeVisible();
   await expect(row.getByTestId('row-time-chip')).toContainText('45m');
@@ -36,7 +36,7 @@ test('short syntax files tags, project, date and estimate', async ({ page }) => 
 });
 
 test('track time on a to-do, see it live, stop it, find it in the Worklog', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await quickAdd(page, 'Deep work block');
   await currentScreen(page).getByText('Deep work block').click();
   const card = page.locator('[data-task-card]');
@@ -62,7 +62,7 @@ test('track time on a to-do, see it live, stop it, find it in the Worklog', asyn
 });
 
 test('estimate a to-do from the card', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await quickAdd(page, 'Write proposal');
   await currentScreen(page).getByText('Write proposal').click();
   const card = page.locator('[data-task-card]');
@@ -73,7 +73,7 @@ test('estimate a to-do from the card', async ({ page }) => {
 });
 
 test('make a to-do repeat daily and see the next one ahead', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await quickAdd(page, 'Stand-up notes');
   await currentScreen(page).getByText('Stand-up notes').click();
   const card = page.locator('[data-task-card]');
@@ -84,11 +84,11 @@ test('make a to-do repeat daily and see the next one ahead', async ({ page }) =>
 
   // It became a repeating to-do for today; the next occurrence is in Upcoming
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   const row = currentScreen(page).locator('div.task-row', { hasText: 'Stand-up notes' });
   await expect(row.getByTestId('repeat-badge')).toBeVisible();
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-upcoming').click();
+  await (await homeRow(page, 'home-upcoming')).click();
   await expect(currentScreen(page).locator('div.task-row', { hasText: 'Stand-up notes' }).first()).toBeVisible();
 
   // The card shows the rule and can stop it
@@ -100,7 +100,7 @@ test('make a to-do repeat daily and see the next one ahead', async ({ page }) =>
 });
 
 test('counters: tap counter with a goal and a stopwatch', async ({ page }) => {
-  await page.getByTestId('home-counters').click();
+  await (await homeRow(page, 'home-counters')).click();
   await currentScreen(page).getByTestId('counter-add').click();
   await currentScreen(page).getByTestId('counter-title').fill('Water');
   await currentScreen(page).getByTestId('counter-goal').fill('2');
@@ -124,14 +124,14 @@ test('counters: tap counter with a goal and a stopwatch', async ({ page }) => {
   await expect(reading.getByTestId('counter-toggle')).toHaveAttribute('aria-pressed', 'false');
 
   await page.getByTestId('back-button').last().click();
-  await expect(page.getByTestId('home-counters')).toContainText('1/2');
+  await expect((await homeRow(page, 'home-counters'))).toContainText('1/2');
 });
 
 test('finish day: roll leftovers to tomorrow and save a review', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await quickAdd(page, 'Leftover task @today');
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-finish-day').click();
+  await (await homeRow(page, 'home-finish-day')).click();
   const open = currentScreen(page).getByTestId('fd-open-list');
   await expect(open).toContainText('Leftover task');
   await open.locator('div', { hasText: 'Leftover task' }).last().getByTestId('fd-tomorrow').click();
@@ -139,14 +139,14 @@ test('finish day: roll leftovers to tomorrow and save a review', async ({ page }
   await currentScreen(page).getByTestId('fd-impact-3').click();
   await currentScreen(page).getByPlaceholder(/One line about today/).fill('Shipped the port');
   await currentScreen(page).getByTestId('fd-finish').click();
-  await expect(page.getByTestId('home-finish-day-state')).toHaveText('Done');
+  await expect((await homeRow(page, 'home-finish-day-state'))).toHaveText('Done');
 
   await page.goto('./#/worklog');
   await expect(currentScreen(page).getByTestId('worklog-review')).toContainText('High impact · Shipped the port');
 });
 
 test('settings expose break reminders, short syntax and GitHub import', async ({ page }) => {
-  await page.getByTestId('settings-button').click();
+  await openSettings(page, 'planning');
   await expect(currentScreen(page).getByTestId('toggle-break-reminder')).toHaveAttribute('aria-pressed', 'true');
   await currentScreen(page).getByTestId('toggle-break-reminder').click();
   await expect(currentScreen(page).getByTestId('toggle-break-reminder')).toHaveAttribute('aria-pressed', 'false');

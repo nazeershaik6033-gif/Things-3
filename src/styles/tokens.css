@@ -41,6 +41,8 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.18);
   --shadow-fab: 0 4px 12px rgba(47, 124, 246, 0.45), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --tabbar-bg: rgba(255, 255, 255, 0.82);
+  --tabbar-pill: rgba(29, 29, 31, 0.08);
   --shadow-drag: 0 12px 32px rgba(0, 0, 0, 0.24);
 
   /* type scale */
@@ -97,6 +99,8 @@
   --shadow-card: 0 4px 24px rgba(60, 40, 10, 0.13), 0 1px 3px rgba(60, 40, 10, 0.08);
   --shadow-sheet: 0 -8px 40px rgba(60, 40, 10, 0.18);
   --shadow-fab: 0 4px 12px rgba(47, 124, 246, 0.45), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --tabbar-bg: rgba(247, 242, 232, 0.86);
+  --tabbar-pill: rgba(44, 36, 24, 0.09);
   --shadow-drag: 0 12px 32px rgba(60, 40, 10, 0.22);
 }
 
@@ -138,6 +142,8 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.50);
   --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --tabbar-bg: rgba(78, 78, 82, 0.82);
+  --tabbar-pill: rgba(255, 255, 255, 0.14);
   --shadow-drag: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
@@ -179,5 +185,7 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.45);
   --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.60);
   --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.55);
+  --tabbar-bg: rgba(36, 36, 40, 0.84);
+  --tabbar-pill: rgba(255, 255, 255, 0.14);
   --shadow-drag: 0 12px 32px rgba(0, 0, 0, 0.65);
 }

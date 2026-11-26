@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show, type JSX } from 'solid-js';
+import { createContext, createMemo, createSignal, For, onMount, Show, useContext, type JSX } from 'solid-js';
 import { db } from '../db/db';
 import { getSetting, setSetting } from '../db/mutations';
 import { exportData, importData, validateExport } from '../db/exportImport';
@@ -14,24 +14,183 @@ import { GEMINI_MODELS, OPENROUTER_MODELS, type AiProvider } from '../net/ai';
 import { doneTodaySec, setOverlayOpen } from '../app/pomodoro';
 import { formatHrMin } from '../domain/pomodoro';
 import { push } from '../app/navigation';
+import { startHomeLayout } from '../app/homeLayout';
+import { motionLevel, motionPref, setMotionPref, type MotionPref } from '../app/motion';
+import {
+  SECTION_TITLE, SETTINGS_GROUPS, groupIcon, groupOfSection, groupTitle, searchSettings,
+  type SettingsGroupId, type SettingsSectionId,
+} from '../domain/settingsGroups';
 import { Icon } from '../ui/Icon';
 import { ScreenChrome } from './common';
 import { GitHubSettings, ShortSyntaxHelp, TimeTrackingSettings } from './SuperSettings';
 
-function Section(props: { title: string; children: JSX.Element }): JSX.Element {
+
+const MOTION_CHOICES: { id: MotionPref; label: string }[] = [
+  { id: 'auto', label: 'Auto' },
+  { id: 'rich', label: 'Rich' },
+  { id: 'subtle', label: 'Subtle' },
+  { id: 'off', label: 'Off' },
+];
+
+const MOTION_HINT: Record<MotionPref, string> = {
+  auto: 'Follows your iPhone: Rich, or Off when Reduce Motion is on.',
+  rich: 'Springy sheets and tabs, pages that rise in, cards that spring back, and confetti when you finish your habits, hit your target or finish the day.',
+  subtle: 'The same moves, calmer: no overshoot, quicker fades, no confetti.',
+  off: 'No animation. Screens and sheets appear at once.',
+};
+
+/** Settings → Appearance → Motion. */
+function MotionPicker(): JSX.Element {
   return (
-    <div style={{ padding: '14px 16px 4px' }}>
-      <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px', padding: '0 0 8px' }}>
-        {props.title}
+    <div style={{ 'border-top': '1px solid var(--separator)', padding: '10px 0' }}>
+      <div style={{ display: 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'padding-bottom': '8px' }}>
+        <span style={{ 'font-size': '15px', color: 'var(--text)' }}>Motion</span>
+        <Show when={motionPref() === 'auto'}>
+          <span style={{ 'font-size': '12px', color: 'var(--text-tertiary)' }}>Now: {motionLevel() === 'off' ? 'Off' : 'Rich'}</span>
+        </Show>
       </div>
-      <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '4px 14px' }}>
-        {props.children}
+      <div role="radiogroup" aria-label="Motion" style={{ display: 'flex', gap: '4px', padding: '3px', 'border-radius': '10px', background: 'var(--bg-list)' }}>
+        <For each={MOTION_CHOICES}>
+          {(c) => (
+            <button
+              role="radio"
+              aria-checked={motionPref() === c.id}
+              data-testid={`motion-${c.id}`}
+              onClick={() => void setMotionPref(c.id)}
+              style={{
+                flex: '1', padding: '7px 0', 'border-radius': '8px', 'font-size': '14px',
+                'font-weight': motionPref() === c.id ? '600' : '400',
+                background: motionPref() === c.id ? 'var(--blue)' : 'transparent',
+                color: motionPref() === c.id ? '#fff' : 'var(--text-secondary)',
+                transition: 'background-color 160ms, color 160ms',
+              }}
+            >
+              {c.label}
+            </button>
+          )}
+        </For>
+      </div>
+      <div data-testid="motion-hint" style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '8px 2px 0', 'line-height': '1.45' }}>
+        {MOTION_HINT[motionPref()]}
       </div>
     </div>
   );
 }
 
-export function SettingsScreen(): JSX.Element {
+/** The section a settings page is showing, provided by SettingsGroupPage. A
+ *  section renders only on its own group's page; its children are created
+ *  lazily, so hidden sections cost nothing. */
+const GroupContext = createContext<SettingsGroupId | null>(null);
+
+function Section(props: { id: SettingsSectionId; title: string; children: JSX.Element }): JSX.Element {
+  const group = useContext(GroupContext);
+  return (
+    <Show when={group === groupOfSection(props.id)}>
+      <div data-section={props.id} data-testid={`settings-section-${props.id}`} style={{ padding: '14px 16px 4px' }}>
+        <div style={{ 'font-size': '13px', 'font-weight': '600', color: 'var(--text-secondary)', 'text-transform': 'uppercase', 'letter-spacing': '0.4px', padding: '0 0 8px' }}>
+          {props.title}
+        </div>
+        <div style={{ background: 'var(--bg-inset)', 'border-radius': '12px', padding: '4px 14px' }}>
+          {props.children}
+        </div>
+      </div>
+    </Show>
+  );
+}
+
+/** Settings landing page: a search box and the five groups. Searching lists
+ *  the matching sections across every group; tapping one opens its page and
+ *  scrolls to it. */
+function SettingsLanding(): JSX.Element {
+  const [query, setQuery] = createSignal('');
+  const results = createMemo(() => searchSettings(query()));
+  return (
+    <ScreenChrome title="Settings" icon={<Icon name="settings" size={28} color="var(--text-secondary)" />}>
+      <div style={{ padding: '0 16px 12px' }}>
+        <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '9px 12px', 'border-radius': '12px', background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+          <Icon name="search" size={16} />
+          <input
+            data-testid="settings-search"
+            type="search"
+            placeholder="Search settings"
+            value={query()}
+            onInput={(e) => setQuery(e.currentTarget.value)}
+            style={{ flex: '1', 'font-size': '16px', background: 'transparent', color: 'var(--text)' }}
+          />
+        </div>
+      </div>
+      <Show
+        when={query().trim()}
+        fallback={
+          <div class="rise" style={{ margin: '0 16px', background: 'var(--bg-inset)', 'border-radius': '14px', overflow: 'hidden' }}>
+            <For each={SETTINGS_GROUPS}>
+              {(g, i) => (
+                <button
+                  data-testid={`settings-group-${g.id}`}
+                  class="pressable"
+                  onClick={() => push({ name: 'settings', group: g.id })}
+                  style={{
+                    display: 'flex', 'align-items': 'center', gap: '12px', width: '100%', padding: '12px 14px', 'text-align': 'left',
+                    'border-top': i() === 0 ? 'none' : '1px solid var(--separator)',
+                  }}
+                >
+                  <span style={{ width: '32px', height: '32px', 'border-radius': '9px', display: 'grid', 'place-items': 'center', background: g.tint, flex: 'none' }}>
+                    <Icon name={g.icon} size={18} color="#fff" />
+                  </span>
+                  <span style={{ flex: '1', 'min-width': '0' }}>
+                    <span style={{ display: 'block', 'font-size': '17px', color: 'var(--text)' }}>{g.title}</span>
+                    <span style={{ display: 'block', 'font-size': '13px', color: 'var(--text-secondary)', overflow: 'hidden', 'text-overflow': 'ellipsis', 'white-space': 'nowrap' }}>
+                      {g.blurb ?? g.sections.map((sec) => SECTION_TITLE[sec]).join(' · ')}
+                    </span>
+                  </span>
+                  <Icon name="chevron-right" size={16} color="var(--text-tertiary)" />
+                </button>
+              )}
+            </For>
+          </div>
+        }
+      >
+        <Show
+          when={results().length > 0}
+          fallback={<div style={{ padding: '24px 16px', 'text-align': 'center', color: 'var(--text-secondary)' }}>No settings match “{query().trim()}”.</div>}
+        >
+          <div style={{ margin: '0 16px', background: 'var(--bg-inset)', 'border-radius': '14px', overflow: 'hidden' }}>
+            <For each={results()}>
+              {(r, i) => (
+                <button
+                  data-testid={`settings-result-${r.section}`}
+                  class="pressable"
+                  onClick={() => push({ name: 'settings', group: r.group, section: r.section })}
+                  style={{
+                    display: 'flex', 'align-items': 'center', gap: '10px', width: '100%', padding: '12px 14px', 'text-align': 'left',
+                    'border-top': i() === 0 ? 'none' : '1px solid var(--separator)',
+                  }}
+                >
+                  <span style={{ flex: '1' }}>
+                    <span style={{ display: 'block', 'font-size': '16px', color: 'var(--text)' }}>{SECTION_TITLE[r.section]}</span>
+                    <span style={{ display: 'block', 'font-size': '12px', color: 'var(--text-secondary)' }}>{groupTitle(r.group)}</span>
+                  </span>
+                  <Icon name="chevron-right" size={16} color="var(--text-tertiary)" />
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
+      </Show>
+    </ScreenChrome>
+  );
+}
+
+/** Settings: the landing page, or one group's page. */
+export function SettingsScreen(props: { group?: SettingsGroupId; section?: SettingsSectionId }): JSX.Element {
+  return (
+    <Show when={props.group} fallback={<SettingsLanding />}>
+      {(group) => <SettingsGroupPage group={group()} section={props.section} />}
+    </Show>
+  );
+}
+
+function SettingsGroupPage(props: { group: SettingsGroupId; section?: SettingsSectionId }): JSX.Element {
   const [icsUrl, setIcsUrl] = createSignal('');
   /** The main link as saved (the field above may hold unsaved edits). */
   const [savedIcsUrl, setSavedIcsUrl] = createSignal('');
@@ -41,6 +200,16 @@ export function SettingsScreen(): JSX.Element {
   const [storageInfo, setStorageInfo] = createSignal('');
   let fileInput!: HTMLInputElement;
   let icsFileInput!: HTMLInputElement;
+  let scrollEl: HTMLDivElement | undefined;
+
+  onMount(() => {
+    // Opened from a search result: bring that section into view
+    if (!props.section || !scrollEl) return;
+    const target = scrollEl.querySelector<HTMLElement>(`[data-section="${props.section}"]`);
+    if (!target) return;
+    const offset = target.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
+    scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop + offset - 8);
+  });
 
   onMount(async () => {
     setIcsUrl(await getSetting('icsUrl', ''));
@@ -93,6 +262,7 @@ export function SettingsScreen(): JSX.Element {
       const valid = validateExport(json);
       if (!window.confirm('Importing replaces ALL current data with the backup. Continue?')) return;
       await importData(valid);
+      await startHomeLayout();
       setImportStatus(`Imported ${valid.data.tasks.length} to-dos.`);
     } catch (e) {
       setImportStatus(e instanceof Error ? e.message : 'Import failed.');
@@ -157,8 +327,13 @@ export function SettingsScreen(): JSX.Element {
   } as const;
 
   return (
-    <ScreenChrome title="Settings" icon={<Icon name="settings" size={28} color="var(--text-secondary)" />}>
-      <Section title="Appearance">
+    <ScreenChrome
+      title={groupTitle(props.group)}
+      icon={<Icon name={groupIcon(props.group)} size={26} color="var(--text-secondary)" />}
+      scrollRef={(el) => (scrollEl = el)}
+    >
+      <GroupContext.Provider value={props.group}>
+      <Section id="appearance" title="Appearance">
         <div style={{ display: 'flex', gap: '8px', padding: '8px 0' }}>
           {PALETTES.map(themeSwatch)}
         </div>
@@ -175,9 +350,10 @@ export function SettingsScreen(): JSX.Element {
             {themePref() === 'auto' ? '✓ ' : ''}Follow system
           </button>
         </div>
+        <MotionPicker />
       </Section>
 
-      <Section title="Completing to-dos">
+      <Section id="completing" title="Completing to-dos">
         <button
           data-testid="toggle-ask-completion"
           onClick={() => void setAskCompletionDate(!askCompletionDate())}
@@ -226,7 +402,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Planner">
+      <Section id="planner" title="Planner">
         <div style={{ display: 'flex', 'align-items': 'center', gap: '8px', padding: '10px 0 6px' }}>
           <span style={{ flex: '1', 'font-size': '15px' }}>Snap blocks to</span>
           {SNAP_CHOICES.map((m) => (
@@ -309,7 +485,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Focus Timer">
+      <Section id="focus-timer" title="Focus Timer">
         <div style={{ padding: '10px 0' }}>
           <button
             data-testid="open-focus-timer"
@@ -327,19 +503,19 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Time tracking & breaks">
+      <Section id="time-tracking" title="Time tracking & breaks">
         <TimeTrackingSettings />
       </Section>
 
-      <Section title="Quick Entry short syntax">
+      <Section id="short-syntax" title="Quick Entry short syntax">
         <ShortSyntaxHelp />
       </Section>
 
-      <Section title="GitHub issues">
+      <Section id="github" title="GitHub issues">
         <GitHubSettings />
       </Section>
 
-      <Section title="My Routine">
+      <Section id="my-routine" title="My Routine">
         <div style={{ padding: '10px 0' }}>
           <button
             data-testid="open-myroutine"
@@ -367,7 +543,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="AI">
+      <Section id="ai" title="AI">
         <div style={{ padding: '10px 0' }}>
           <div style={{ display: 'flex', gap: '6px', 'margin-bottom': '10px' }}>
             {(
@@ -460,7 +636,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Boards">
+      <Section id="boards" title="Boards">
         <div style={{ padding: '10px 0' }}>
           <button
             data-testid="open-boards"
@@ -494,7 +670,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Google Calendar">
+      <Section id="google-calendar" title="Google Calendar">
         <div style={{ 'font-size': '12px', color: 'var(--text-tertiary)', padding: '10px 0 6px', 'line-height': '1.5' }}>
           In Google Calendar (web): Settings → your calendar → <b>Integrate calendar</b> →
           copy the <b>Secret address in iCal format</b> (it ends in <b>.ics</b>), then paste it
@@ -548,7 +724,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="Backup">
+      <Section id="backup" title="Backup">
         <div style={{ display: 'flex', gap: '14px', padding: '10px 0' }}>
           <button onClick={() => void doExport()} data-testid="export-data" style={{ display: 'flex', 'align-items': 'center', gap: '6px', color: 'var(--blue)', 'font-size': '15px', 'font-weight': '500' }}>
             <Icon name="export" size={17} /> Export
@@ -577,7 +753,7 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
-      <Section title="About">
+      <Section id="about" title="About">
         <div style={{ 'font-size': '13px', color: 'var(--text-secondary)', padding: '10px 0', 'line-height': '1.6' }}>
           Clarity {__APP_VERSION__}
           <Show when={storageInfo()}>
@@ -586,6 +762,7 @@ export function SettingsScreen(): JSX.Element {
           </Show>
         </div>
       </Section>
+      </GroupContext.Provider>
     </ScreenChrome>
   );
 }

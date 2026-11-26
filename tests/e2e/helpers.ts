@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /** Load the app fresh with demo data. */
 export async function loadSeeded(page: Page): Promise<void> {
@@ -110,4 +110,39 @@ export async function longPressDrag(
     bubbles: true,
     pointerType: 'touch',
   });
+}
+
+/** Which Home tab each Home test id lives on in the default layout. */
+const HOME_TAB: Record<string, string> = {
+  'today-banner': 'tasks', 'home-inbox': 'tasks', 'home-today': 'tasks', 'home-cando': 'tasks',
+  'home-upcoming': 'tasks', 'home-prior': 'tasks', 'home-anytime': 'tasks', 'home-someday': 'tasks',
+  'home-logbook': 'tasks', 'home-trash': 'tasks',
+  'home-calendar': 'plan', 'home-calendar-row': 'plan', 'home-planner': 'plan', 'home-boards': 'plan',
+  'home-note': 'plan', 'home-review': 'plan', 'home-review-due': 'plan', 'home-view': 'plan',
+  'home-quote': 'focus', 'home-quote-text': 'focus', 'home-focus': 'focus', 'home-target': 'focus',
+  'home-target-state': 'focus', 'home-routine': 'focus', 'home-routine-progress': 'focus',
+  'home-beliefs': 'focus', 'home-beliefs-state': 'focus', 'home-myroutine': 'focus', 'home-myroutine-new': 'focus',
+  'home-worklog': 'track', 'home-worklog-today': 'track', 'home-counters': 'track',
+  'home-finish-day': 'track', 'home-finish-day-state': 'track',
+};
+
+/** A Home row (or badge) by test id. Home shows one tab at a time, so when
+ *  the row isn't on screen this first switches to the tab that holds it. */
+export async function homeRow(page: Page, testid: string): Promise<Locator> {
+  const loc = page.getByTestId(testid);
+  const tab = HOME_TAB[testid];
+  if (tab && (await page.getByTestId(`home-page-${tab}`).count()) === 0) {
+    await page.getByTestId(`home-tab-${tab}`).click();
+    await page.getByTestId(`home-page-${tab}`).waitFor();
+  }
+  return loc;
+}
+
+/** Open Settings → one group's page (General, Planner & Time, …). */
+export async function openSettings(
+  page: Page,
+  group: 'general' | 'planning' | 'integrations' | 'ai' | 'data',
+): Promise<void> {
+  await page.getByTestId('settings-button').click();
+  await page.getByTestId(`settings-group-${group}`).click();
 }

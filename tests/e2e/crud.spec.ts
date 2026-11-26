@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded } from './helpers';
+import { loadSeeded, homeRow } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   page.on('pageerror', (err) => {
@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 
 test('full lifecycle: create → schedule → complete → logbook → reopen', async ({ page }) => {
   // Create in Inbox via Magic Plus tap
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Write the report');
   await page.getByTestId('quick-entry-save').click();
@@ -26,7 +26,7 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
   // Scheduling moves it out of the Inbox (card closes with it)
   await expect(page.getByText('Write the report')).toBeHidden();
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await expect(page.getByText('Write the report')).toBeVisible();
 
   // Complete it: row checkbox
@@ -41,7 +41,7 @@ test('full lifecycle: create → schedule → complete → logbook → reopen', 
 
   // Shows up in the Logbook under today
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-logbook').click();
+  await (await homeRow(page, 'home-logbook')).click();
   await expect(page.getByText('Write the report')).toBeVisible();
 
   // Reopen from the logbook (newest entry is first)
@@ -99,7 +99,7 @@ test('typing keystroke-by-keystroke into a 2nd+ checklist item keeps focus', asy
 });
 
 test('edit title, notes and checklist inline; data persists', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('New idea: balcony garden').click();
   const card = page.locator('[data-task-card]');
   await expect(card).toBeVisible();
@@ -123,13 +123,13 @@ test('edit title, notes and checklist inline; data persists', async ({ page }) =
 });
 
 test('trash and restore from the card; empty trash deletes forever', async ({ page }) => {
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('Check insurance offer').click();
   await page.locator('[data-task-card]').getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText('Check insurance offer')).toBeHidden();
 
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-trash').click();
+  await (await homeRow(page, 'home-trash')).click();
   await expect(page.getByText('Check insurance offer')).toBeVisible();
 
   // Restore
@@ -138,18 +138,18 @@ test('trash and restore from the card; empty trash deletes forever', async ({ pa
 
   // Trash it again, then empty the trash
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-inbox').click();
+  await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('Check insurance offer').click();
   await page.locator('[data-task-card]').getByRole('button', { name: 'Delete' }).click();
   await page.getByTestId('back-button').last().click();
-  await page.getByTestId('home-trash').click();
+  await (await homeRow(page, 'home-trash')).click();
   await page.getByTestId('empty-trash').click();
   await page.getByRole('button', { name: 'Empty Trash' }).click();
   await expect(page.getByText('The Trash is empty.')).toBeVisible();
 });
 
 test('new project: create, add heading, complete project', async ({ page }) => {
-  await page.getByTestId('new-list').click();
+  await page.getByTestId('home-add').click();
   await page.getByRole('button', { name: 'New Project' }).click();
   await page.getByTestId('project-title').fill('Spring cleaning');
 
@@ -167,14 +167,14 @@ test('new project: create, add heading, complete project', async ({ page }) => {
   // Complete the project → its open tasks complete too, back home
   await page.getByTestId('project-menu').click();
   await page.getByRole('button', { name: 'Complete Project' }).click();
-  await expect(page.getByTestId('home-inbox')).toBeVisible();
-  await page.getByTestId('home-logbook').click();
+  await expect((await homeRow(page, 'home-inbox'))).toBeVisible();
+  await (await homeRow(page, 'home-logbook')).click();
   await expect(page.getByText('Spring cleaning')).toBeVisible();
   await expect(page.getByText('Clean the windows')).toBeVisible();
 });
 
 test('evening tasks: quick entry from Today tonight section', async ({ page }) => {
-  await page.getByTestId('home-today').click();
+  await (await homeRow(page, 'home-today')).click();
   await page.getByTestId('magic-plus').click();
   await page.getByPlaceholder('New To-Do').fill('Stretch before bed');
   // Set to Tonight via the When chip
