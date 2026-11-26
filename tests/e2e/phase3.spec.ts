@@ -60,7 +60,7 @@ test('skip one occurrence of a repeating to-do', async ({ page }) => {
 
 test('calendar: year view, week numbers, Sunday weeks, week opens the Planner', async ({ page }) => {
   await loadSeeded(page);
-  await page.goto('./#/settings');
+  await page.goto('./#/settings/planning');
   await page.getByTestId('week-start-0').click();
   await page.getByTestId('toggle-week-numbers').click();
   await page.goto('./#/calendar');
