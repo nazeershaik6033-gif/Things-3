@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadSeeded, homeRow, openSettings } from './helpers';
+import { loadSeeded, homeRow, openSettings, closeSettings } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await loadSeeded(page);
@@ -57,7 +57,7 @@ test('export then import restores data (backup roundtrip)', async ({ page }) => 
   const path = await download.path();
 
   // Wipe by importing an empty-ish state? Instead: delete a task, then import
-  await page.getByTestId('back-button').last().click();
+  await closeSettings(page);
   await (await homeRow(page, 'home-inbox')).click();
   await page.getByText('Check insurance offer').click();
   await page.locator('[data-task-card]').getByRole('button', { name: 'Delete' }).click();
@@ -73,7 +73,7 @@ test('export then import restores data (backup roundtrip)', async ({ page }) => 
   await expect(page.getByText(/Imported \d+ to-dos/)).toBeVisible();
 
   // The deleted task is back in the Inbox
-  await page.getByTestId('back-button').last().click();
+  await closeSettings(page);
   await (await homeRow(page, 'home-inbox')).click();
   await expect(page.getByText('Check insurance offer')).toBeVisible();
 });
